@@ -1,0 +1,1 @@
+insert into public.platform_admins select id from auth.users where email='platform-owner@demo.test';

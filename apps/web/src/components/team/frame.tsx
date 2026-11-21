@@ -1,0 +1,2 @@
+import{WorkspaceLayout}from '@/components/workspace/layout';import{type TeamProperty}from '@/lib/team';
+export function TeamFrame({tid,properties,property,children}:{tid:string;properties:TeamProperty[];property?:string;children:React.ReactNode}){const active=properties.find(p=>p.id===property)??properties[0];return <WorkspaceLayout tenantId={tid} propertyId={active?.id}>{children}</WorkspaceLayout>;}

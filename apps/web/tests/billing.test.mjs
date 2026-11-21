@@ -1,0 +1,10 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import ts from 'typescript';
+const compile=s=>ts.transpileModule(s,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;const data=s=>`data:text/javascript;base64,${Buffer.from(s).toString('base64')}`;
+const reservations=data(compile(readFileSync(new URL('../src/lib/reservations.ts',import.meta.url),'utf8')));
+const source=readFileSync(new URL('../src/lib/billing.ts',import.meta.url),'utf8').replace("'./reservations'",JSON.stringify(reservations));
+const {parseAmount,csvText,csvMoney,billingFilters,validAuditDay}=await import(data(compile(source)));
+test('amounts are normalized in integer cents instead of floating point',()=>{assert.equal(parseAmount('0.1'),'0.10');assert.equal(parseAmount('0012.30'),'12.30');assert.equal(parseAmount('9999999999.99'),'9999999999.99');});
+test('invalid money cannot be silently rounded or interpreted as an exponent',()=>{for(const value of ['0','-10','1.001','1e3','NaN','Infinity','10000000000.00','1,000.00',''])assert.equal(parseAmount(value),null,value);});
+test('CSV text quotes separators and neutralizes spreadsheet formula prefixes',()=>{assert.equal(csvText('a,"b"'),'"a,""b"""');for(const v of ['=SUM(A1:A2)','+CMD','-cmd','@SUM(A1:A2)',' \t=1+1','\n=1+1'])assert.ok(csvText(v).startsWith('"\''),v);assert.equal(csvText('Normal description'),'"Normal description"');});
+test('ledger numbers remain numeric and exact in CSV',()=>{assert.equal(csvMoney('-0.01'),'-0.01');assert.equal(csvMoney('9999999999.99'),'9999999999.99');assert.throws(()=>csvMoney('=1+1'));});
+test('billing query and audit dates are bounded and validated',()=>{const f=billingFilters({page:'9999999999',view:'sql',balance:'oops',q:'x'.repeat(200)});assert.equal(f.page,100000);assert.equal(f.view,'open');assert.equal(f.balance,'all');assert.equal(f.q.length,100);assert.equal(validAuditDay('2028-02-29','2028-03-01'),true);assert.equal(validAuditDay('2027-02-29','2028-03-01'),false);assert.equal(validAuditDay('2028-03-02','2028-03-01'),false);});

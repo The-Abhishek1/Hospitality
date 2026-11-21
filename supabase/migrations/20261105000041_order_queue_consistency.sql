@@ -1,0 +1,17 @@
+-- Cancelled orders have no payment due, including cancelled room orders.
+create or replace function public.orders_workspace(p_property uuid,p_filters jsonb default '{}')returns jsonb language plpgsql stable security definer set search_path=''as $$
+declare result jsonb;prop public.properties;day date;financial boolean;query text:=left(trim(coalesce(p_filters->>'q','')),100);view text:=coalesce(p_filters->>'view','active');pg integer:=greatest(1,least(100000,coalesce((p_filters->>'page')::integer,1)));
+begin
+ if not private.order_access(p_property)then raise exception 'not permitted'using errcode='42501';end if;
+ financial:=private.has_permission(p_property,'billing.manage')or private.has_permission(p_property,'finance.read');select * into prop from public.properties where id=p_property;day:=(now()at time zone prop.timezone)::date;
+ with all_orders as materialized(select o.*,case when financial then case when o.status='cancelled'then 'cancelled'when o.reservation_id is not null then case when o.status='served'then 'room_posted'else 'room_pending'end when o.total=0 then 'complimentary'when exists(select 1 from public.payments where order_id=o.id)then 'paid'else 'unpaid'end end as payment_state from private.order_rows(p_property)o),filtered as materialized(select * from all_orders o where
+ (query=''or strpos(lower(concat_ws(' ',o.id::text,o.table_label,o.room,o.current_room,o.guest_name,o.items::text)),lower(query))>0)
+ and(coalesce(p_filters->>'kind','')=''or o.kind=p_filters->>'kind')and(coalesce(p_filters->>'priority','')=''or o.priority=p_filters->>'priority')
+ and(case view when 'active'then o.status in('placed','preparing','ready')when 'placed'then o.status='placed'when 'preparing'then o.status='preparing'when 'ready'then o.status='ready'when 'served'then o.status='served'when 'cancelled'then o.status='cancelled'when 'overdue'then o.status in('placed','preparing','ready')and o.due_at<now()when 'unpaid'then financial and o.status='served'and o.payment_state='unpaid'else true end))
+ select jsonb_build_object('total',(select count(*)from filtered),'page',pg,'rows',coalesce((select jsonb_agg(to_jsonb(x))from(select * from filtered order by
+ case when coalesce(p_filters->>'sort','priority')='priority'then case priority when 'urgent'then 0 when 'high'then 1 else 2 end else 0 end,
+ case when coalesce(p_filters->>'sort','priority')='newest'then null else due_at end asc nulls last,
+ case when coalesce(p_filters->>'sort','priority')='newest'then created_at end desc,created_at asc,id limit 20 offset(pg-1)*20)x),'[]'::jsonb),
+ 'stats',jsonb_build_object('placed',(select count(*)from all_orders where status='placed'),'preparing',(select count(*)from all_orders where status='preparing'),'ready',(select count(*)from all_orders where status='ready'),'overdue',(select count(*)from all_orders where status in('placed','preparing','ready')and due_at<now()),'served_today',(select count(*)from all_orders where status='served'and(served_at at time zone prop.timezone)::date=day),'unpaid',case when financial then(select count(*)from all_orders where status='served'and payment_state='unpaid')end))into result;
+ return result||jsonb_build_object('currency',prop.currency,'timezone',prop.timezone,'day',day,'updated_at',now(),'can_place',private.has_permission(p_property,'orders.place'),'can_work',private.has_permission(p_property,'orders.write'),'can_menu',private.has_permission(p_property,'staff.manage'),'can_money',financial);
+end $$;

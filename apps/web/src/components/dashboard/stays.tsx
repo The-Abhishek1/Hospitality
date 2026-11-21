@@ -1,0 +1,13 @@
+"use client";
+import Link from 'next/link';
+import { useState } from 'react';
+export type Stay = { id: string; full_name: string | null; room: string | null; status: string; check_in: string; check_out: string; source: string };
+export function TodayStays({ stays, day, property, canRead }: { stays: Stay[]; day: string; property: string; canRead: boolean }) {
+  const [tab,setTab] = useState('arrivals');
+  const tabs = [{id:'arrivals',label:'Arrivals'}, {id:'departures',label:'Departures'}, {id:'inhouse',label:'In house'}];
+  const rows = stays.filter(s => tab === 'arrivals' ? s.check_in === day : tab === 'departures' ? s.check_out === day && s.status !== 'confirmed' : s.status === 'checked_in');
+  return <section className="dash-panel dash-stays"><div className="dash-panel-heading"><div><h2>The front desk</h2><p>Today’s guest movements, at a glance.</p></div>{canRead && <Link href={`/p/${property}/reservations`}>All reservations ↗</Link>}</div>
+    {!canRead ? <div className="dash-empty">Reservation details are available to staff with reservation access.</div> : <><div className="dash-tabs" role="tablist" aria-label="Guest movements">{tabs.map(t => <button key={t.id} role="tab" id={`tab-${t.id}`} aria-selected={tab===t.id} aria-controls="stay-panel" onClick={() => setTab(t.id)}>{t.label}</button>)}</div>
+    <div role="tabpanel" id="stay-panel" aria-labelledby={`tab-${tab}`} className="dash-table-wrap"><table><thead><tr><th>Guest</th><th>Room</th><th>Stay</th><th>Status</th><th><span className="sr-only">Open</span></th></tr></thead><tbody>{rows.slice(0,6).map(s => <tr key={s.id}><td><strong>{s.full_name || 'Guest'}</strong><small>{s.source === 'ota' ? 'Channel booking' : s.source.replace('_',' ')}</small></td><td>{s.room || '—'}</td><td className="dash-stay-dates">{s.check_in.slice(5)} <span>→</span> {s.check_out.slice(5)}</td><td><span className={`dash-badge ${s.status==='checked_in' ? 'green' : s.status==='checked_out' ? 'neutral' : 'gold'}`}>{s.status.replaceAll('_',' ')}</span></td><td><Link aria-label={`Open reservations for ${s.full_name || 'guest'}`} href={`/p/${property}/reservations/${s.id}`}>↗</Link></td></tr>)}</tbody></table>{rows.length===0 && <div className="dash-empty">{tab==='arrivals' ? 'No arrivals scheduled for today.' : tab==='departures' ? 'No departures due today.' : 'No guests are checked in right now.'}</div>}</div><div className="dash-panel-footer">Showing {Math.min(rows.length,6)} of {rows.length} loaded {tab==='inhouse' ? 'stays' : tab}. <Link href={`/p/${property}/reservations`}>Open front desk →</Link></div></>}
+  </section>;
+}

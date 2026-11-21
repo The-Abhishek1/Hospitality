@@ -1,0 +1,103 @@
+name: ci
+on:
+  push:
+  pull_request:
+
+jobs:
+  database:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with: { version: latest }
+      - run: supabase start -x studio,imgproxy,logflare,vector
+      - name: pgTAP suites (RLS, permissions, security audit)
+        run: supabase test db
+      - name: Concurrent booking race
+        run: bash supabase/tests/concurrency.sh
+      - name: Concurrent financial workflows
+        run: python3 supabase/tests/billing-concurrency.py
+      - name: Concurrent guest-service completion and cancellation
+        run: python3 supabase/tests/service-concurrency.py
+      - name: Concurrent task claims and housekeeping completion
+        run: python3 supabase/tests/task-concurrency.py
+      - name: Concurrent inventory configuration and booking
+        run: python3 supabase/tests/inventory-concurrency.py
+      - name: Concurrent order and payment workflows
+        run: python3 supabase/tests/order-concurrency.py
+      - name: Concurrent team access and invitation workflows
+        run: python3 supabase/tests/team-concurrency.py
+      - name: Concurrent guest portal workflows
+        run: python3 supabase/tests/guest-portal-concurrency.py
+      - name: Concurrent offline WhatsApp template authoring
+        run: python3 supabase/tests/whatsapp-studio-concurrency.py
+      - name: Concurrent platform changes and hotel plan limits
+        run: python3 supabase/tests/platform-concurrency.py
+      - name: Concurrent campaign scheduling and cancellation
+        run: python3 supabase/tests/campaign-concurrency.py
+      - name: Concurrent channel review and worker imports
+        run: python3 supabase/tests/channel-review-concurrency.py
+      - name: Concurrent property settings and currency review
+        run: python3 supabase/tests/settings-concurrency.py
+
+  node:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { dir: apps/web, build: "npx next build" }
+          - { dir: apps/guest-portal, build: "npx next build" }
+          - { dir: services/notification-worker, build: "" }
+          - { dir: services/channel-manager, build: "" }
+    defaults:
+      run: { working-directory: "${{ matrix.dir }}" }
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: "${{ matrix.dir }}/package-lock.json" }
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - name: Web behavior regressions
+        if: matrix.dir == 'apps/web'
+        run: |
+          node --test ../../packages/whatsapp-security/security.test.mjs
+          npm run test:auth
+          npm run test:reservations
+          npm run test:inbox
+          npm run test:billing
+          npm run test:service-desk
+          npm run test:tasks
+          npm run test:inventory
+          npm run test:orders
+          npm run test:team
+          npm run test:settings
+          npm run test:reports
+          npm run test:platform
+          npm run test:workspace
+          npm run test:guest-messaging
+          npm run test:distribution
+          npm run test:channel-review
+          npm run test:campaigns
+      - name: Guest portal behavior and offline privacy
+        if: matrix.dir == 'apps/guest-portal'
+        run: npm test
+      - name: Channel supply contract regressions
+        if: matrix.dir == 'services/channel-manager'
+        run: npm test
+      - name: Notification transport regressions
+        if: matrix.dir == 'services/notification-worker'
+        run: npm test
+      - if: matrix.build != ''
+        run: ${{ matrix.build }}
+
+  edge-functions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with: { deno-version: v2.x }
+      - run: deno check --node-modules-dir=none supabase/functions/*/index.ts

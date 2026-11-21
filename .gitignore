@@ -1,0 +1,23 @@
+node_modules
+.env*
+!.env.example
+!apps/web/.env.whatsapp.example
+supabase/.branches
+supabase/.temp
+.next
+.next-dev
+dist
+build
+next-env.d.ts
+*.tsbuildinfo
+.vercel/
+configure.txt
+*.log
+*.pem
+*.key
+*.jks
+*.keystore
+.DS_Store
+
+# Isolated guest-portal production artifacts
+.next-production/

@@ -1,0 +1,88 @@
+begin;
+select no_plan();
+
+insert into auth.users (id, email) values
+  ('e0000000-0000-0000-0000-00000000000e', 'root@platform.test'),
+  ('f0000000-0000-0000-0000-00000000000f', 'owner@t.test'),
+  ('90000000-0000-0000-0000-000000000009', 'outsider@x.test');
+insert into public.platform_admins (user_id) values ('e0000000-0000-0000-0000-00000000000e');
+insert into public.tenants (id, name, slug) values ('44444444-4444-4444-4444-444444444444', 'Tenant T', 'tenant-t');
+insert into public.tenant_memberships (tenant_id, user_id, role)
+  values ('44444444-4444-4444-4444-444444444444', 'f0000000-0000-0000-0000-00000000000f', 'owner');
+insert into public.subscriptions (tenant_id, plan_id, status)
+  select '44444444-4444-4444-4444-444444444444', id, 'active' from public.plans where key = 'starter';
+
+update auth.users set email_confirmed_at=now()where id='f0000000-0000-0000-0000-00000000000f';
+insert into public.properties(id,tenant_id,name,property_type,timezone)values('d4000000-0000-0000-0000-000000000001','44444444-4444-4444-4444-444444444444','Directory Hotel','hotel','UTC');
+insert into public.accommodation_types(id,tenant_id,property_id,name,max_occupancy,base_rate)values('d5000000-0000-0000-0000-000000000001','44444444-4444-4444-4444-444444444444','d4000000-0000-0000-0000-000000000001','Standard',2,100);
+insert into public.accommodation_units(tenant_id,property_id,type_id,name)values('44444444-4444-4444-4444-444444444444','d4000000-0000-0000-0000-000000000001','d5000000-0000-0000-0000-000000000001','101');
+insert into public.guests(id,tenant_id,full_name)values('d6000000-0000-0000-0000-000000000001','44444444-4444-4444-4444-444444444444','Private guest');
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"f0000000-0000-0000-0000-00000000000f","role":"authenticated"}',true);
+select set_config('test.res',public.create_reservation('d4000000-0000-0000-0000-000000000001','d6000000-0000-0000-0000-000000000001','d5000000-0000-0000-0000-000000000001',current_date+2,current_date+3,1,0)::text,true);
+select set_config('test.token',public.create_guest_portal_link(current_setting('test.res')::uuid),true);
+select throws_ok($$select public.platform_directory()$$,'42501',null,'hotel owner cannot list platform accounts');
+select throws_ok($$select public.platform_business('44444444-4444-4444-4444-444444444444')$$,'42501',null,'owner cannot inspect platform management data');
+select throws_ok($$select public.platform_manage('44444444-4444-4444-4444-444444444444',1,gen_random_uuid(),'status','{"status":"suspended","reason":"Invalid actor","confirmation":"tenant-t"}')$$,'42501',null,'owner cannot use platform commands');
+select throws_ok($$update public.tenants set status='suspended'where id='44444444-4444-4444-4444-444444444444'$$,'42501',null,'owner cannot bypass platform status control with a direct update');
+select set_config('request.jwt.claims','{"sub":"e0000000-0000-0000-0000-00000000000e","role":"authenticated"}',true);
+select is((public.platform_directory('Directory Hotel')->>'hotel_total')::integer,1,'hotel search works across owner boundaries');
+select is((public.platform_directory('Directory Hotel')->>'business_total')::integer,1,'hotel-name search also finds its business account');
+select is((public.platform_directory('Directory Hotel', 'all',2)->'hotels'),'[]'::jsonb,'directory pagination is bounded');
+select is((public.platform_business('44444444-4444-4444-4444-444444444444')#>>'{owners,0,email}'),'owner@t.test','platform detail supplies verified owner contact');
+select ok(public.platform_business('44444444-4444-4444-4444-444444444444')::text not like '%Private guest%','platform metadata never includes guest identity');
+select is_empty($$select 1 from public.properties where tenant_id='44444444-4444-4444-4444-444444444444'$$,'platform role does not gain operational property RLS');
+select is_empty($$select 1 from public.reservations where tenant_id='44444444-4444-4444-4444-444444444444'$$,'platform role does not gain reservation RLS');
+select throws_ok($$select public.hotel_report('d4000000-0000-0000-0000-000000000001')$$,'42501',null,'platform role does not gain hotel reporting access');
+select throws_ok($$select public.platform_business('d4000000-0000-0000-0000-000000000099')$$,'P0002',null,'unknown business gives a handled error');
+select throws_ok($$select public.platform_manage('44444444-4444-4444-4444-444444444444',1,gen_random_uuid(),'plan','{"plan":"growth","reason":"Upgrade","confirmation":"wrong"}')$$,'22023',null,'account slug confirmation required');
+select lives_ok($$select public.platform_manage('44444444-4444-4444-4444-444444444444',1,'d7000000-0000-0000-0000-000000000001','plan','{"plan":"growth","reason":"More hotels","confirmation":"tenant-t"}')$$,'reviewed plan upgrade succeeds');
+select lives_ok($$select public.platform_manage('44444444-4444-4444-4444-444444444444',1,'d7000000-0000-0000-0000-000000000001','plan','{"plan":"growth","reason":"More hotels","confirmation":"tenant-t"}')$$,'identical retry succeeds with original version');
+select is((select count(*)::integer from public.platform_audit_logs where tenant_id='44444444-4444-4444-4444-444444444444'),1,'retry produces one audit event');
+select throws_ok($$select public.platform_manage('44444444-4444-4444-4444-444444444444',1,'d7000000-0000-0000-0000-000000000001','plan','{"plan":"enterprise","reason":"More hotels","confirmation":"tenant-t"}')$$,'22023',null,'request ID reuse cannot change payload');
+select throws_ok($$select public.platform_manage('44444444-4444-4444-4444-444444444444',1,gen_random_uuid(),'plan','{"plan":"starter","reason":"Old form","confirmation":"tenant-t"}')$$,'40001',null,'stale account form cannot overwrite newer plan');
+select lives_ok($$select public.platform_manage('44444444-4444-4444-4444-444444444444',2,'d7000000-0000-0000-0000-000000000002','add_hotel','{"name":"Second Hotel","property_type":"hotel","timezone":"UTC","currency":"INR","city":"Kochi","country_code":"IN","reason":"Portfolio expansion"}')$$,'platform adds a second hotel to existing business');
+select lives_ok($$select public.platform_manage('44444444-4444-4444-4444-444444444444',3,'d7000000-0000-0000-0000-000000000003','add_hotel','{"name":"Third Hotel","property_type":"hotel","timezone":"UTC","currency":"INR","country_code":"IN","reason":"Portfolio expansion"}')$$,'growth plan allows a third hotel');
+select throws_ok($$select public.platform_manage('44444444-4444-4444-4444-444444444444',4,gen_random_uuid(),'plan','{"plan":"starter","reason":"Would exceed limit","confirmation":"tenant-t"}')$$,'53400',null,'downgrade cannot strand existing hotels beyond plan capacity');
+select is((public.platform_business('44444444-4444-4444-4444-444444444444')#>>'{subscription,plan_key}'),'growth','failed downgrade retains existing plan');
+select throws_ok($$select public.platform_manage(null,null,gen_random_uuid(),'onboard','{"business_name":"Invalid Owner","slug":"invalid-owner","owner_email":"nobody@platform.test","plan":"starter","name":"New Hotel","property_type":"hotel","timezone":"UTC","currency":"INR","country_code":"IN","reason":"New customer"}')$$,'22023',null,'new business requires an existing verified owner');
+select is((select count(*)::integer from public.tenants where slug='invalid-owner'),0,'failed onboarding leaves no orphan business');
+select set_config('test.new',public.platform_manage(null,null,'d7000000-0000-0000-0000-000000000004','onboard','{"business_name":"Managed Business","slug":"managed-business","owner_email":"owner@t.test","plan":"starter","name":"First Managed Hotel","property_type":"resort","timezone":"Asia/Kolkata","currency":"INR","country_code":"IN","reason":"New customer setup"}')::text,true);
+select is((public.platform_business((current_setting('test.new')::jsonb->>'tenant_id')::uuid)->>'hotel_total')::integer,1,'onboarding atomically creates business and first hotel');
+select is((public.platform_business((current_setting('test.new')::jsonb->>'tenant_id')::uuid)#>>'{owners,0,email}'),'owner@t.test','onboarding assigns the requested existing verified owner');
+select lives_ok($$select public.platform_manage('44444444-4444-4444-4444-444444444444',4,'d7000000-0000-0000-0000-000000000005','status','{"status":"suspended","confirmation":"tenant-t","reason":"Account review"}')$$,'platform suspends the whole business');
+select is((public.platform_business('44444444-4444-4444-4444-444444444444')#>>'{business,status}'),'suspended','suspended business remains manageable by platform admin');
+select throws_ok($$select public.platform_manage('44444444-4444-4444-4444-444444444444',5,gen_random_uuid(),'add_hotel','{"name":"Blocked Hotel","property_type":"hotel","timezone":"UTC","currency":"INR","country_code":"IN","reason":"Should not add"}')$$,'22023',null,'hotel creation blocked while business suspended');
+select set_config('request.jwt.claims','{"sub":"f0000000-0000-0000-0000-00000000000f","role":"authenticated"}',true);
+select is_empty($$select 1 from public.properties where tenant_id='44444444-4444-4444-4444-444444444444'$$,'suspended owner loses direct hotel access');
+select is_empty($$select 1 from public.guests where tenant_id='44444444-4444-4444-4444-444444444444'$$,'suspension denies direct guest reads');
+select is(private.has_permission('d4000000-0000-0000-0000-000000000001','reservations.read'),false,'suspension revokes implicit owner permissions');
+select throws_ok($$select public.hotel_report('d4000000-0000-0000-0000-000000000001')$$,'42501',null,'suspension also denies security definer hotel read models');
+select is((select status from public.tenants where id='44444444-4444-4444-4444-444444444444'),'suspended','member can still see account status for a useful recovery message');
+select lives_ok($$select public.hotel_report((current_setting('test.new')::jsonb->>'property_id')::uuid)$$,'same owner retains access to another active business');
+set local role anon;
+select throws_ok($$select public.portal_get_stay(current_setting('test.token'))$$,'42501',null,'suspension denies guest portal token access');
+select throws_ok($$select public.platform_directory()$$,'42501',null,'anonymous cannot execute platform directory');
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"e0000000-0000-0000-0000-00000000000e","role":"authenticated"}',true);
+select lives_ok($$select public.platform_manage('44444444-4444-4444-4444-444444444444',5,gen_random_uuid(),'status','{"status":"active","confirmation":"tenant-t","reason":"Review completed"}')$$,'platform restores account access');
+select set_config('request.jwt.claims','{"sub":"f0000000-0000-0000-0000-00000000000f","role":"authenticated"}',true);
+select is((select count(*)::integer from public.properties where tenant_id='44444444-4444-4444-4444-444444444444'),3,'reactivation restores all hotels without duplicating records');
+select lives_ok($$select public.portal_get_stay(current_setting('test.token'))$$,'reactivation restores an unexpired guest link');
+select ok((select count(*)from public.roles where tenant_id is null)>0,'active staff retain the shared system role catalog');
+reset role;
+insert into public.tenant_memberships(tenant_id,user_id,role)values('44444444-4444-4444-4444-444444444444','e0000000-0000-0000-0000-00000000000e','owner');
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"e0000000-0000-0000-0000-00000000000e","role":"authenticated"}',true);
+select throws_ok($$update public.tenants set status='closed'where id='44444444-4444-4444-4444-444444444444'$$,'42501',null,'platform admin with owner membership cannot bypass audited command path');
+select throws_ok($$update public.tenants set admin_version=99 where id='44444444-4444-4444-4444-444444444444'$$,'42501',null,'platform admin cannot forge command version with a direct update');
+select throws_ok($$select public.platform_manage('44444444-4444-4444-4444-444444444444',6,gen_random_uuid(),'status','{"status":"closed","confirmation":"tenant-t","reason":""}')$$,'22023',null,'status changes require a meaningful reason');
+select lives_ok($$select public.platform_manage('44444444-4444-4444-4444-444444444444',6,gen_random_uuid(),'status','{"status":"closed","confirmation":"tenant-t","reason":"Close business account"}')$$,'closure retains a recoverable business account');
+select is((public.platform_business('44444444-4444-4444-4444-444444444444')#>>'{business,status}'),'closed','platform can review closed business metadata');
+select lives_ok($$select public.platform_manage('44444444-4444-4444-4444-444444444444',7,gen_random_uuid(),'status','{"status":"active","confirmation":"tenant-t","reason":"Reopen business account"}')$$,'closed business can be explicitly reactivated');
+reset role;
+update public.subscriptions set status='canceled'where tenant_id=(current_setting('test.new')::jsonb->>'tenant_id')::uuid;
+set local role authenticated;
+select throws_ok($$select public.platform_manage((current_setting('test.new')::jsonb->>'tenant_id')::uuid,2,gen_random_uuid(),'add_hotel','{"name":"Unsubscribed hotel","property_type":"hotel","timezone":"UTC","currency":"INR","country_code":"IN","reason":"Cannot add"}')$$,'22023',null,'platform must assign an eligible plan before adding hotels to canceled subscriptions');
+select * from finish();
+rollback;

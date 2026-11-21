@@ -1,0 +1,12 @@
+{
+  "name": "hospitality-platform",
+  "private": true,
+  "scripts": {
+    "db:start": "supabase start",
+    "db:reset": "supabase db reset",
+    "db:test": "supabase test db",
+    "db:race": "bash supabase/tests/concurrency.sh",
+    "db:types": "supabase gen types typescript --local > packages/shared-types/database.ts",
+    "seed": "node scripts/seed-demo.mjs"
+  }
+}

@@ -1,0 +1,12 @@
+export const settingsTabs=['overview','identity','localization','guest','operations','history']as const;
+export const settingsLabel=(s:string)=>({overview:'Hotel overview',identity:'Identity & contact',localization:'Timezone & currency',guest:'Guest experience',operations:'Operational defaults',history:'Change history'}[s]??s);
+export const validLocalTime=(s:string)=>/^([01]\d|2[0-3]):[0-5]\d$/.test(s);
+export const boundedWhole=(s:string,min:number,max:number)=>/^\d+$/.test(s)&&Number(s)>=min&&Number(s)<=max;
+export function settingsFilters(p:Record<string,string|undefined>){return{tab:settingsTabs.includes(p.tab as typeof settingsTabs[number])?p.tab!:'overview',page:p.page&&/^\d+$/.test(p.page)?Math.min(100000,Math.max(1,Number(p.page))):1};}
+export function bookingDefaultsForType(nights:number,adults:number,capacity:number){return{nights:Math.max(1,Math.min(30,Math.floor(nights))),adults:Math.max(1,Math.min(Math.floor(adults),Math.max(1,capacity)))};}
+export type PropertyConfig={id:string;tenant_id:string;version:number;name:string;property_type:string;timezone:string;currency:string;address:string;city:string;country_code:string;contact_email:string;contact_phone:string};
+export type OperationalSettings={property_id:string;version:number;check_in_time:string;check_out_time:string;arrival_instructions:string;stay_information:string;booking_nights:number;booking_adults:number;default_rate_plan_id:string|null;cleaning_target_minutes:number|null;cleaning_priority:string;cleaning_checklist:string[]};
+export type SettingsEvent={id:string;section:string;actor_name:string;reason:string|null;created_at:string;details:{before:Record<string,unknown>;after:Record<string,unknown>}};
+export type PropertySettingsWorkspace={property:PropertyConfig;settings:OperationalSettings;loaded_at:string;currency_locked:boolean;rates:{id:string;name:string;adjustment_percent:number}[];setup:{room_types:number;active_rooms:number;staff:number;services:number;menu_items:number;inbox_status:string|null};history_page:number;history_total:number;events:SettingsEvent[]};
+export type BookingDefaults={nights:number;adults:number;rate_plan_id:string|null;check_in_time:string;check_out_time:string};
+export type StayInfo={name:string;timezone:string;address:string;city:string;country_code:string;contact_email:string;contact_phone:string;check_in_time:string;check_out_time:string;arrival_instructions:string;stay_information:string};

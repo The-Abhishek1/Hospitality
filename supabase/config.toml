@@ -1,0 +1,27 @@
+project_id = "hospitality-platform"
+
+[api]
+enabled = true
+
+[db]
+port = 54322
+major_version = 15
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000/auth/confirm**"]
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false   # local only. Keep true in production: staff invitations require a confirmed email.
+
+# Meta and the guest cannot send a Supabase JWT; these functions authenticate by HMAC signature / secret link token.
+[functions.whatsapp-webhook]
+verify_jwt = false
+[functions.guest-documents]
+verify_jwt = false

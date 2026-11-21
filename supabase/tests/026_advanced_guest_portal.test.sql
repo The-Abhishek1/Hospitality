@@ -1,0 +1,152 @@
+begin;
+select no_plan();
+
+insert into auth.users (id, email) values
+  ('a1000000-0000-0000-0000-000000000001', 'owner@t9.test'), ('a1000000-0000-0000-0000-000000000002', 'hk@t9.test');
+insert into public.tenants (id, name, slug) values ('a2000000-0000-0000-0000-000000000001', 'Tenant 9', 'tenant-9');
+insert into public.properties (id, tenant_id, name, property_type) values
+  ('a3000000-0000-0000-0000-000000000001', 'a2000000-0000-0000-0000-000000000001', 'Prop 9', 'hotel');
+insert into public.tenant_memberships (tenant_id, user_id, role) values
+  ('a2000000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-000000000001', 'owner'),
+  ('a2000000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-000000000002', 'member');
+insert into public.property_memberships (property_id, tenant_id, user_id) values
+  ('a3000000-0000-0000-0000-000000000001', 'a2000000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-000000000002');
+insert into public.user_roles (property_id, user_id, role_id)
+select 'a3000000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-000000000002', id from public.roles where key = 'housekeeping' and tenant_id is null;
+insert into public.accommodation_types (id, tenant_id, property_id, name, max_occupancy, base_rate) values
+  ('a4000000-0000-0000-0000-000000000001', 'a2000000-0000-0000-0000-000000000001', 'a3000000-0000-0000-0000-000000000001', 'Std', 2, 100);
+insert into public.accommodation_units (tenant_id, property_id, type_id, name) values
+  ('a2000000-0000-0000-0000-000000000001', 'a3000000-0000-0000-0000-000000000001', 'a4000000-0000-0000-0000-000000000001', 'U1'),
+  ('a2000000-0000-0000-0000-000000000001', 'a3000000-0000-0000-0000-000000000001', 'a4000000-0000-0000-0000-000000000001', 'U2');
+insert into public.guests (id, tenant_id, full_name) values ('a5000000-0000-0000-0000-000000000001', 'a2000000-0000-0000-0000-000000000001', 'Portal Guest');
+insert into public.menu_categories (id, tenant_id, property_id, name) values ('a6000000-0000-0000-0000-000000000001', 'a2000000-0000-0000-0000-000000000001', 'a3000000-0000-0000-0000-000000000001', 'Drinks');
+insert into public.menu_items (id, tenant_id, property_id, category_id, name, price, tax_rate_percent) values
+  ('a7000000-0000-0000-0000-000000000001', 'a2000000-0000-0000-0000-000000000001', 'a3000000-0000-0000-0000-000000000001', 'a6000000-0000-0000-0000-000000000001', 'Tea', 50, 10);
+insert into public.service_categories (id, tenant_id, property_id, name) values ('a8000000-0000-0000-0000-000000000001', 'a2000000-0000-0000-0000-000000000001', 'a3000000-0000-0000-0000-000000000001', 'Amenities');
+insert into public.service_catalog (id, tenant_id, property_id, category_id, name) values
+  ('a9000000-0000-0000-0000-000000000001', 'a2000000-0000-0000-0000-000000000001', 'a3000000-0000-0000-0000-000000000001', 'a8000000-0000-0000-0000-000000000001', 'Extra towels');
+insert into public.service_routing_rules (tenant_id, property_id, catalog_id, task_kind) values
+  ('a2000000-0000-0000-0000-000000000001', 'a3000000-0000-0000-0000-000000000001', 'a9000000-0000-0000-0000-000000000001', 'housekeeping');
+
+update public.properties set timezone='UTC'where id='a3000000-0000-0000-0000-000000000001';
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"a1000000-0000-0000-0000-000000000001","role":"authenticated"}',true);
+select set_config('t.r1',public.create_reservation('a3000000-0000-0000-0000-000000000001','a5000000-0000-0000-0000-000000000001','a4000000-0000-0000-0000-000000000001',current_date,current_date+2,1,0)::text,true);
+select set_config('t.r2',public.create_reservation('a3000000-0000-0000-0000-000000000001','a5000000-0000-0000-0000-000000000001','a4000000-0000-0000-0000-000000000001',current_date,current_date+2,1,0)::text,true);
+select set_config('t.token1',public.create_guest_portal_link(current_setting('t.r1')::uuid),true);
+select set_config('t.token2',public.create_guest_portal_link(current_setting('t.r2')::uuid),true);
+set local role anon;
+select lives_ok($$select public.portal_workspace(current_setting('t.token1'))$$,'guest can load advanced workspace');
+select is(public.portal_workspace(current_setting('t.token1'))#>>'{stay,id}',current_setting('t.r1'),'workspace is scoped to the link reservation');
+select is(public.portal_workspace(current_setting('t.token1'))#>>'{bill,exists}','false','viewing a stay creates no folio');
+select is(public.portal_workspace(current_setting('t.token1'))#>>'{bill,unposted_room}','200.00','booked room charge is separate from posted activity');
+select ok(not(public.portal_workspace(current_setting('t.token1'))::text~'(storage_path|token_hash|credentials_ref|posted_by)'),'workspace exposes no storage paths, token hashes or internal credential fields');
+select throws_ok($$select public.portal_workspace('invalid')$$,'28000',null,'invalid credential rejected');
+select set_config('t.profile','{"version": 0, "full_name": "Updated Stay Guest", "email": "guest@example.test", "phone": "+919000000000", "country_code": "IN", "address": "Guest address", "arrival_time": "17:30", "arrival_notes": "Arriving in the evening", "stay_updates_requested": true}',true);
+select lives_ok($$select public.portal_command(current_setting('t.token1'),'ab100000-0000-0000-0000-000000000001','arrival',current_setting('t.profile')::jsonb)$$,'guest saves stay-scoped arrival details');
+select lives_ok($$select public.portal_command(current_setting('t.token1'),'ab100000-0000-0000-0000-000000000001','arrival',current_setting('t.profile')::jsonb)$$,'same arrival submission retries safely');
+select is(public.portal_workspace(current_setting('t.token1'))#>>'{arrival,full_name}','Updated Stay Guest','saved details appear on this stay');
+select is(public.portal_workspace(current_setting('t.token1'))#>>'{arrival,version}','1','retry does not increment arrival version');
+select is(public.portal_workspace(current_setting('t.token2'))->'arrival','null'::jsonb,'another stay for the same guest has no copied arrival data');
+select is(public.portal_workspace(current_setting('t.token2'))#>>'{guest,full_name}','Portal Guest','shared guest directory remains unchanged');
+select throws_ok($$select public.portal_command(current_setting('t.token1'),gen_random_uuid(),'arrival',current_setting('t.profile')::jsonb)$$,'40001',null,'stale arrival edits rejected');
+select throws_ok($$select public.portal_command(current_setting('t.token1'),'ab100000-0000-0000-0000-000000000001','arrival',current_setting('t.profile')::jsonb||'{"full_name":"Other name"}')$$,'22023',null,'request ID cannot be reused for changed details');
+select throws_ok($$select public.portal_command(current_setting('t.token1'),gen_random_uuid(),'arrival',current_setting('t.profile')::jsonb||'{"version":1,"arrival_time":"25:00"}')$$,'22023',null,'invalid local arrival time rejected');
+select throws_ok($$select public.portal_command(current_setting('t.token1'),gen_random_uuid(),'arrival',current_setting('t.profile')::jsonb||'{"version":1,"phone":"","stay_updates_requested":true}')$$,'22023',null,'stay update preference requires a contact number');
+select set_config('t.checkin',(public.portal_command(current_setting('t.token1'),gen_random_uuid(),'request_checkin','{}')->>'id'),true);
+select is(public.portal_command(current_setting('t.token1'),gen_random_uuid(),'request_checkin','{}')->>'id',current_setting('t.checkin'),'repeated arrival assistance uses the existing open request');
+select is(public.portal_workspace(current_setting('t.token1'))#>>'{stay,status}','confirmed','guest assistance does not check the reservation in');
+select throws_ok($$select public.portal_command(current_setting('t.token1'),gen_random_uuid(),'request_checkout','{}')$$,'22023',null,'not checked-in stays cannot request checkout');
+select set_config('t.service',(public.portal_command(current_setting('t.token1'),'ab100000-0000-0000-0000-000000000002','service','{"catalog_id":"a9000000-0000-0000-0000-000000000001","notes":"Two towels"}')->>'id'),true);
+select is(public.portal_command(current_setting('t.token1'),'ab100000-0000-0000-0000-000000000002','service','{"catalog_id":"a9000000-0000-0000-0000-000000000001","notes":"Two towels"}')->>'id',current_setting('t.service'),'service retries return the original request');
+select throws_ok($$select public.portal_command(current_setting('t.token2'),gen_random_uuid(),'cancel_request',jsonb_build_object('id',current_setting('t.service'),'version',1))$$,'22023',null,'another stay cannot cancel this request');
+select lives_ok($$select public.portal_command(current_setting('t.token1'),gen_random_uuid(),'cancel_request',jsonb_build_object('id',current_setting('t.service'),'version',1))$$,'guest cancels a not-started request');
+select is((select value->>'status'from jsonb_array_elements(public.portal_workspace(current_setting('t.token1'))->'requests')where value->>'id'=current_setting('t.service')),'cancelled','cancelled status is visible');
+select is_empty($$select 1 from public.guest_arrival_details$$,'anonymous cannot query arrival records directly');
+reset role;
+select is((select status from public.tasks where guest_request_id=current_setting('t.service')::uuid),'cancelled','linked task is cancelled consistently');
+select is((select count(*)::integer from public.guest_portal_events where reservation_id=current_setting('t.r1')::uuid and action='arrival'),1,'arrival retry writes one guest event');
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"a1000000-0000-0000-0000-000000000002","role":"authenticated"}',true);
+select is_empty($$select 1 from public.guest_arrival_details$$,'housekeeping cannot read submitted guest identity/contact data');
+select set_config('request.jwt.claims','{"sub":"a1000000-0000-0000-0000-000000000001","role":"authenticated"}',true);
+select is((select full_name from public.guest_arrival_details where reservation_id=current_setting('t.r1')::uuid),'Updated Stay Guest','authorized staff see submitted arrival details');
+select public.check_in_reservation(current_setting('t.r1')::uuid);
+set local role anon;
+select set_config('t.cart','{"currency":"INR","total":"110.00","items":[{"menu_item_id":"a7000000-0000-0000-0000-000000000001","version":1,"quantity":2}],"notes":"No sugar"}',true);
+select set_config('t.order',(public.portal_command(current_setting('t.token1'),'ab100000-0000-0000-0000-000000000003','order',current_setting('t.cart')::jsonb)->>'id'),true);
+select is(public.portal_command(current_setting('t.token1'),'ab100000-0000-0000-0000-000000000003','order',current_setting('t.cart')::jsonb)->>'id',current_setting('t.order'),'order retry returns original order');
+select is(public.portal_workspace(current_setting('t.token1'))->>'order_total','1','duplicate order prevented');
+select is(public.portal_workspace(current_setting('t.token1'))#>>'{orders,0,total}','110.00','cart total uses authoritative line tax');
+select is(public.portal_workspace(current_setting('t.token1'))#>>'{bill,pending_orders}','110.00','pending order is shown separately from posted charges');
+select is(public.portal_workspace(current_setting('t.token1'))#>>'{bill,estimated_balance}','310.00','estimate includes booked room nights and pending food once');
+select throws_ok($$select public.portal_command(current_setting('t.token2'),gen_random_uuid(),'order',current_setting('t.cart')::jsonb)$$,'22023',null,'room ordering requires checked-in stay');
+select throws_ok($$select public.portal_command(current_setting('t.token1'),gen_random_uuid(),'order',current_setting('t.cart')::jsonb||'{"total":"1.00"}')$$,'40001',null,'tampered cart total rejected transactionally');
+select is(public.portal_workspace(current_setting('t.token1'))->>'order_total','1','failed quote rolls back the attempted order');
+select throws_ok($$select public.portal_command(current_setting('t.token1'),gen_random_uuid(),'order',current_setting('t.cart')::jsonb||'{"currency":"USD"}')$$,'40001',null,'stale currency rejected');
+reset role;
+update public.menu_items set price=60 where id='a7000000-0000-0000-0000-000000000001';
+set local role anon;
+select throws_ok($$select public.portal_command(current_setting('t.token1'),gen_random_uuid(),'order',current_setting('t.cart')::jsonb)$$,'40001',null,'changed menu version requires a new review');
+select is(public.portal_workspace(current_setting('t.token1'))#>>'{orders,0,total}','110.00','existing order keeps its original price');
+select is(jsonb_array_length(public.portal_workspace(current_setting('t.token1'),'{"menu_page":2}')->'menu'),0,'menu pagination is bounded');
+select is(public.portal_workspace(current_setting('t.token1'),'{"q":"TEA"}')->>'menu_total','1','menu search ignores case');
+select is(public.portal_workspace(current_setting('t.token2'))->>'order_total','0','other stay cannot inspect food orders');
+select set_config('t.checkout',public.portal_command(current_setting('t.token1'),gen_random_uuid(),'request_checkout','{}')->>'id',true);
+select is(public.portal_workspace(current_setting('t.token1'))#>>'{stay,status}','checked_in','checkout assistance does not bypass hotel settlement');
+select is(public.portal_command(current_setting('t.token1'),gen_random_uuid(),'request_checkout','{}')->>'id',current_setting('t.checkout'),'open checkout request is reused');
+select set_config('t.service2',public.portal_command(current_setting('t.token1'),gen_random_uuid(),'service','{"catalog_id":"a9000000-0000-0000-0000-000000000001","notes":"Feedback test"}')->>'id',true);
+reset role;
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"a1000000-0000-0000-0000-000000000001","role":"authenticated"}',true);
+select public.set_task_status((select id from public.tasks where guest_request_id=current_setting('t.service2')::uuid),'in_progress');
+select set_config('t.qv',(select version::text from public.guest_requests where id=current_setting('t.service2')::uuid),true);
+set local role anon;
+select throws_ok($$select public.portal_command(current_setting('t.token1'),gen_random_uuid(),'cancel_request',jsonb_build_object('id',current_setting('t.service2'),'version',current_setting('t.qv')::integer))$$,'22023',null,'guest cannot cancel work already in progress');
+set local role authenticated;
+select public.set_task_status((select id from public.tasks where guest_request_id=current_setting('t.service2')::uuid),'done');
+set local role anon;
+select lives_ok($$select public.portal_command(current_setting('t.token1'),'ab100000-0000-0000-0000-000000000004','feedback',jsonb_build_object('id',current_setting('t.service2'),'rating',5,'comment','Excellent'))$$,'guest rates a completed service');
+select lives_ok($$select public.portal_command(current_setting('t.token1'),'ab100000-0000-0000-0000-000000000004','feedback',jsonb_build_object('id',current_setting('t.service2'),'rating',5,'comment','Excellent'))$$,'feedback retry is idempotent');
+select throws_ok($$select public.portal_command(current_setting('t.token2'),gen_random_uuid(),'feedback',jsonb_build_object('id',current_setting('t.service2'),'rating',5))$$,'22023',null,'feedback remains scoped to its stay');
+reset role;
+insert into public.folio_items(tenant_id,property_id,folio_id,kind,description,amount,business_date)select tenant_id,property_id,id,'room','Night one',100,current_date from public.folios where reservation_id=current_setting('t.r1')::uuid;
+insert into public.folio_items(tenant_id,property_id,folio_id,kind,description,amount,business_date)select tenant_id,property_id,id,'room','Night two',100,current_date+1 from public.folios where reservation_id=current_setting('t.r1')::uuid;
+insert into public.payments(tenant_id,property_id,folio_id,amount,method,reference)select tenant_id,property_id,id,50,'cash','PRIVATE-PROCESSOR-REFERENCE'from public.folios where reservation_id=current_setting('t.r1')::uuid;
+set local role anon;
+select is(public.portal_workspace(current_setting('t.token1'))#>>'{bill,balance}','150.00','guest bill reconciles posted charges and receipts');
+select is(public.portal_workspace(current_setting('t.token1'))#>>'{bill,estimated_balance}','260.00','already posted room nights are not counted twice in estimate');
+select ok(public.portal_workspace(current_setting('t.token1'))::text not like '%PRIVATE-PROCESSOR-REFERENCE%','guest bill does not disclose internal payment references');
+reset role;
+set local role service_role;
+select set_config('t.doc',public.portal_prepare_document(current_setting('t.token2'),'passport','image/png',1000)->>'document_id',true);
+select lives_ok($$select public.portal_upload_metadata(current_setting('t.token2'),current_setting('t.doc')::uuid)$$,'upload metadata checks the owning stay token');
+select throws_ok($$select public.portal_upload_metadata(current_setting('t.token1'),current_setting('t.doc')::uuid)$$,'22023',null,'upload metadata rejects a different stay token');
+select public.portal_confirm_document(current_setting('t.token2'),current_setting('t.doc')::uuid);
+select lives_ok($$select public.portal_confirm_document(current_setting('t.token2'),current_setting('t.doc')::uuid)$$,'upload finalization can be retried');
+reset role;
+update public.guest_documents set status='clean'where id=current_setting('t.doc')::uuid;
+set local role service_role;
+select public.portal_confirm_document(current_setting('t.token2'),current_setting('t.doc')::uuid);
+select is((select status from public.guest_documents where id=current_setting('t.doc')::uuid),'clean','confirmation retry does not reverse scanner decisions');
+reset role;
+update public.reservations set status='checked_out'where id=current_setting('t.r2')::uuid;
+set local role anon;
+select is(public.portal_workspace(current_setting('t.token2'))#>>'{capabilities,details}','false','departed stays are read-only');
+select throws_ok($$select public.portal_command(current_setting('t.token2'),gen_random_uuid(),'service','{"title":"Not active"}')$$,'22023',null,'departed stays cannot create new service requests');
+set local role service_role;
+select throws_ok($$select public.portal_prepare_document(current_setting('t.token2'),'passport','image/png',1000)$$,'22023',null,'departed stays cannot prepare document uploads');
+select throws_ok($$select public.portal_confirm_document(current_setting('t.token2'),current_setting('t.doc')::uuid)$$,'22023',null,'departed stays cannot finalize document uploads');
+reset role;
+select ok(not has_function_privilege('anon','public.portal_upload_metadata(text,uuid)','execute'),'storage path metadata remains service-role only');
+select ok(not has_table_privilege('authenticated','private.guest_portal_commands','select'),'private command payloads are not staff-readable');
+update public.guest_access_tokens set revoked_at=now()where token_hash=encode(sha256(convert_to(current_setting('t.token1'),'utf8')),'hex');
+set local role anon;
+select throws_ok($$select public.portal_workspace(current_setting('t.token1'))$$,'28000',null,'revocation denies advanced workspace');
+select throws_ok($$select public.portal_command(current_setting('t.token1'),'ab100000-0000-0000-0000-000000000003','order',current_setting('t.cart')::jsonb)$$,'28000',null,'revocation also denies replay of a previous command');
+reset role;
+insert into public.guest_requests(tenant_id,property_id,reservation_id,title,notes,source)values('a2000000-0000-0000-0000-000000000001','a3000000-0000-0000-0000-000000000001',current_setting('t.r2')::uuid,'Hotel assistance','PRIVATE-STAFF-REQUEST-NOTES','staff');
+set local role anon;
+select ok(public.portal_workspace(current_setting('t.token2'))::text not like '%PRIVATE-STAFF-REQUEST-NOTES%','staff request notes stay private');
+select * from finish();
+rollback;

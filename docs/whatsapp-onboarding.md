@@ -1,0 +1,49 @@
+# Hotel WhatsApp onboarding
+
+The `/p/[propertyId]/whatsapp` page uses Meta Embedded Signup v4 for the Cloud API flow. Existing test/manual Inbox connections remain supported by the worker. Coexistence, migration from another provider, historical chat synchronization and automatic template synchronization are not implemented by this flow. Do not disconnect/delete a hotel's mobile account to force eligibility.
+
+## Meta setup by the platform owner
+
+1. Open Hospitality in Meta Developers. Complete **Become a Tech Provider**, including the access-verification tasks Meta displays. Business verification is separate from Tech Provider approval and App Review.
+2. In **Facebook Login for Business → Configurations**, create a **WhatsApp Embedded Signup** configuration and select **Cloud API**. Use the configuration's selected permissions; obtain Advanced Access for `whatsapp_business_management` and `whatsapp_business_messaging`, and any additional permissions you choose. Copy the configuration ID.
+3. Host the application at an HTTPS origin. Add that origin/domain and exact onboarding page URL to the appropriate allowed-domain and OAuth redirect settings. Enable the JavaScript SDK and the OAuth/HTTPS settings specified by Meta. Plain localhost HTTP cannot complete signup.
+4. Configure the app's WhatsApp webhook with the existing Supabase function URL and matching verification token. Subscribe `messages` and `account_update`. The current webhook processes message/status events; account-update onboarding metadata is not persisted. Completion uses verified API asset discovery instead.
+5. In App Review, provide actual reviewer instructions, an accessible review account, privacy policy and data-deletion information, and a video demonstrating hotel authorization, receiving/replying and disconnection. Do not claim approval from a successful developer-role test. Only publish after reviewing the production requirements shown by Meta.
+
+Meta links:
+- https://developers.facebook.com/documentation/business-messaging/whatsapp/embedded-signup/implementation
+- https://developers.facebook.com/documentation/business-messaging/whatsapp/embedded-signup/version-4
+- https://developers.facebook.com/documentation/business-messaging/whatsapp/embedded-signup/onboarding-customers-as-a-tech-provider
+- https://developers.facebook.com/docs/development/release/tech-providers/
+
+## Server configuration
+
+Apply migration 77 before using the page. Configure these **server-only** values in the web application:
+
+```env
+WHATSAPP_APP_ID=<current Meta application ID>
+WHATSAPP_APP_SECRET=<current app secret>
+WHATSAPP_CONFIG_ID=<Embedded Signup Cloud API configuration ID>
+WHATSAPP_GRAPH_VERSION=v27.0
+WHATSAPP_ONBOARDING_ORIGIN=https://your-hospitality-domain.example
+WHATSAPP_ENCRYPTION_KEY=<64 hexadecimal characters from 32 random bytes>
+SUPABASE_SERVICE_ROLE_KEY=<backend Supabase key>
+```
+
+Configure the **same encryption key** on the notification worker and set its `WHATSAPP_GRAPH_URL` to the same Graph version. Preserve this key in a secret manager with access controls and backups; losing or changing it makes existing authorizations unreadable. Rotation requires re-encryption or hotel reconnection. Never put these secrets in `NEXT_PUBLIC_` variables. App/config IDs are passed to the browser intentionally; tokens and app secrets are not.
+
+Credentials are AES-256-GCM encrypted with the hotel reference as authenticated data. Ciphertext lives in a private database table, accessible through a service-role-only retrieval RPC for active connections/tenants. The browser uses a short-lived one-attempt session bound to the signed-in hotel administrator. The backend verifies the number belongs to the account using the exchanged token, registers new connections using the user's PIN, subscribes the app, then commits credentials atomically. External Meta operations cannot be rolled back if the final database commit fails; retry onboarding and retain the number's existing PIN. PINs are not stored. Tokens are not cached by the worker.
+
+The standard Cloud API flow is supported; cancellation/failure does not activate a new connection. Existing sender IDs cannot be replaced, including through legacy manual RPCs. To test another sender, create a separate test property. A phone ID can belong to only one property. Disconnect disables local inbound/queue handling and removes the stored token; it retains history and does not revoke Meta-level partner access. Owners can remove that access in Meta Business Settings. A message already in transit cannot be recalled. Reconnect authorizes the original sender again.
+
+Health checks read Meta phone ownership and app subscription; they do not imply delivery, template approval, unrestricted account status, or billing readiness. Campaigns remain explicitly disabled unless separately enabled after review. New hotels require their own approved templates; the configuration does not copy another hotel's templates or authorize marketing consent.
+
+## Second-number test
+
+1. Start the web app at its approved HTTPS origin and start the rebuilt notification worker with the shared encryption key. Use a Meta app admin/developer for pre-review testing where Meta permits it.
+2. Create a separate test hotel, open **Property settings → Guest conversations** or **Inbox → Connection setup** and launch signup. Enter/retain the number's six-digit two-step PIN, then complete Meta authorization and click Finish.
+3. Check connection health. Send a unique message from a different personal test phone. Confirm it appears only in the selected hotel's Inbox; reply and check provider delivery status.
+4. Disconnect, verify credentials are no longer available and new replies are blocked, then reconnect the same sender and retest.
+5. Test a second hotel's administrator cannot read/manage the first hotel's setup. Avoid fake incoming events in the hosted database.
+
+Automated checks: `node --test packages/whatsapp-security/security.test.mjs`, notification-worker `npm test`, web `npm run build`, and local database `031_whatsapp_onboarding.test.sql`. Provider account approval and real browser signup require Meta account access; mocked checks cannot establish them.

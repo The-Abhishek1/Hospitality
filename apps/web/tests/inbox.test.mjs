@@ -1,0 +1,9 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import ts from 'typescript';
+const compile=s=>ts.transpileModule(s,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+const data=s=>`data:text/javascript;base64,${Buffer.from(s).toString('base64')}`;
+const reservations=data(compile(readFileSync(new URL('../src/lib/reservations.ts',import.meta.url),'utf8')));
+const inboxSource=readFileSync(new URL('../src/lib/inbox.ts',import.meta.url),'utf8').replace("'./reservations'",JSON.stringify(reservations));
+const {inboxFilters,deliveryLabel}=await import(data(compile(inboxSource)));
+test('untrusted inbox filters cannot inject arbitrary state or cursors',()=>{const f=inboxFilters({page:'-9',status:'unknown',assignment:'anyone',c:'../secret',before:'bad-id',q:'x'.repeat(200),setup:'javascript'});assert.equal(f.page,1);assert.equal(f.status,'open');assert.equal(f.assignment,'all');assert.equal(f.c,'');assert.equal(f.before,'');assert.equal(f.q.length,100);assert.equal(f.setup,'');});
+test('history cursor and search filters survive navigation normalization',()=>{const id='ac600000-0000-0000-0000-000000000012';const f=inboxFilters({page:'2',status:'closed',assignment:'mine',q:'  Alice  ',before:id,handoff:'human',setup:'1'});assert.equal(f.page,2);assert.equal(f.status,'closed');assert.equal(f.assignment,'mine');assert.equal(f.q,'Alice');assert.equal(f.before,id);assert.equal(f.handoff,'human');assert.equal(f.setup,'1');});
+test('queued, sent and confirmed delivery are distinct user-facing states',()=>{assert.equal(deliveryLabel('queued'),'Queued');assert.equal(deliveryLabel('sent'),'Sent');assert.equal(deliveryLabel('delivered'),'Delivered');assert.equal(deliveryLabel('read'),'Read');});

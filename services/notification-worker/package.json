@@ -1,0 +1,17 @@
+{
+  "name": "@hospitality/notification-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "tsc && node --test tests/transport.test.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.46.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}

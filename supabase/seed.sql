@@ -1,0 +1,1 @@
+-- Local development seed data goes here (reference data lives in migrations).

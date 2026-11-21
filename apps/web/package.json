@@ -1,0 +1,41 @@
+{
+  "name": "@hospitality/web",
+  "private": true,
+  "engines": { "node": "22.x" },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test:auth": "node --test tests/auth.test.mjs",
+    "test:reservations": "node --test tests/reservations.test.mjs",
+    "test:inbox": "node --test tests/inbox.test.mjs",
+    "test:billing": "node --test tests/billing.test.mjs",
+    "test:service-desk": "node --test tests/service-desk.test.mjs",
+    "test:tasks": "node --test tests/tasks.test.mjs",
+    "test:inventory": "node --test tests/inventory.test.mjs",
+    "test:orders": "node --test tests/orders.test.mjs",
+    "test:team": "node --test tests/team.test.mjs",
+    "test:settings": "node --test tests/property-settings.test.mjs",
+    "test:reports": "node --test tests/reports.test.mjs",
+    "test:platform": "node --test tests/platform.test.mjs",
+    "test:workspace": "node --test tests/workspace-navigation.test.mjs",
+    "test:guest-messaging": "node --test tests/guest-messaging.test.mjs",
+    "test:distribution": "node --test tests/distribution-catalog.test.mjs",
+    "test:channel-review": "node --test tests/channel-review.test.mjs",
+    "test:campaigns": "node --test tests/campaigns.test.mjs"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "^2.46.0",
+    "next": "^15.0.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.6.0"
+  }
+}

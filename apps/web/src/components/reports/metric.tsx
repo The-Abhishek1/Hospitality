@@ -1,0 +1,2 @@
+import{reportChange}from '@/lib/reports';
+export function ReportMetricCard({title,value,note,current,previous,points=false,featured=false}:{title:string;value:string;note:string;current?:number|string|null;previous?:number|string|null;points?:boolean;featured?:boolean}){return <article className={`report-metric${featured?' featured':''}`}><span>{title}</span><strong>{value}</strong><p>{note}</p>{current!==undefined&&previous!==undefined&&<small>{reportChange(current,previous,points)}</small>}</article>;}

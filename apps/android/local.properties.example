@@ -1,0 +1,3 @@
+# Copy to local.properties. Anon/publishable key ONLY, never the service-role key.
+supabase.url=http://10.0.2.2:54321
+supabase.anonKey=
