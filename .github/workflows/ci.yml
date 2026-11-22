@@ -33,6 +33,8 @@ jobs:
         run: python3 supabase/tests/whatsapp-studio-concurrency.py
       - name: Concurrent platform changes and hotel plan limits
         run: python3 supabase/tests/platform-concurrency.py
+      - name: Concurrent automatic-message dispatch and claim
+        run: python3 supabase/tests/automation-concurrency.py
       - name: Concurrent campaign scheduling and cancellation
         run: python3 supabase/tests/campaign-concurrency.py
       - name: Concurrent channel review and worker imports
@@ -64,7 +66,8 @@ jobs:
       - name: Web behavior regressions
         if: matrix.dir == 'apps/web'
         run: |
-          node --test ../../packages/whatsapp-security/security.test.mjs
+          node --test ../../packages/whatsapp-security/security.test.mjs ../../packages/whatsapp-security/templates.test.mjs
+          node ../../scripts/sync-whatsapp-edge.mjs --check
           npm run test:auth
           npm run test:reservations
           npm run test:inbox

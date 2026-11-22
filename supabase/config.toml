@@ -25,3 +25,5 @@ enable_confirmations = false   # local only. Keep true in production: staff invi
 verify_jwt = false
 [functions.guest-documents]
 verify_jwt = false
+[functions.whatsapp-worker]
+verify_jwt = false # Server-to-server only; requires the dedicated X-Worker-Secret.

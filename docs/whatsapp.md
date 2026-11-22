@@ -10,7 +10,7 @@
 
 **Preparation workspace:** local template authoring, named variables and sample previews, photo-header drafts, URL/quick-reply definitions, hotel links, guest-menu configuration, journey plans, a simulator and preparation JSON exports now exist. These are offline content/configuration features.
 
-**Live integration not built yet:** template sync/submission and approval mapping with Meta, runtime variable/media/button delivery, booking-event hooks and the journey scheduler, inbound menu/bot replies (respect `human_handoff`), verified reservation-to-contact binding and automatic stay-link generation, and provider activation/quality monitoring. Cloud API Embedded Signup, encrypted hotel credentials, connection checks and disconnect/reconnect controls are implemented separately; see [onboarding requirements and remaining Meta setup](whatsapp-onboarding.md).
+**Live integration:** provider template sync, text body variables, hotel domain-event hooks, scheduled reminders, explicit guest authorization/binding and secure stay links are implemented in the separate [Automations workspace](whatsapp-automations.md). Template submission still happens through Meta. Media/button delivery, inbound menu/bot replies, guest self-verification, full provider quality monitoring and activation of the old offline journey-plan records remain unimplemented. Cloud API Embedded Signup, encrypted hotel credentials, connection checks and disconnect/reconnect controls are implemented separately; see [onboarding requirements and remaining Meta setup](whatsapp-onboarding.md).
 
 ## Advanced staff inbox
 

@@ -54,7 +54,7 @@ https://your-staff-project.vercel.app/auth/confirm
 
 If you add a custom domain, add its `/auth/confirm` URL too. Keep localhost callbacks only for local development. Verify the current confirmation/password-reset email templates use the app's token-hash callback as described in `docs/local-development.md`; changing the origin does not replace that callback implementation.
 
-Do not reset or reseed hosted data. Migration 77 introduces onboarding sessions, encrypted credentials and permissions. It must be applied to hosted Supabase before using self-service connection setup. It has only been applied/tested locally at preparation time. A project owner can apply the reviewed `supabase/migrations/20261105000077_whatsapp_embedded_signup.sql` through Supabase SQL Editor, or restore CLI management permissions and use the migration workflow. Do not replay migrations 1–76 on a database where they are already applied. Applying it manually through SQL Editor does not update CLI migration history; reconcile that history before a later `db push`.
+Do not reset or reseed hosted data. Migration 77 introduces onboarding sessions, encrypted credentials and permissions. It must be applied to hosted Supabase before using self-service connection setup. The existing hosted Hospitality project has migrations 1–80 recorded as of 2026-11-22. Other deployments should inspect their own migration history before applying updates. A project owner can apply the reviewed `supabase/migrations/20261105000077_whatsapp_embedded_signup.sql` through Supabase SQL Editor, or restore CLI management permissions and use the migration workflow. Do not replay migrations 1–76 on a database where they are already applied. Applying it manually through SQL Editor does not update CLI migration history; reconcile that history before a later `db push`.
 
 ## Meta settings after HTTPS is live
 
@@ -75,6 +75,8 @@ https://qqqsjvzserjyggcezvac.supabase.co/functions/v1/whatsapp-webhook
 Do not move that webhook to Vercel. App Review remains required for onboarding independent hotel customers; pre-review tests are limited to the roles/accounts Meta permits. See `docs/whatsapp-onboarding.md`.
 
 ## Delivery worker
+
+The scheduled Supabase `whatsapp-worker` and Cron integration now provide hosted event-driven delivery; see [automation deployment](whatsapp-automations.md). Apply migrations 78–80, deploy the function and configure its server secrets and Vault-backed invocation configuration. The following continuous-worker instructions remain an alternative for development or a larger worker pool. Do not enable duplicate consumers unnecessarily.
 
 `services/notification-worker` is a continuously running Node process; a normal Vercel Next.js deployment does not start it. Keep the current development worker running for a temporary test, or deploy it as a persistent worker on a suitable host. Stopping the laptop stops that local worker. The Supabase webhook can still receive messages, but outgoing replies remain queued without a worker.
 

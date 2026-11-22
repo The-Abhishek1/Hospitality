@@ -88,3 +88,7 @@ Private-schema lockdown migration; security-audit test; lockfiles per app (`npm 
 ### Hotel marketing campaigns
 
 Guest audiences, manual recipient selection, campaign drafts, one-off hotel-timezone scheduling, cancellation and per-recipient WhatsApp delivery reporting are available in the local implementation at `/p/<id>/campaigns`. Delivery requires an active hotel sender, verified approved text-only marketing template, recorded permission and an explicitly enabled worker; no campaign sending is enabled by default. See [docs/whatsapp-campaigns.md](docs/whatsapp-campaigns.md).
+
+## Event-driven WhatsApp automation
+
+Guest-facing reservation, arrival, dining, service, billing, document and checkout events can use approved templates through the durable automation outbox. Per-hotel rules and verified guest permission control delivery. The scheduled Supabase worker supports hosted delivery independently of the developer laptop; marketing campaigns remain separately disabled. See [automation setup and limitations](docs/whatsapp-automations.md).

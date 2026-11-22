@@ -21,3 +21,9 @@ test('network failures and accepted responses with no message ID require reconci
 test('template transport uses the approved name and language',async()=>{
  await send({...job,msg_type:'template',template_name:'welcome',template_language:'en'},'test','https://provider.invalid',async(_url,opts)=>{const p=JSON.parse(opts.body);assert.equal(p.type,'template');assert.deepEqual(p.template,{name:'welcome',language:{code:'en'}});return new Response(JSON.stringify({messages:[{id:'template-test'}]}));});
 });
+test('automation transport preserves approved named and positional parameters',async()=>{
+ const components=[{type:'body',parameters:[{type:'text',parameter_name:'guest_name',text:'Asha'},{type:'text',parameter_name:'portal_url',text:'https://guest.invalid/s/test'}]}];
+ await send({...job,msg_type:'template',template_name:'stay_update',template_language:'en_US',template_components:components},'test','https://provider.invalid',async(_url,opts)=>{
+  const p=JSON.parse(opts.body);assert.deepEqual(p.template.components,components);assert.equal(p.template.language.code,'en_US');return new Response(JSON.stringify({messages:[{id:'automation-test'}]}));
+ });
+});

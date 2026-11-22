@@ -1,4 +1,5 @@
 import {createCipheriv,createDecipheriv,randomBytes} from 'node:crypto';
+import {Buffer} from 'node:buffer';
 function key(value){if(!/^[a-f0-9]{64}$/i.test(value??''))throw Error('WhatsApp encryption key is not configured');return Buffer.from(value,'hex');}
 export function encryptToken(token,reference,secret){
  const iv=randomBytes(12),cipher=createCipheriv('aes-256-gcm',key(secret),iv);cipher.setAAD(Buffer.from(reference));
