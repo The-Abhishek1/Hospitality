@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import ts from 'typescript';
 import {normalizeTemplate} from '../../../packages/whatsapp-security/templates.mjs';
 const code=ts.transpileModule(readFileSync(new URL('../src/lib/automation-flow.ts',import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
-const {automationStarters,eventFields,createTemplatePayload,templateUsable,setupNext,previewAutomation}=await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
+const {automationStarters,eventFields,createTemplatePayload,templateUsable,setupNext,previewAutomation,templateProviderError}=await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
 const input={event:'checked_in',name:'hotel_checked_in',language:'en_US',body:automationStarters.checked_in};
 test('all 23 event starters produce provider templates compatible with actual delivery transport',()=>{
  assert.equal(Object.keys(automationStarters).length,23);
@@ -27,7 +27,7 @@ test('reject event-specific fields when the event cannot provide them',()=>{
 });
 test('static templates need no examples; repeated named fields need only one example',()=>{
  assert.equal(createTemplatePayload({...input,body:'Your check-in has been confirmed. Welcome to our hotel.'}).parameter_format,undefined);
- const p=createTemplatePayload({...input,body:'Hello {{guest_name}}, welcome {{guest_name}}.'});
+ const p=createTemplatePayload({...input,body:'Hello {{guest_name}}, welcome {{guest_name}}. Enjoy your stay.'});
  assert.equal(p.components[0].example.body_text_named_params.length,1);
 });
 test('template eligibility gates pending, unsupported, wrong category and stale approval',()=>{
@@ -48,4 +48,14 @@ test('setup recommends the first incomplete step in order',()=>{
  assert.equal(setupNext(state),'permissions');state.permissions=1;
  assert.equal(setupNext(state),'worker');state.worker=true;
  assert.equal(setupNext(state),'test');
+});
+
+test('Meta rejects boundary parameters even when separated from the edge by punctuation',()=>{
+ for(const body of ['{{guest_name}}, welcome to our hotel.','... {{guest_name}}, welcome to our hotel.','Hello, view your stay: {{portal_url}}.','Hello {{guest_name}}!','Hello {{guest_name}}... \n'])assert.throws(()=>createTemplatePayload({...input,body}),/written text/);
+ assert.doesNotThrow(()=>createTemplatePayload({...input,body:'Hello {{guest_name}}. Enjoy your stay!'}));
+});
+test('template errors preserve provider reason and redact credentials without unrelated reconnect advice',()=>{
+ const error=templateProviderError({code:100,error_subcode:2388299,error_user_title:'Leading or trailing params not allowed',error_user_msg:"Variables can't be at the start or end of the template. private-test-token"},400,'private-test-token');
+ assert.match(error,/2388299/);assert.match(error,/Variables can't/);assert.doesNotMatch(error,/private-test-token|Reconnect/);
+ assert.match(templateProviderError({code:190,message:'Expired token'},400,''),/Reconnect/);
 });

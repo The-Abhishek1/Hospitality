@@ -13,7 +13,7 @@ function harness(options={}){
  const deps={
   'next/server':{NextResponse:{json:(body,init)=>new Response(JSON.stringify(body),init)}},
   '@/lib/supabase/server':{createClient:async()=>({auth:{getUser:async()=>({data:{user:options.anonymous?null:{id:'owner'}}})},rpc:async()=>({data:{connection:{status:'active',id:'connection',waba_id:'hotel-waba'}},error:options.forbidden?{message:'Forbidden'}:null})})},
-  '@/lib/whatsapp-onboarding':{SetupError,graphVersion:'v27.0',savedToken:async()=>{calls.push('credential');return'private-token';},meta:async(path,token,method='GET',body)=>{calls.push({path,method,body});return{data:options.duplicate?[{name:payload.name,language:payload.language}]:[],id:'provider-id'};},backend:()=>({rpc:async()=>{calls.push('sync-db');return{error:options.syncFailure?{}:null};},from:()=>({select:()=>({eq:()=>({eq:()=>({eq:()=>({maybeSingle:async()=>({data:{id:'local-template-id'}})})})})})})})},
+  '@/lib/whatsapp-onboarding':{SetupError,graphVersion:'v27.0',savedToken:async()=>{calls.push('credential');return'private-token';},meta:async(path,token,method='GET',body,context)=>{calls.push({path,method,body,context});if(options.providerError&&method==='POST')throw new SetupError(options.providerError);return{data:options.duplicate?[{name:payload.name,language:payload.language}]:[],id:'provider-id'};},backend:()=>({rpc:async()=>{calls.push('sync-db');return{error:options.syncFailure?{}:null};},from:()=>({select:()=>({eq:()=>({eq:()=>({eq:()=>({maybeSingle:async()=>({data:{id:'local-template-id'}})})})})})})})},
   '@/lib/automation-flow':flow,
   '../../../../../../../../packages/whatsapp-security/templates.mjs':{fetchTemplates:async()=>{calls.push('fetch-directory');return rows;}}
  };
@@ -24,17 +24,22 @@ test('cross-origin, anonymous and unauthorized users cannot access credentials o
  for(const[options,requestOrigin,status]of [[{},'https://other.example',403],[{anonymous:true},origin,401],[{forbidden:true},origin,403]]){const h=harness(options);assert.equal((await h.invoke(payload,requestOrigin)).status,status);assert.equal(h.calls.length,0);}
 });
 test('invalid template payload is rejected before reading a credential',async()=>{
- for(const value of ['bad json',{action:'submit',event:'checked_in'},{...payload,body:'Hello {{secret}}, invalid template.'},{action:'delete'}]){const h=harness();assert.equal((await h.invoke(value)).status,400);assert.equal(h.calls.length,0);}
+ for(const value of ['bad json',{action:'submit',event:'checked_in'},{...payload,body:'Hello {{secret}}, invalid template.'},{...payload,body:'Hello {{guest_name}}, view your stay: {{portal_url}}.'},{action:'delete'}]){const h=harness();assert.equal((await h.invoke(value)).status,400);assert.equal(h.calls.length,0);}
 });
 test('sync refreshes the provider directory without creating a template',async()=>{
  const h=harness();assert.equal((await h.invoke()).status,200);assert.ok(h.calls.includes('fetch-directory'));assert.ok(h.calls.includes('sync-db'));assert.equal(h.calls.filter(c=>c.method==='POST').length,0);
 });
 test('explicit reviewed submission uses the connected WABA and waits for approval',async()=>{
- const h=harness(),result=await h.invoke(payload),posts=h.calls.filter(c=>c.method==='POST');assert.equal(result.status,200);assert.equal(result.body.submitted,true);assert.equal(result.body.status,'PENDING');assert.equal(result.body.ready,false);assert.equal(posts.length,1);assert.equal(posts[0].path,'hotel-waba/message_templates');assert.equal(posts[0].body.parameter_format,'NAMED');assert.equal(JSON.parse(posts[0].body.components)[0].type,'BODY');
+ const h=harness(),result=await h.invoke(payload),posts=h.calls.filter(c=>c.method==='POST');assert.equal(result.status,200);assert.equal(result.body.submitted,true);assert.equal(result.body.status,'PENDING');assert.equal(result.body.ready,false);assert.equal(posts.length,1);assert.equal(posts[0].path,'hotel-waba/message_templates');assert.equal(posts[0].context,'template');assert.equal(posts[0].body.parameter_format,'NAMED');assert.equal(JSON.parse(posts[0].body.components)[0].type,'BODY');
 });
 test('existing provider name/language prevents duplicate submission',async()=>{
  const h=harness({duplicate:true});assert.equal((await h.invoke(payload)).status,409);assert.equal(h.calls.filter(c=>c.method==='POST').length,0);
 });
 test('accepted submission with failed sync is not reported as needing a new submission',async()=>{
  const h=harness({syncFailure:true}),result=await h.invoke(payload);assert.equal(result.status,200);assert.equal(result.body.submitted,true);assert.match(result.body.success,/accepted/);assert.equal(h.calls.filter(c=>c.method==='POST').length,1);
+});
+
+test('provider submission failures preserve the specific actionable template rejection',async()=>{
+ const message="Meta rejected the template request (code 100/2388299): Variables can't be at the start or end of the template.",h=harness({providerError:message}),result=await h.invoke(payload);
+ assert.equal(result.status,400);assert.equal(result.body.error,message);assert.ok(!h.calls.includes('sync-db'));
 });

@@ -20,10 +20,10 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{propertyId:
  try{
   const token=await savedToken(`managed:${pid}`);
   if(payload){
-   const current=await meta(`${data.connection.waba_id}/message_templates?name=${encodeURIComponent(payload.name)}&fields=name,language,status`,token);
+   const current=await meta(`${data.connection.waba_id}/message_templates?name=${encodeURIComponent(payload.name)}&fields=name,language,status`,token,'GET',undefined,'template');
    if(current.data?.some((t:{name:string;language:string})=>t.name===payload!.name&&t.language===payload!.language))return response({error:'A template with this name and language already exists in Meta. Check approval & sync to load it, or choose another name.'},409);
    // Only the explicit Submit to Meta form creates a provider template. Sync never creates one.
-   await meta(`${data.connection.waba_id}/message_templates`,token,'POST',{name:payload.name,language:payload.language,category:payload.category,...(payload.parameter_format?{parameter_format:payload.parameter_format}:{}),components:JSON.stringify(payload.components)});accepted=true;
+   await meta(`${data.connection.waba_id}/message_templates`,token,'POST',{name:payload.name,language:payload.language,category:payload.category,...(payload.parameter_format?{parameter_format:payload.parameter_format}:{}),components:JSON.stringify(payload.components)},'template');accepted=true;
   }
   const templates=await fetchTemplates(data.connection.waba_id,token,graphVersion),admin=backend();
   const synced=await admin.rpc('sync_whatsapp_provider_templates',{p_connection:data.connection.id,p_waba:data.connection.waba_id,p_templates:templates});if(synced.error)throw Error('Could not save template status.');
