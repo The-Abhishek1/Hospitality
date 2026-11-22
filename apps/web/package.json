@@ -1,7 +1,9 @@
 {
   "name": "@hospitality/web",
   "private": true,
-  "engines": { "node": "22.x" },
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -22,7 +24,8 @@
     "test:guest-messaging": "node --test tests/guest-messaging.test.mjs",
     "test:distribution": "node --test tests/distribution-catalog.test.mjs",
     "test:channel-review": "node --test tests/channel-review.test.mjs",
-    "test:campaigns": "node --test tests/campaigns.test.mjs"
+    "test:campaigns": "node --test tests/campaigns.test.mjs",
+    "test:automations": "node --test tests/automation-flow.test.mjs tests/automation-template-api.test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",

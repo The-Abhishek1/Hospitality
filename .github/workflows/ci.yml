@@ -85,6 +85,7 @@ jobs:
           npm run test:distribution
           npm run test:channel-review
           npm run test:campaigns
+          npm run test:automations
       - name: Guest portal behavior and offline privacy
         if: matrix.dir == 'apps/guest-portal'
         run: npm test

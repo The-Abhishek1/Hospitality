@@ -1,23 +1,17 @@
 # Event-driven guest messaging
 
-Hotel administrators open **Automations** from the management sidebar. This is the live event workspace. **Guest messaging** remains an offline draft/journey planning workspace; reviewing a draft there never approves it with Meta or enables a rule.
+Hotel administrators open **WhatsApp messages** from the management sidebar or **Templates & automations** in Inbox. This is the live event workspace. Offline message drafts, hotel links and guest menu planning are available under its Advanced section; an offline draft never approves a template or enables sending.
 
 ## Hotel setup
 
-1. Connect the hotel's actual sender through **WhatsApp setup**. A separate test property keeps the existing Meta test-number history isolated.
-2. Create message templates in WhatsApp Manager, submit them, and wait for approval. Use **UTILITY** for operational updates. Post-stay review requests require a **MARKETING** template and separate recorded marketing permission. Template submission is still through Meta, not the local draft editor.
-3. In **Automations → Provider templates**, click **Sync approved templates from Meta**. Current support: body text with positional or named variables and an optional static footer. Headers, images, documents, interactive buttons, authentication templates and mixed/invalid parameter formats are not supported by this transport. A synced unsupported template is displayed but cannot be enabled. Synchronization is account-scoped and only commits after the entire provider directory was retrieved.
-4. In **Guest permissions**, verify the guest identity and actual WhatsApp number, record their explicit agreement/evidence, and save permission. A phone on a reservation, an inbound Hi, a previous booking, or the portal's existing `stay_updates_requested` preference does not by itself grant verified automation permission. Permission is scoped to that guest profile and hotel, and can cover later stays there until revoked. Guests with shared/duplicate phone profiles require identity review. Staff cannot override STOP by recording this permission. Review requests also require separate marketing permission in Campaigns.
-5. In **Event rules**, choose the approved template, map every parameter to a supported event field, set the delay, and enable only the desired milestones. Rules default off. Templates must belong to the hotel's active WABA and have been synchronized within 24 hours. A template definition change requires reviewing/saving the rule again. Parameter fields unavailable for an event block that event instead of sending blank or invented data.
-6. Perform a new action and inspect **Delivery history** and Inbox. Pending/blocked events, queueing, sent/delivered/read, skipped events, failures and uncertain outcomes remain distinct. The UI also shows the scheduled worker's latest successful run. No real messages are sent by automated tests.
+1. Connect the hotel's sender through **WhatsApp setup**. A separate test property keeps existing Meta test-number history isolated.
+2. Open **WhatsApp messages → Message templates**. Choose the hotel event, edit the suggested message, select its language and review the sample. Click **Review template**, then explicitly **Submit to Meta for approval**. This creates a template on that hotel's WABA, not a guest message. Only administrators can submit. Operational messages use UTILITY; review requests use MARKETING. Meta decides approval and classification. You can still create templates in WhatsApp Manager.
+3. On the same page, click **Check approval & sync**. This refreshes the complete provider directory and never creates templates. Cards show Pending, Ready to use, unsupported format, stale approval or other provider states. Pending submissions do not need resubmission. After a timeout, sync before retrying. Current delivery supports body text with named or numbered variables and an optional static footer. Headers, images, documents, buttons, authentication templates and mixed or invalid variable formats remain unsupported. The in-app editor creates body-only templates with named fields and sample values.
+4. Click **Use for [event]** on an approved template card. In **Event automations**, choose one event at a time, review the sample, map any numbered fields explicitly, choose the timing and enable sending. Changing templates does not silently activate the replacement. Named hotel fields map automatically; numbered placeholders are never guessed. Saving without activation sends nothing.
+5. In **Guest permissions**, verify guest identity and their actual WhatsApp number, record their agreement/evidence and save permission. A reservation phone, inbound Hi, previous booking or portal preference alone is insufficient. Permission is scoped to that guest profile and hotel and covers future stays until revoked. Shared phone profiles require identity review. Staff cannot override STOP. Review requests require separate marketing permission in Campaigns.
+6. Perform a new action on a dedicated test reservation, then open **Delivery history** and the guest's WhatsApp. Existing past milestones are not replayed. Setup overview identifies the next incomplete step and shows recent worker health.
 
-Example approved check-in body:
-
-```text
-Hello {{1}}, your check-in at {{2}} is confirmed. Your personal stay page: {{3}}
-```
-
-Map `1 → guest_name`, `2 → hotel_name`, `3 → portal_url`. This is proposed copy, not a claim of provider approval. Other useful fields are `booking_reference`, `check_in`, `check_out`, `hotel_phone`, `room_name`, `event_label`, `order_reference`, `request_title`, `amount`, `currency`, `invoice_number` and `review_url`. Keep promotional copy out of operational templates. Meta determines template classification.
+Example named message: `Hello {{guest_name}}, your check-in at {{hotel_name}} is confirmed. Your personal stay page: {{portal_url}}.` This is suggested copy, not provider approval. Keep promotional copy out of operational templates. [Meta template creation reference](https://developers.facebook.com/docs/graph-api/reference/whats-app-business-account/message_templates/).
 
 ## Captured milestones
 

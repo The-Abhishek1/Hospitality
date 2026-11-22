@@ -10,7 +10,7 @@
 
 **Preparation workspace:** local template authoring, named variables and sample previews, photo-header drafts, URL/quick-reply definitions, hotel links, guest-menu configuration, journey plans, a simulator and preparation JSON exports now exist. These are offline content/configuration features.
 
-**Live integration:** provider template sync, text body variables, hotel domain-event hooks, scheduled reminders, explicit guest authorization/binding and secure stay links are implemented in the separate [Automations workspace](whatsapp-automations.md). Template submission still happens through Meta. Media/button delivery, inbound menu/bot replies, guest self-verification, full provider quality monitoring and activation of the old offline journey-plan records remain unimplemented. Cloud API Embedded Signup, encrypted hotel credentials, connection checks and disconnect/reconnect controls are implemented separately; see [onboarding requirements and remaining Meta setup](whatsapp-onboarding.md).
+**Live integration:** provider template sync, text body variables, hotel domain-event hooks, scheduled reminders, explicit guest authorization/binding and secure stay links are implemented in the separate [Automations workspace](whatsapp-automations.md). The guided WhatsApp messages workspace supports explicit in-app submission to Meta, approval sync and event selection. Media/button delivery, inbound menu/bot replies, guest self-verification, full provider quality monitoring and activation of the old offline journey-plan records remain unimplemented. Cloud API Embedded Signup, encrypted hotel credentials, connection checks and disconnect/reconnect controls are implemented separately; see [onboarding requirements and remaining Meta setup](whatsapp-onboarding.md).
 
 ## Advanced staff inbox
 
@@ -64,8 +64,8 @@ Inbox/queue tests. These tests never send real WhatsApp messages.
 
 ## Prepare guest messaging before API setup
 
-Open **Guest messaging** in the hotel sidebar, or **Templates & guest journeys**
-from Inbox. Preparation is available before a business-number connection and does
+Open **WhatsApp messages → Advanced → Open message drafts & hotel links**.
+For live templates, use **Message templates** in the guided workspace instead. Preparation is available before a business-number connection and does
 not require the current plan to include live WhatsApp messaging. Administrators
 with `staff.manage` edit configuration; `whatsapp.use` staff can inspect drafts,
 previews and exports. Other hotels and suspended accounts cannot access the data.
