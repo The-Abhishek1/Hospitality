@@ -90,4 +90,21 @@ select ok(not exists(select 1 from public.whatsapp_automation_events where paylo
 update public.whatsapp_automation_events set expires_at=now()-interval '1 second'where event_key='checked_in'and property_id='e3000000-0000-0000-0000-000000000001';
 select is((select public.validate_outbound_claim(id,attempts)->>'error'from public.messages where automation_event_id is not null and property_id='e3000000-0000-0000-0000-000000000001'limit 1),'Event expired.','expired automation is not sent');
 
+
+update public.whatsapp_automation_rules set delay_minutes=60,version=version+1,updated_at=now()where property_id='e3000000-0000-0000-0000-000000000001'and event_key='checkout_reminder';
+select public.dispatch_whatsapp_automations(50,'https://guest.test');
+select is((select count(*)::integer from public.whatsapp_automation_events where event_key='checkout_reminder'and property_id='e3000000-0000-0000-0000-000000000001'),2,'editing a future reminder rule creates its replacement');
+select is((select private.whatsapp_automation_error(id)from public.whatsapp_automation_events where event_key='checkout_reminder'and rule_version=1 and property_id='e3000000-0000-0000-0000-000000000001'),'Rule paused or changed.','old reminder revision is suppressed');
+select set_config('test.reminder_id',(select id::text from public.whatsapp_automation_events where event_key='checkout_reminder'and rule_version=2 and property_id='e3000000-0000-0000-0000-000000000001'),true);
+update public.properties set timezone=case when timezone='Asia/Kolkata'then'UTC'else'Asia/Kolkata'end where id='e3000000-0000-0000-0000-000000000001';
+select public.dispatch_whatsapp_automations(50,'https://guest.test');
+select is((select count(*)::integer from public.whatsapp_automation_events where event_key='checkout_reminder'and property_id='e3000000-0000-0000-0000-000000000001'),3,'hotel timezone change reschedules a future reminder');
+select is(private.whatsapp_automation_error(current_setting('test.reminder_id')::uuid),'Stay schedule changed.','old timezone reminder is suppressed');
+insert into public.messages(tenant_id,property_id,conversation_id,direction,type,body,template_id,status,automation_event_id)
+select e.tenant_id,e.property_id,a.conversation_id,'out','template','Synthetic delivered reminder',current_setting('test.auto_template')::uuid,'delivered',e.id from public.whatsapp_automation_events e join public.whatsapp_guest_authorizations a on a.property_id=e.property_id and a.guest_id=e.guest_id where e.id=current_setting('test.reminder_id')::uuid;
+update public.whatsapp_automation_events set message_id=(select id from public.messages where automation_event_id=current_setting('test.reminder_id')::uuid),state='queued'where id=current_setting('test.reminder_id')::uuid;
+update public.whatsapp_automation_rules set delay_minutes=30,version=version+1,updated_at=now()where property_id='e3000000-0000-0000-0000-000000000001'and event_key='checkout_reminder';
+select public.dispatch_whatsapp_automations(50,'https://guest.test');
+select is((select count(*)::integer from public.whatsapp_automation_events where event_key='checkout_reminder'and property_id='e3000000-0000-0000-0000-000000000001'),3,'an already delivered reminder is not recreated after configuration edits');
+
 select *from finish();rollback;
