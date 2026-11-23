@@ -23,5 +23,12 @@
     "Browser tests used an empty staff session for guest pages.",
     "Synthetic document-state transitions test the UI; they do not claim a production malware scan.",
     "No live WhatsApp message or campaign was sent for this focused-page QA run."
+  ],
+  "hosted_checks": [
+    "Hosted documents task loads without staff login and returns only its task data",
+    "Hosted food task loads without staff login and returns only its task data",
+    "Hosted bill task loads without staff login and returns only its task data",
+    "Hosted staff dashboard remains protected",
+    "Hosted guest document proxy rejects invalid credentials before upload"
   ]
 }
