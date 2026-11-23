@@ -7,19 +7,21 @@ export function InboxRefresh(){
  const router=useRouter(),[pending,start]=useTransition();const [auto,setAuto]=useState(true);const busy=useRef(false);
  useEffect(()=>{busy.current=pending;},[pending]);
  useEffect(()=>{if(!auto)return;const timer=setInterval(()=>{const el=document.activeElement;if(!busy.current&&document.visibilityState==='visible'&&!el?.matches('textarea,input,select'))start(()=>router.refresh());},15000);return()=>clearInterval(timer);},[router,auto]);
- return <div className="ib-refresh"><label><input type="checkbox" checked={auto} onChange={e=>setAuto(e.target.checked)}/>Auto refresh</label><button className="dash-button dash-secondary" onClick={()=>start(()=>router.refresh())} disabled={pending}>{pending?'Refreshing…':'↻ Refresh'}</button></div>;
+ return <div className="ib-refresh"><label><input type="checkbox" checked={auto} onChange={e=>setAuto(e.target.checked)}/>Live</label><button className="dash-button dash-secondary" onClick={()=>start(()=>router.refresh())} disabled={pending}>{pending?'Refreshing…':'↻ Refresh'}</button></div>;
 }
 export function ThreadBehavior({children,pid,cid,lastInbound,lastMessage,history}:{children:React.ReactNode;pid:string;cid:string;lastInbound?:string;lastMessage?:string;history:boolean}){
- const feed=useRef<HTMLDivElement>(null),atBottom=useRef(true),marked=useRef(''),last=useRef('');const router=useRouter();const [newer,setNewer]=useState(false),[readError,setReadError]=useState('');
+ const feed=useRef<HTMLDivElement>(null),atBottom=useRef(true),marked=useRef(''),last=useRef(''),viewHeight=useRef(0),viewWidth=useRef(0);const router=useRouter();const [newer,setNewer]=useState(false),[readError,setReadError]=useState('');
  useEffect(()=>{if(history)return;const el=feed.current;if(!el)return;
   const read=()=>{if(!lastInbound||marked.current===lastInbound||document.visibilityState!=='visible'||!el.getClientRects().length||!atBottom.current)return;
    marked.current=lastInbound;markRead(pid,cid,lastInbound).then(result=>{if(result.error){setReadError(result.error);marked.current='';}else{setReadError('');router.refresh();}}).catch(()=>{marked.current='';setReadError('Read status couldn’t be updated.');});};
-  const scroll=()=>{atBottom.current=el.scrollHeight-el.scrollTop-el.clientHeight<100;if(atBottom.current){setNewer(false);read();}};
+  const scroll=()=>{if(viewHeight.current!==el.clientHeight||viewWidth.current!==el.clientWidth){viewHeight.current=el.clientHeight;viewWidth.current=el.clientWidth;if(atBottom.current)el.scrollTop=el.scrollHeight;return;}atBottom.current=el.scrollHeight-el.scrollTop-el.clientHeight<100;if(atBottom.current){setNewer(false);read();}};
+  viewHeight.current=el.clientHeight;viewWidth.current=el.clientWidth;
   if(atBottom.current||!last.current){el.scrollTop=el.scrollHeight;read();}else if(lastMessage!==last.current)setNewer(true);
   last.current=lastMessage??'';el.addEventListener('scroll',scroll);document.addEventListener('visibilitychange',read);window.addEventListener('focus',read);
-  return()=>{el.removeEventListener('scroll',scroll);document.removeEventListener('visibilitychange',read);window.removeEventListener('focus',read);};
+  const resize=new ResizeObserver(()=>{if(atBottom.current&&el.getClientRects().length){el.scrollTop=el.scrollHeight;read();}});resize.observe(el);
+  return()=>{resize.disconnect();el.removeEventListener('scroll',scroll);document.removeEventListener('visibilitychange',read);window.removeEventListener('focus',read);};
  },[pid,cid,lastInbound,lastMessage,history,router]);
- return <><div className="ib-message-feed" ref={feed} aria-label="Message history">{children}</div>{newer&&<button className="ib-new-messages" onClick={()=>{feed.current?.scrollTo({top:feed.current.scrollHeight,behavior:'smooth'});}}>New messages ↓</button>}{readError&&<p className="ib-feedback error" role="status">{readError}</p>}</>;
+ return <><div className="ib-message-feed" ref={feed} role="region" tabIndex={0} aria-label="Message history">{children}</div>{newer&&<button className="ib-new-messages" onClick={()=>{const el=feed.current;if(el){atBottom.current=true;el.scrollTop=el.scrollHeight;setNewer(false);}}}>New messages ↓</button>}{readError&&<p className="ib-feedback error" role="status">{readError}</p>}</>;
 }
 export function ConversationControls({pid,c,canAssign,assignees,userId}:{pid:string;c:Conversation;canAssign:boolean;assignees:InboxData['assignees'];userId:string}){
  const [state,action,pending]=useActionState(conversationAction,{} as InboxState);
