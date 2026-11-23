@@ -32,4 +32,3 @@ begin
  on conflict(property_id,event_key)do update set enabled=excluded.enabled,template_id=excluded.template_id,template_fingerprint=excluded.template_fingerprint,parameter_keys=excluded.parameter_keys,delay_minutes=excluded.delay_minutes,updated_by=auth.uid(),updated_at=now(),version=whatsapp_automation_rules.version+1;
  insert into public.whatsapp_automation_audit(property_id,tenant_id,actor,action,details)values(p_property,tenant,auth.uid(),'rule_saved',jsonb_build_object('event',p_event,'enabled',p_enabled,'template',t.id));
 end $$;
-
