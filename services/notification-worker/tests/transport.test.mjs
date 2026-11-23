@@ -27,3 +27,13 @@ test('automation transport preserves approved named and positional parameters',a
   const p=JSON.parse(opts.body);assert.deepEqual(p.template.components,components);assert.equal(p.template.language.code,'en_US');return new Response(JSON.stringify({messages:[{id:'automation-test'}]}));
  });
 });
+test('guest menu and image replies preserve rich content and cannot override the recipient',async()=>{
+ for(const rich of [{type:'interactive',interactive:{type:'list',body:{text:'Welcome'},action:{button:'Choose',sections:[{title:'Hotel',rows:[{id:'guest:photos',title:'Photos'}]}]}}},{type:'image',image:{link:'https://hotel.invalid/photo.jpg',caption:'Our hotel'}},{type:'interactive',interactive:{type:'cta_url',body:{text:'Your stay'},action:{name:'cta_url',parameters:{display_text:'Open guest page',url:'https://guest.invalid/s/private'}}}}]){
+  await send({...job,msg_type:rich.type,outbound_payload:{...rich,to:'attacker',messaging_product:'other'}},'test','https://provider.invalid',async(_url,opts)=>{const payload=JSON.parse(opts.body);assert.equal(payload.to,job.wa_contact_id);assert.equal(payload.messaging_product,'whatsapp');assert.deepEqual(payload[rich.type],rich[rich.type]);return new Response(JSON.stringify({messages:[{id:'rich-id'}]}));});
+ }
+});
+test('unsupported or mismatched rich content never reaches Meta',async()=>{
+ for(const payload of [{type:'audio',audio:{link:'https://hotel.invalid/file'}},{type:'image',image:{link:'https://hotel.invalid/photo.jpg'}}]){
+  await assert.rejects(()=>send({...job,msg_type:'interactive',outbound_payload:payload},'test','https://provider.invalid',async()=>{assert.fail('Must not send');}),e=>e instanceof DeliveryError&&!e.uncertain);
+ }
+});

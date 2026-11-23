@@ -38,3 +38,8 @@ export async function configureWhatsApp(_:InboxState,fd:FormData):Promise<InboxS
  const db=await createClient();const {error}=await db.rpc('inbox_configure',{p_property:pid,p_phone_id:field(fd,'phone_id'),p_waba_id:field(fd,'waba_id'),p_display:field(fd,'display'),p_credentials_ref:field(fd,'credentials_ref'),p_status:status});
  if(error)return{error:friendly(error)};revalidatePath(`/p/${pid}/inbox`);return{success:status==='active'?'Messaging enabled. Use the inbox to monitor actual delivery status.':'WhatsApp configuration saved.'};
 }
+export async function sendGuestReply(_:InboxState,fd:FormData):Promise<InboxState>{
+ const c=await context(fd),request=field(fd,'request');if(!c||!validId(request))return{error:'Refresh this conversation before sending.'};
+ const{data,error}=await c.db.rpc('inbox_guest_message',{p_conversation:c.cid,p_request:request,p_action:field(fd,'guest_action')});
+ if(error)return{error:friendly(error)};revalidatePath(`/p/${c.pid}/inbox`);return{success:'Guest reply queued. Check delivery status below the message.',messageId:data};
+}

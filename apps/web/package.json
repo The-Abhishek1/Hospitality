@@ -25,7 +25,8 @@
     "test:distribution": "node --test tests/distribution-catalog.test.mjs",
     "test:channel-review": "node --test tests/channel-review.test.mjs",
     "test:campaigns": "node --test tests/campaigns.test.mjs",
-    "test:automations": "node --test tests/automation-flow.test.mjs tests/automation-template-api.test.mjs"
+    "test:automations": "node --test tests/automation-flow.test.mjs tests/automation-template-api.test.mjs",
+    "test:concierge": "node --test tests/guest-concierge.test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",

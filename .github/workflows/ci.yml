@@ -86,6 +86,7 @@ jobs:
           npm run test:channel-review
           npm run test:campaigns
           npm run test:automations
+          npm run test:concierge
       - name: Guest portal behavior and offline privacy
         if: matrix.dir == 'apps/guest-portal'
         run: npm test

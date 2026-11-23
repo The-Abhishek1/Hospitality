@@ -1,0 +1,14 @@
+export const conciergeActions={stay:'My stay',documents:'Upload documents',food:'Order food',services:'Request a service',checkin:'Request check-in',checkout:'Request checkout',location:'Hotel location',photos:'Hotel photos',review:'Leave a review',website:'Hotel website',reception:'Talk to reception'};
+export type ConciergeAction=keyof typeof conciergeActions;
+export type ConciergeData={intro:string;items:{action:ConciergeAction;label:string;enabled:boolean}[];maps_url:string;review_url:string;website_url:string;photos:{url:string;caption:string}[]};
+export type ConciergeConfig={version:number;enabled:boolean;data:ConciergeData};
+export const defaultConcierge:ConciergeData={intro:'Welcome to our hotel. How can we help with your stay?',items:Object.entries(conciergeActions).map(([action,label])=>({action:action as ConciergeAction,label,enabled:!['location','photos','review','website'].includes(action)})),maps_url:'',review_url:'',website_url:'',photos:[]};
+export function publicHotelLink(value:string){try{const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password&&!u.hash&&u.hostname.includes('.')&&!/^(localhost|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|0\.|\[)/i.test(u.hostname)&&!u.hostname.endsWith('.local');}catch{return false;}}
+export function conciergeIssues(data:ConciergeData,enabled:boolean){const issues:string[]=[];if(!data.intro.trim()||data.intro.length>500)issues.push('Write a welcome message of 1–500 characters.');const active=data.items.filter(i=>i.enabled);if(active.length<1||active.length>10)issues.push('Enable between 1 and 10 menu options.');for(const i of data.items)if(!i.label.trim()||i.label.length>24)issues.push('Menu labels need 1–24 characters.');for(const key of ['maps_url','review_url','website_url']as const)if(data[key]&&!publicHotelLink(data[key]))issues.push('Use public HTTPS hotel links without credentials or fragments.');if(data.photos.length>5||data.photos.some(p=>!publicHotelLink(p.url)||p.caption.length>1024))issues.push('Add up to five public HTTPS photo links, with captions up to 1024 characters.');if(enabled)for(const item of active){const missing=item.action==='location'&&!data.maps_url||item.action==='review'&&!data.review_url||item.action==='website'&&!data.website_url||item.action==='photos'&&!data.photos.length;if(missing)issues.push(`Configure ${conciergeActions[item.action]} before enabling automatic replies.`);}return[...new Set(issues)];}
+export function hotelPhotoType(bytes:Uint8Array){
+ if(bytes.length<12)return null;
+ if(bytes[0]===0xff&&bytes[1]===0xd8&&bytes[2]===0xff)return{mime:'image/jpeg',extension:'jpg'};
+ if([137,80,78,71,13,10,26,10].every((n,i)=>bytes[i]===n))return{mime:'image/png',extension:'png'};
+ if(String.fromCharCode(...bytes.slice(0,4))==='RIFF'&&String.fromCharCode(...bytes.slice(8,12))==='WEBP')return{mime:'image/webp',extension:'webp'};
+ return null;
+}

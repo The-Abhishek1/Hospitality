@@ -6,7 +6,7 @@ import {fetchTemplates} from '../../../packages/whatsapp-security/templates.mjs'
 const db=createClient(process.env.SUPABASE_URL!,process.env.SUPABASE_SERVICE_ROLE_KEY!,{auth:{persistSession:false}});
 const tokens:Record<string,string>=JSON.parse(process.env.WHATSAPP_TOKENS_JSON??'{}');
 const GRAPH=process.env.WHATSAPP_GRAPH_URL??'https://graph.facebook.com/v27.0';
-type Job={message_id:string;phone_number_id:string;credentials_ref:string;wa_contact_id:string;msg_type:string;msg_body:string|null;template_name:string|null;template_language:string|null;attempt:number;template_components?:unknown[]|null};
+type Job={message_id:string;phone_number_id:string;credentials_ref:string;wa_contact_id:string;msg_type:string;msg_body:string|null;template_name:string|null;template_language:string|null;attempt:number;template_components?:unknown[]|null;outbound_payload?:Record<string,unknown>|null};
 async function credential(ref:string){
  if(!ref.startsWith('managed:'))return tokens[ref];
  const {data,error}=await db.rpc('whatsapp_delivery_credential',{p_reference:ref});if(error||!data)throw Error('Authorization unavailable');
@@ -30,7 +30,8 @@ async function tick():Promise<number>{
  const automationsEnabled=process.env.WHATSAPP_AUTOMATIONS_ENABLED==='true';
  if(automationsEnabled){await syncTemplates();const {error}=await db.rpc('dispatch_whatsapp_automations',{p_limit:50,p_portal_origin:process.env.GUEST_PORTAL_URL??null});if(error)throw error;}
  if(campaignsEnabled){const {error:dispatchError}=await db.rpc('dispatch_whatsapp_campaigns',{p_limit:50});if(dispatchError)throw dispatchError;}
- const {data,error}=await db.rpc(automationsEnabled?'claim_outbound_messages_v4':'claim_outbound_messages_v3',{p_limit:10,p_allow_campaigns:campaignsEnabled,...(automationsEnabled?{p_allow_automations:true}:{})});if(error)throw error;
+ const concierge=await db.rpc('dispatch_whatsapp_guest_replies',{p_limit:50,p_portal_origin:process.env.GUEST_PORTAL_URL??null});if(concierge.error)throw concierge.error;
+ const {data,error}=await db.rpc('claim_outbound_messages_v5',{p_limit:10,p_allow_campaigns:campaignsEnabled,p_allow_automations:automationsEnabled});if(error)throw error;
  const jobs=(data??[]) as Job[];
  for(const job of jobs){
   // An RPC/acknowledgment failure must not be treated as a failed HTTP send.

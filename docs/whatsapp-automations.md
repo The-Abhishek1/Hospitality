@@ -22,7 +22,7 @@ Example named message: `Hello {{guest_name}}, your check-in at {{hotel_name}} is
 - Billing: recorded payment, refund and issued invoice. These are ledger-recording notifications, not proof of external processor settlement.
 - Arrival documents: upload received, review approved or rejected. No document identifiers, scans, internal review notes or private task descriptions are put into messages. Receipt does not imply verification or malware scanning.
 
-There are 23 configurable event types. Events use existing transactional hotel operations; automation does not check a guest in, check them out, accept an order, change a request status, charge a card or approve a document. Feedback, staff administration and OTA synchronization internals do not produce unnecessary guest messages. General chatbot/menu replies and arbitrary inbound-question automation are separate features and remain unimplemented.
+There are 23 configurable event types. Events use existing transactional hotel operations; automation does not check a guest in, check them out, accept an order, change a request status, charge a card or approve a document. Feedback, staff administration and OTA synchronization internals do not produce unnecessary guest messages. Live deterministic Hi/Menu replies, links, photos and reception handoff are implemented separately in the [guest menu](whatsapp-guest-menu.md). Arbitrary inbound-question AI remains unimplemented.
 
 ## Delivery and suppression
 

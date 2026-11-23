@@ -27,9 +27,10 @@ Deno.serve(async req=>{
    }catch{await db.from('whatsapp_connections').update({templates_sync_after:new Date(Date.now()+5*60*1000).toISOString()}).eq('id',c.id);console.error('Provider template sync unavailable',c.id);}}
    const dispatch=await db.rpc('dispatch_whatsapp_automations',{p_limit:50,p_portal_origin:Deno.env.get('GUEST_PORTAL_URL')??null});if(dispatch.error)throw dispatch.error;
   }
+  const guestReplies=await db.rpc('dispatch_whatsapp_guest_replies',{p_limit:50,p_portal_origin:Deno.env.get('GUEST_PORTAL_URL')??null});if(guestReplies.error)throw guestReplies.error;
   // Claim one message at a time so a bounded invocation never abandons a whole batch.
   while(processed<20&&Date.now()-started<85000){
-   const jobs=await db.rpc('claim_outbound_messages_v4',{p_limit:1,p_allow_campaigns:false,p_allow_automations:automations});if(jobs.error)throw jobs.error;const job=jobs.data?.[0]as Job|undefined;if(!job)break;
+   const jobs=await db.rpc('claim_outbound_messages_v5',{p_limit:1,p_allow_campaigns:false,p_allow_automations:automations});if(jobs.error)throw jobs.error;const job=jobs.data?.[0]as Job|undefined;if(!job)break;
    const valid=await db.rpc('validate_outbound_claim',{p_id:job.message_id,p_attempt:job.attempt});
    if(valid.error)throw valid.error;
    if(!valid.data?.ok){await complete(job,null,new DeliveryError(valid.data?.error??'Message no longer eligible'));processed++;continue;}
