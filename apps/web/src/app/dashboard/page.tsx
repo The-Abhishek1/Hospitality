@@ -27,14 +27,15 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const { error: inviteError } = await db.rpc('accept_staff_invitations');
   const [tenantResult,propertyResult,membershipResult] = await Promise.all([
     db.from('tenants').select('id,name,status'),
-    db.from('properties').select('id,tenant_id,name,property_type,timezone,currency').order('name'),
+    db.from('properties').select('id,tenant_id,name,property_type,timezone,currency,archived_at').order('name'),
     db.from('tenant_memberships').select('tenant_id,role').eq('user_id',user.id),
   ]);
-  const properties = propertyResult.data ?? [], tenants = tenantResult.data ?? [];
+  if(params.property&&propertyResult.data?.some(p=>p.id===params.property&&p.archived_at))redirect(`/properties/${params.property}/lifecycle`);
+  const properties = (propertyResult.data ?? []).filter(p=>!p.archived_at), tenants = tenantResult.data ?? [];
   if (!tenantResult.error && !propertyResult.error && !tenants.length) redirect('/onboarding');
   if (tenantResult.error || propertyResult.error) return <main className="dash-fallback"><h1>We couldn’t load your workspace</h1><p>Please try again in a moment.</p><RefreshDashboard /></main>;
   if(!properties.length&&tenants.some(t=>t.status!=='active'))return <main className="dash-fallback"><span className="dash-wordmark">h· hospitality</span><h1>Your business account is unavailable.</h1><p>Hotel access is paused for {tenants.filter(t=>t.status!=='active').map(t=>t.name).join(', ')}. Contact platform support to review the account status.</p>{platformAdmin&&<Link href="/admin">Open platform console →</Link>}<form action={signOut}><button className="dash-button">Sign out</button></form></main>;
-  if (!properties.length) return <main className="dash-fallback"><span className="dash-wordmark">h· hospitality</span><h1>Your workspace is almost ready.</h1><p>No hotels are available to your account yet. Add your first property if you own this business, or ask your administrator to assign hotel access.</p><Link className="dash-button" href="/properties">Manage / add properties →</Link>{tenants.map(t => <Link key={t.id} href={`/t/${t.id}/team`}>View {t.name} team →</Link>)}<form action={signOut}><button className="dash-button">Sign out</button></form></main>;
+  if (!properties.length) return <main className="dash-fallback"><span className="dash-wordmark">h· hospitality</span><h1>Your workspace is almost ready.</h1><p>No active hotels are available to your account. Open Manage properties to add a hotel or reopen an archived one, or ask your administrator to assign access.</p><Link className="dash-button" href="/properties">Manage / add properties →</Link>{tenants.map(t => <Link key={t.id} href={`/t/${t.id}/team`}>View {t.name} team →</Link>)}<form action={signOut}><button className="dash-button">Sign out</button></form></main>;
   const property = properties.find(p => p.id===params.property) ?? properties[0];
   const tenant = tenants.find(t => t.id===property.tenant_id);
   const [{data,error},{data:workspacePermissions}]=await Promise.all([db.rpc('dashboard_snapshot',{p_property:property.id}),db.rpc('workspace_permissions',{p_property:property.id})]);

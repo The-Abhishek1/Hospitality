@@ -5,9 +5,9 @@ export async function WorkspaceLayout({children,propertyId,tenantId}: {children:
   const db=await createClient();
   const {data:{user}}=await db.auth.getUser();
   if(!user) redirect('/login');
-  const {data:properties,error}=await db.from('properties').select('id,tenant_id,name,timezone,currency').order('name');
+  const {data:properties,error}=await db.from('properties').select('id,tenant_id,name,timezone,currency,archived_at').order('name');
   if(error) throw new Error('Could not load hotel workspace. Please refresh.');
-  const property=(propertyId ? properties?.find(p=>p.id===propertyId && (!tenantId || p.tenant_id===tenantId)) : properties?.find(p=>p.tenant_id===tenantId)) as WorkspaceProperty|undefined;
+  const property=(propertyId ? properties?.find(p=>p.id===propertyId && (!tenantId || p.tenant_id===tenantId)) : properties?.find(p=>p.tenant_id===tenantId&&!p.archived_at)) as WorkspaceProperty|undefined;
   if(!property){if(tenantId) return <main className="dash-fallback">{children}</main>;notFound();}
   const [{data:tenant},{data:membership},{data:permissions,error:permissionError},{data:platformAdmin}]=await Promise.all([
     db.from('tenants').select('name').eq('id',property.tenant_id).maybeSingle(),

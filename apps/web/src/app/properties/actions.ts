@@ -38,3 +38,11 @@ export async function updateProperty(_:PropertyState,fd:FormData):Promise<Proper
  revalidatePath('/dashboard');revalidatePath('/properties');revalidatePath(`/p/${id}`,'layout');
  redirect(`/p/${id}/settings?saved=1`);
 }
+export async function changePropertyLifecycle(_:PropertyState,fd:FormData):Promise<PropertyState>{
+ const id=field(fd,'property'),version=Number(field(fd,'version')),operation=field(fd,'operation'),name=field(fd,'confirmation'),reason=field(fd,'reason');
+ if(!uuid(id)||!Number.isInteger(version)||version<1||!['archive','reopen'].includes(operation))return{error:'Refresh this page and review the hotel again.'};
+ if(reason.length<5||reason.length>1000||!name)return{error:'Enter a reason and type the hotel name to confirm.'};
+ const db=await createClient(),{error}=await db.rpc('set_property_archived',{p_property:id,p_version:version,p_archive:operation==='archive',p_name:name,p_reason:reason,p_external_closed:fd.get('external_closed')==='on'});
+ if(error)return{error:error.code==='53400'?'Your active property limit has been reached. Close another hotel or change your plan before reopening.':['22023','55000','40001','42501'].includes(error.code)?error.message:'Could not change the hotel status. Refresh and try again.'};
+ revalidatePath('/','layout');redirect(`/properties?view=${operation==='archive'?'archived':'active'}&property=${id}&notice=${operation==='archive'?'archived':'reopened'}`);
+}

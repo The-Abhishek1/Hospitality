@@ -1,0 +1,7 @@
+'use client';
+import{useActionState}from'react';
+import{changePropertyLifecycle,type PropertyState}from'@/app/properties/actions';
+export function PropertyLifecycleForm({id,name,version,archived,blocked}:{id:string;name:string;version:number;archived:boolean;blocked:boolean}){
+ const[state,action,pending]=useActionState(changePropertyLifecycle,{}as PropertyState);
+ return <form action={action} className="property-form"><input name="property" type="hidden" value={id}/><input name="version" type="hidden" value={version}/><input name="operation" type="hidden" value={archived?'reopen':'archive'}/>{state.error&&<p role="alert" className="property-error">{state.error}</p>}<fieldset disabled={pending||blocked}><legend>{archived?'Reopen this hotel':'Confirm closure'}</legend><label>Reason<textarea name="reason" required minLength={5} maxLength={1000} rows={3} placeholder={archived?'Why is this hotel reopening?':'For example, the hotel has permanently closed.'}/></label><label>Type <strong>{name}</strong> to confirm<input name="confirmation" required autoComplete="off" maxLength={120}/></label>{!archived&&<label className="property-lifecycle-check"><input name="external_closed" type="checkbox" required/>I have resolved this hotel’s bookings and closed sales in any OTA or booking websites. Pausing the channel manager does not close those listings.</label>}<button className="dash-button" disabled={pending||blocked}>{pending?'Saving…':archived?'Reopen property':'Close & archive property'}</button></fieldset></form>;
+}
