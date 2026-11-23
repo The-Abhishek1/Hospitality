@@ -27,7 +27,8 @@ export const automationStarters:Record<string,string>={
 };
 export function templateVariables(body:string){return [...new Set([...body.matchAll(/\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}/g)].map(m=>m[1]))];}
 export function previewAutomation(body:string,keys?:string[],parameters?:string[]){return body.replace(/\{\{\s*([a-z_][a-z0-9_]*|[1-9][0-9]*)\s*\}\}/g,(_whole,name)=>{const mapped=keys&&parameters?keys[parameters.indexOf(name)]:name;return sampleValues[mapped]??`[Choose ${name}]`;});}
-export function eventFields(event:string){return Object.keys(automationFields).filter(key=>
+const serviceFields=['guest_name','hotel_name','hotel_phone','portal_url','booking_reference','check_in','check_out','room_name','review_url'];
+export function eventFields(event:string){if(event==='service_reply')return serviceFields;return Object.keys(automationFields).filter(key=>
  (key!=='order_reference'||event.startsWith('order_'))&&(key!=='request_title'||event.startsWith('request_'))&&(key!=='invoice_number'||event==='invoice_issued')&&(key!=='review_url'||event==='review_request')&&(key!=='portal_url'||event!=='booking_cancelled'));
 }
 export function createTemplatePayload(input:{event:string;name:string;language:string;body:string}){
@@ -37,6 +38,7 @@ export function createTemplatePayload(input:{event:string;name:string;language:s
  if(!['en_US','en_GB','en','hi','ta','te','ml','kn','ar'].includes(input.language))throw Error('Choose a supported template language.');
  if(body.length<10||body.length>1024||variables.length>15||body.replace(/\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}/g,'').includes('{{'))throw Error('Use 10–1024 characters and named variables such as {{guest_name}}.');
  if(/^[^\p{L}\p{N}]*\{\{/u.test(body)||/\}\}[^\p{L}\p{N}]*$/u.test(body))throw Error('Meta requires written text before the first variable and after the last variable. Add a closing sentence after the final field; punctuation alone is not enough.');
+ if(input.event==='service_reply'&&variables.some(v=>!serviceFields.includes(v)))throw Error('Guest-menu templates support guest, hotel and stay fields. Payment, invoice and order details require an event-specific template.');
  if(variables.some(v=>!Object.hasOwn(automationFields,v)))throw Error('Use the supported guest and stay variables shown in the editor.');
  if(variables.includes('order_reference')&&!input.event.startsWith('order_')||variables.includes('request_title')&&!input.event.startsWith('request_')||variables.includes('invoice_number')&&input.event!=='invoice_issued'||variables.includes('review_url')&&!['review_request','service_reply'].includes(input.event)||variables.includes('portal_url')&&input.event==='booking_cancelled')throw Error('This template uses a field that is unavailable for the chosen event.');
  return{name,language:input.language,category:input.event==='review_request'?'MARKETING':'UTILITY',...(variables.length?{parameter_format:'NAMED'}:{}),components:[{type:'BODY',text:body,...(variables.length?{example:{body_text_named_params:variables.map(param_name=>({param_name,example:sampleValues[param_name]}))}}:{})}]};
