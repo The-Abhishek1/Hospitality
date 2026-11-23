@@ -1,13 +1,32 @@
 "use client";
 import Link from 'next/link';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 export type Stay = { id: string; full_name: string | null; room: string | null; status: string; check_in: string; check_out: string; source: string };
-export function TodayStays({ stays, day, property, canRead }: { stays: Stay[]; day: string; property: string; canRead: boolean }) {
-  const [tab,setTab] = useState('arrivals');
-  const tabs = [{id:'arrivals',label:'Arrivals'}, {id:'departures',label:'Departures'}, {id:'inhouse',label:'In house'}];
+const tabs = [{id:'arrivals',label:'Arrivals',view:'arrivals'}, {id:'departures',label:'Departures',view:'departures'}, {id:'inhouse',label:'In house',view:'in_house'}] as const;
+type Tab = typeof tabs[number]['id'];
+const stayDate = (day:string) => new Intl.DateTimeFormat('en',{day:'numeric',month:'short',timeZone:'UTC'}).format(new Date(`${day}T12:00:00Z`));
+
+export function TodayStays({ stays, day, property, canRead, totals }: { stays: Stay[]; day: string; property: string; canRead: boolean; totals: Record<Tab,number> }) {
+  const [tab,setTab] = useState<Tab>('arrivals');
+  const buttons=useRef<(HTMLButtonElement|null)[]>([]);
   const rows = stays.filter(s => tab === 'arrivals' ? s.check_in === day : tab === 'departures' ? s.check_out === day && s.status !== 'confirmed' : s.status === 'checked_in');
-  return <section className="dash-panel dash-stays"><div className="dash-panel-heading"><div><h2>The front desk</h2><p>Today’s guest movements, at a glance.</p></div>{canRead && <Link href={`/p/${property}/reservations`}>All reservations ↗</Link>}</div>
-    {!canRead ? <div className="dash-empty">Reservation details are available to staff with reservation access.</div> : <><div className="dash-tabs" role="tablist" aria-label="Guest movements">{tabs.map(t => <button key={t.id} role="tab" id={`tab-${t.id}`} aria-selected={tab===t.id} aria-controls="stay-panel" onClick={() => setTab(t.id)}>{t.label}</button>)}</div>
-    <div role="tabpanel" id="stay-panel" aria-labelledby={`tab-${tab}`} className="dash-table-wrap"><table><thead><tr><th>Guest</th><th>Room</th><th>Stay</th><th>Status</th><th><span className="sr-only">Open</span></th></tr></thead><tbody>{rows.slice(0,6).map(s => <tr key={s.id}><td><strong>{s.full_name || 'Guest'}</strong><small>{s.source === 'ota' ? 'Channel booking' : s.source.replace('_',' ')}</small></td><td>{s.room || '—'}</td><td className="dash-stay-dates">{s.check_in.slice(5)} <span>→</span> {s.check_out.slice(5)}</td><td><span className={`dash-badge ${s.status==='checked_in' ? 'green' : s.status==='checked_out' ? 'neutral' : 'gold'}`}>{s.status.replaceAll('_',' ')}</span></td><td><Link aria-label={`Open reservations for ${s.full_name || 'guest'}`} href={`/p/${property}/reservations/${s.id}`}>↗</Link></td></tr>)}</tbody></table>{rows.length===0 && <div className="dash-empty">{tab==='arrivals' ? 'No arrivals scheduled for today.' : tab==='departures' ? 'No departures due today.' : 'No guests are checked in right now.'}</div>}</div><div className="dash-panel-footer">Showing {Math.min(rows.length,6)} of {rows.length} loaded {tab==='inhouse' ? 'stays' : tab}. <Link href={`/p/${property}/reservations`}>Open front desk →</Link></div></>}
+  const view=tabs.find(t=>t.id===tab)!.view;
+  return <section className="overview-card overview-stays" aria-labelledby="overview-guests-title">
+    <div className="overview-card-heading"><h2 id="overview-guests-title">Today’s guests</h2>{canRead && <Link href={`/p/${property}/reservations`}>All reservations →</Link>}</div>
+    {!canRead ? <p className="overview-note">Reservation details require reservation access.</p> : <>
+      <div className="overview-tabs" role="tablist" aria-label="Today’s guests">{tabs.map((t,index) => <button key={t.id} type="button" ref={el=>{buttons.current[index]=el;}} role="tab" id={`tab-${t.id}`} tabIndex={tab===t.id?0:-1} aria-selected={tab===t.id} aria-controls="stay-panel" onClick={() => setTab(t.id)} onKeyDown={event=>{
+        const next=event.key==='ArrowRight'?(index+1)%tabs.length:event.key==='ArrowLeft'?(index+tabs.length-1)%tabs.length:event.key==='Home'?0:event.key==='End'?tabs.length-1:null;
+        if(next!==null){event.preventDefault();setTab(tabs[next].id);buttons.current[next]?.focus();}
+      }}>{t.label} <span>{totals[t.id]}</span></button>)}</div>
+      <div role="tabpanel" id="stay-panel" aria-labelledby={`tab-${tab}`} tabIndex={0}>
+        {rows.length > 0 ? <ul className="overview-guest-list">{rows.slice(0,6).map(s => <li key={s.id}><Link className="overview-guest" href={`/p/${property}/reservations/${s.id}`}>
+          <span className="overview-guest-name"><strong>{s.full_name || 'Guest'}</strong><small>{s.source === 'ota' ? 'Channel booking' : s.source.replaceAll('_',' ')}</small></span>
+          <span className="overview-guest-stay"><span>{s.room ? `Room ${s.room}` : 'Room unassigned'}</span><small>{stayDate(s.check_in)} – {stayDate(s.check_out)}</small></span>
+          <span className={`overview-status ${s.status}`}>{s.status==='confirmed'?'To check in':s.status.replaceAll('_',' ')}</span>
+          <span className="overview-guest-arrow" aria-hidden="true">→</span>
+        </Link></li>)}</ul> : <p className="overview-empty">{totals[tab]>0 ? 'Open the full list to see these guests.' : tab==='arrivals' ? 'No arrivals today.' : tab==='departures' ? 'No departures today.' : 'No guests are checked in.'}</p>}
+      </div>
+      {totals[tab] > 0 && <div className="overview-stays-footer"><span>{Math.min(rows.length,6)} of {totals[tab]} shown</span><Link href={`/p/${property}/reservations?view=${view}`}>View {tab==='inhouse'?'in-house guests':tab==='arrivals'?'arrivals':'departures'} →</Link></div>}
+    </>}
   </section>;
 }
