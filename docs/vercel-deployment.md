@@ -1,6 +1,6 @@
 # Deploy Hospitality to Vercel
 
-Deploy two projects from the same repository. Both connect to the existing hosted Supabase project; Vercel does not deploy database migrations, Edge Functions or continuous workers.
+The hotel app now includes focused guest task pages; see [guest tasks](guest-tasks.md). The existing guest-domain project is retained only to redirect previously sent links. New installations need the hotel app, with no separate guest UI deployment. Both existing projects can remain in the same repository; Vercel does not deploy database migrations, Edge Functions or continuous workers.
 
 | Vercel project | Root Directory | Framework | Output Directory |
 | --- | --- | --- | --- |

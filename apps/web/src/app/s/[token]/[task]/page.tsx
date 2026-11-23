@@ -1,0 +1,3 @@
+import GuestTaskPage,{GuestTaskUnavailable}from'@/components/guest-tasks/task-page';import{isGuestTask}from'@/lib/guest-tasks';
+export const dynamic='force-dynamic';export const metadata={title:'Secure hotel task · Hospitality',robots:{index:false,follow:false},referrer:'no-referrer' as const};
+export default async function Page({params,searchParams}:{params:Promise<{token:string;task:string}>;searchParams:Promise<Record<string,string|undefined>>}){const{token,task}=await params;if(!isGuestTask(task))return <GuestTaskUnavailable/>;return <GuestTaskPage token={token} task={task} searchParams={await searchParams}/>;}

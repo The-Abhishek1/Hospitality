@@ -1,5 +1,9 @@
 # Guest portal and documents
 
+**Current flow:** guest tasks now open individually in the hotel app. The old guest
+domain redirects existing links. See [focused guest tasks](guest-tasks.md). The
+full tabbed guest workspace described below is historical implementation context.
+
 **Identity model.** Guests are not Supabase users. Staff mint a link with `create_guest_portal_link` (shown once; only a SHA-256 hash is stored). The token is 244 random bits, expires after at most 30 days and never later than 3 days after check-out, and can be revoked. Every `portal_*` function derives the reservation from the token; the client never supplies a reservation, guest or property id. The portal holds only the anon key and calls these functions as `anon`; direct table access returns nothing.
 
 **Abuse limits.** 10 requests / 10 orders per hour per stay, 10 documents per stay, length limits on text. The advanced command endpoint also caps 100 successful submissions per stay per hour; retries return the original result. Missing: IP-based throttling and failed-token lockout (add at the edge/CDN); a leaked link grants access until it expires or is revoked, so send links only over WhatsApp/SMS to the guest's own number.

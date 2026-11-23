@@ -17,7 +17,7 @@ select is_empty(
 select is(
   (select array_agg(p.proname::text order by p.proname) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
    where n.nspname = 'public' and p.prokind = 'f' and has_function_privilege('anon', p.oid, 'execute')),
-  array['portal_command', 'portal_create_request', 'portal_get_stay', 'portal_place_order', 'portal_submit_feedback', 'portal_workspace'],
+  array['portal_command', 'portal_create_request', 'portal_get_stay', 'portal_place_order', 'portal_submit_feedback', 'portal_task_workspace', 'portal_workspace'],
   'anon can execute only the token-scoped portal functions');
 
 select is_empty(

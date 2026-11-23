@@ -1,0 +1,27 @@
+{
+  "date": "2026-11-23",
+  "checks": [
+    "Logged-out guest opens only food ordering inside the hotel app, with no tabs or staff navigation",
+    "Focused food page fits desktop and mobile",
+    "Food order submits without a staff login and stays on the focused food task",
+    "Bill link shows only charges, payments and activity",
+    "Document link shows only document upload and its review status",
+    "One-time document submission hides the upload form while verification is pending",
+    "Document endpoint also rejects a duplicate pending upload",
+    "Synthetic hotel rejection reopens only the replacement upload",
+    "Approved document task confirms completion without asking for another upload",
+    "Old query-style guest links resolve to the single food task",
+    "Old guest-domain/hash links redirect to the matching task in the hotel app",
+    "Guest task links retain no-store, no-referrer and no-index protection",
+    "Staff dashboard still requires authentication"
+  ],
+  "environment": "Isolated local QA apps and synthetic stay/document fixtures",
+  "database_assertions": 1462,
+  "new_database_assertions": 23,
+  "application_tests": 128,
+  "notes": [
+    "Browser tests used an empty staff session for guest pages.",
+    "Synthetic document-state transitions test the UI; they do not claim a production malware scan.",
+    "No live WhatsApp message or campaign was sent for this focused-page QA run."
+  ]
+}
