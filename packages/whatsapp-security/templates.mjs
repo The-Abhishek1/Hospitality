@@ -1,11 +1,11 @@
-// Only body parameters and a static footer are supported by the automation transport.
+// Event transport supports static text/image headers, footers and public URL buttons.
 export function normalizeTemplate(t){
  const components=Array.isArray(t.components)?t.components:[],raw=components.find(c=>c.type==='BODY')?.text,body=typeof raw==='string'?raw:'';
  const names=[...body.matchAll(/\{\{\s*([a-z_][a-z0-9_]*|[1-9][0-9]*)\s*\}\}/g)].map(x=>x[1]);
  const unique=[...new Set(names)],positional=unique.every(x=>/^\d+$/.test(x)),named=unique.every(x=>/^[a-z_]/.test(x));
  const ordered=positional?unique.sort((a,b)=>Number(a)-Number(b)):unique;
  const supported=typeof body==='string'&&body.length>0&&body.length<=1024&&unique.length<=15&&(positional||named)&&(!positional||ordered.every((x,i)=>Number(x)===i+1))&&
- components.filter(c=>c.type==='BODY').length===1&&components.every(c=>c.type==='BODY'||c.type==='FOOTER'&&!String(c.text??'').includes('{{'))&&
+ components.filter(c=>c.type==='BODY').length===1&&components.filter(c=>c.type==='HEADER').length<=1&&components.filter(c=>c.type==='FOOTER').length<=1&&components.filter(c=>c.type==='BUTTONS').length<=1&&components.every(c=>c.type==='BODY'||c.type==='HEADER'&&(c.format==='IMAGE'||c.format==='TEXT'&&!String(c.text??'').includes('{{'))||c.type==='FOOTER'&&!String(c.text??'').includes('{{')||c.type==='BUTTONS'&&Array.isArray(c.buttons)&&c.buttons.length<=2&&c.buttons.every(b=>b.type==='URL'&&typeof b.url==='string'&&b.url.startsWith('https://')&&!b.url.includes('/s/')&&!b.url.includes('{{')))&&
  !body.replace(/\{\{\s*([a-z_][a-z0-9_]*|[1-9][0-9]*)\s*\}\}/g,'').includes('{{')&&['UTILITY','MARKETING'].includes(t.category);
  const serviceFields=['guest_name','hotel_name','hotel_phone','portal_url','booking_reference','check_in','check_out','room_name','review_url'];
  const service_supported=body.length>0&&body.length<=1024&&named&&unique.every(x=>serviceFields.includes(x))&&components.filter(c=>c.type==='BODY').length===1&&components.filter(c=>c.type==='HEADER').length<=1&&components.filter(c=>c.type==='FOOTER').length<=1&&components.filter(c=>c.type==='BUTTONS').length<=1&&['UTILITY','MARKETING'].includes(t.category)&&!body.replace(/\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}/g,'').includes('{{')&&components.every(c=>c.type==='BODY'||c.type==='HEADER'&&(c.format==='IMAGE'||c.format==='TEXT'&&!String(c.text??'').includes('{{'))||c.type==='FOOTER'&&!String(c.text??'').includes('{{')||c.type==='BUTTONS'&&Array.isArray(c.buttons)&&c.buttons.length<=2&&c.buttons.every(b=>b.type==='URL'&&typeof b.url==='string'&&b.url.startsWith('https://')&&!b.url.includes('/s/')&&!b.url.includes('{{')));

@@ -1,5 +1,7 @@
 // Staff-facing: returns a 60-second signed URL for a guest document AFTER the database authorises and audits the access.
-// Called with the staff member's own JWT (default verify_jwt on). The service-role key never leaves this function.
+// Called with the staff member's JWT; deploy with gateway JWT verification ON.
+// PostgREST also validates the JWT and the scoped RPC checks permission and records access.
+// The service-role key never leaves this function.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const url = Deno.env.get("SUPABASE_URL")!;
@@ -17,5 +19,5 @@ Deno.serve(async (req) => {
 
   const signed = await admin.storage.from("guest-documents").createSignedUrl(path, 60);
   if (signed.error) return new Response(JSON.stringify({ error: "could not sign URL" }), { status: 500 });
-  return new Response(JSON.stringify({ url: signed.data.signedUrl, expires_in: 60 }), { headers: { "Content-Type": "application/json" } });
+  return new Response(JSON.stringify({ url: signed.data.signedUrl, expires_in: 60 }), { headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 });

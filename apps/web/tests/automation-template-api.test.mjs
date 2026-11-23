@@ -46,6 +46,11 @@ test('provider submission failures preserve the specific actionable template rej
 });
 
 test('explicit image template submission supplies the Meta upload handle and saves the template',async()=>{
- const h=harness(),result=await h.invoke({...payload,event:'service_reply',header_kind:'image',image_url:'https://hotel.example/sample.jpg',footer:'Hotel team',buttons:[{text:'Location',url:'https://maps.google.com/hotel'}]});
+ const h=harness(),result=await h.invoke({...payload,event:'service_reply',body:'Welcome {{guest_name}} to {{hotel_name}}. Contact reception for help.',header_kind:'image',image_url:'https://hotel.example/sample.jpg',footer:'Hotel team',buttons:[{text:'Location',url:'https://maps.google.com/hotel'}]});
  assert.equal(result.status,200);assert.equal(result.body.submitted,true);const post=h.calls.find(c=>c.method==='POST');const parts=JSON.parse(post.body.components);assert.equal(parts[0].example.header_handle[0],'sample-handle');assert.equal(parts.at(-1).buttons[0].url,'https://maps.google.com/hotel');
+});
+
+test('approved booking-welcome creation supports a hotel photo and static links too',async()=>{
+ const h=harness(),result=await h.invoke({...payload,event:'booking_confirmed',body:flow.automationStarters.booking_confirmed,header_kind:'image',image_url:'https://hotel.example/sample.jpg',buttons:[{text:'Directions',url:'https://hotel.example/location'}]});
+ assert.equal(result.status,200);const parts=JSON.parse(h.calls.find(c=>c.method==='POST').body.components);assert.equal(parts[0].example.header_handle[0],'sample-handle');assert.equal(parts.at(-1).buttons[0].text,'Directions');
 });

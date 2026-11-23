@@ -1,0 +1,47 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+set local search_path=public,extensions;
+select no_plan();
+insert into auth.users(id,email)values('e1000000-0000-0000-0000-000000000001','automation-owner@test.invalid'),('e1000000-0000-0000-0000-000000000002','automation-other@test.invalid');
+insert into public.tenants(id,name,slug)values('e2000000-0000-0000-0000-000000000001','Automation A','automation-a'),('e2000000-0000-0000-0000-000000000002','Automation B','automation-b');
+insert into public.properties(id,tenant_id,name,property_type)values('e3000000-0000-0000-0000-000000000001','e2000000-0000-0000-0000-000000000001','Hotel A','hotel'),('e3000000-0000-0000-0000-000000000002','e2000000-0000-0000-0000-000000000002','Hotel B','hotel');
+insert into public.tenant_memberships(tenant_id,user_id,role)values('e2000000-0000-0000-0000-000000000001','e1000000-0000-0000-0000-000000000001','owner'),('e2000000-0000-0000-0000-000000000002','e1000000-0000-0000-0000-000000000002','owner');
+insert into public.guests(id,tenant_id,full_name,phone)values('e4000000-0000-0000-0000-000000000001','e2000000-0000-0000-0000-000000000001','Asha','+919111111111');
+insert into public.reservations(id,tenant_id,property_id,guest_id,status,check_in,check_out,total_amount,currency,created_at)values('e5000000-0000-0000-0000-000000000001','e2000000-0000-0000-0000-000000000001','e3000000-0000-0000-0000-000000000001','e4000000-0000-0000-0000-000000000001','confirmed',current_date,current_date+2,5000,'INR',now()-interval '1 day');
+insert into public.whatsapp_connections(id,tenant_id,property_id,phone_number_id,waba_id,display_phone,credentials_ref)values('e6000000-0000-0000-0000-000000000001','e2000000-0000-0000-0000-000000000001','e3000000-0000-0000-0000-000000000001','12345678001','12345678002','+919999999999','automation-test');
+
+insert into public.guest_documents(id,tenant_id,property_id,reservation_id,guest_id,doc_type,storage_path,mime_type,size_bytes,status)values('ed000000-0000-0000-0000-000000000001','e2000000-0000-0000-0000-000000000001','e3000000-0000-0000-0000-000000000001','e5000000-0000-0000-0000-000000000001','e4000000-0000-0000-0000-000000000001','id_proof','scan-lease-fixture','application/pdf',10,'uploaded');
+select ok(not has_function_privilege('anon','public.claim_document_scans(integer)','execute'),'guests cannot claim private documents');
+select ok(not has_function_privilege('authenticated','public.complete_document_scan(uuid,uuid,text,text)','execute'),'staff cannot self-certify antivirus results');
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"e1000000-0000-0000-0000-000000000001","role":"authenticated"}',true);
+select throws_ok($$select public.authorize_document_access('ed000000-0000-0000-0000-000000000001','QA review')$$,'22023',null,'quarantined document cannot be opened');
+select throws_ok($$select public.review_document('ed000000-0000-0000-0000-000000000001','approved','QA review')$$,'22023',null,'staff cannot approve a pending scan');
+reset role;set local role service_role;
+select document_id,lease_id from public.claim_document_scans(1) \gset
+select is((select count(*)::integer from public.claim_document_scans(1)),0,'active scanner lease prevents a second worker claiming the file');
+select is(public.complete_document_scan(:'document_id',gen_random_uuid(),'clean'),false,'unrelated lease cannot release quarantine');
+select is(public.complete_document_scan(:'document_id',:'lease_id','error'),true,'scanner failure is acknowledged without release');
+select is((select count(*)::integer from public.claim_document_scans(1)),0,'scanner errors wait before retrying');
+reset role;
+select is((select status from public.guest_documents where id=:'document_id'),'uploaded','scan error keeps document quarantined');
+update private.document_scan_leases set retry_after=now()-interval '1 minute',expires_at=now()-interval '1 minute';
+set local role service_role;
+select document_id,lease_id as fresh_lease from public.claim_document_scans(1) \gset
+select is(public.complete_document_scan(:'document_id',:'lease_id','clean'),false,'old scanner acknowledgment cannot finish a newer lease');
+select is(public.complete_document_scan(:'document_id',:'fresh_lease','infected'),true,'explicit antivirus infection verdict is applied');
+select is(public.complete_document_scan(:'document_id',:'fresh_lease','clean'),false,'verdict cannot be replayed to turn an infected file clean');
+reset role;
+select is((select status from public.guest_documents where id=:'document_id'),'infected','unsafe file remains blocked');
+select ok(not has_function_privilege('authenticated','public.document_scanner_heartbeat(boolean)','execute'),'hotel staff cannot forge scanner health');
+set local role service_role;
+select public.document_scanner_heartbeat(true);
+reset role;
+select is((public.whatsapp_journey_workspace('e3000000-0000-0000-0000-000000000001')->'scanner'->>'ready')::boolean,true,'recent successful antivirus heartbeat is visible to the hotel');
+update private.document_scanner_health set checked_at=now()-interval '6 minutes';
+select is((public.whatsapp_journey_workspace('e3000000-0000-0000-0000-000000000001')->'scanner'->>'ready')::boolean,false,'stale worker heartbeat cannot claim scanner is online');
+set local role service_role;
+select public.document_scanner_heartbeat(false);
+reset role;
+select is((public.whatsapp_journey_workspace('e3000000-0000-0000-0000-000000000001')->'scanner'->>'ready')::boolean,false,'failed antivirus check is visible instead of approving pending documents');
+select *from finish();rollback;

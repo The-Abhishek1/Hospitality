@@ -1,0 +1,46 @@
+{
+  "date": "2026-11-23",
+  "timezone": "Asia/Calcutta",
+  "scope": "WhatsApp-first guest journey and automatic booking welcome",
+  "database": {"isolated_assertions_passed": 1393, "failed_files": [], "migrations": "91–96"},
+  "application_tests": 117,
+  "whatsapp_worker_tests": 14,
+  "document_scanner_tests": 5,
+  "production_builds_passed": ["hotel app", "guest helper"],
+  "browser_checks": [
+    "Owner journey configuration and document-count persistence",
+    "Reservation document-readiness and staff-review UI",
+    "Mobile helper has documents, food and bill only, a connected-sender WhatsApp return link, and no horizontal overflow",
+    "Availability and explicit returning-guest selection preserve canonical profile fields"
+  ],
+  "real_antivirus": {
+    "daemon": "ClamAV",
+    "harmless_sample": "clean",
+    "standard_EICAR_test_sample": "infected",
+    "guest_identity_files_used": false,
+    "end_to_end_passed": [
+      "Guest upload endpoint",
+      "Signed private storage upload",
+      "Scanner claim, download, real antivirus verdict and acknowledgment",
+      "Audited expiring staff document link",
+      "Staff review of harmless OTHER-type QA asset",
+      "OTHER-type asset cannot satisfy the identity check-in gate"
+    ]
+  },
+  "hosted": {
+    "migrations_applied": "91–96",
+    "functions_deployed": ["whatsapp-worker", "guest-documents", "document-access"],
+    "document_access_gateway_jwt": true,
+    "owner_api_and_returning_guest_choices_verified": true,
+    "anonymous_access_denied": true,
+    "hotels_automatically_enabled": false,
+    "antivirus_worker_running": false,
+    "live_whatsapp_messages_sent_in_this_change": false
+  },
+  "activation_requirements": [
+    "Run services/document-scanner on a persistent private server; Vercel web deployment does not start this daemon",
+    "Enable the selected hotel's Guest journey",
+    "Create, sync and assign approved revised event templates; existing approved bodies are preserved",
+    "Record genuine prior contact permission for the booking welcome; the guest chooses ongoing updates and optional offers in WhatsApp"
+  ]
+}

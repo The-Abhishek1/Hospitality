@@ -8,7 +8,7 @@ export type BookingState={error?:string;input?:Record<string,string>};
 export type QuoteState={error?:string;quote?:Quote;key?:string;input?:Record<string,string>};
 export type OperationState={error?:string;success?:string};
 const text=(fd:FormData,key:string)=>String(fd.get(key)??'').trim();
-const inputSnapshot=(fd:FormData)=>Object.fromEntries(['name','email','phone','check_in','check_out','adults','children','type_id','rate_id','unit_id','notes','source'].filter(k=>fd.has(k)).map(k=>[k,text(fd,k).slice(0,2000)]));
+const inputSnapshot=(fd:FormData)=>Object.fromEntries(['guest_id','name','email','phone','check_in','check_out','adults','children','type_id','rate_id','unit_id','notes','source'].filter(k=>fd.has(k)).map(k=>[k,text(fd,k).slice(0,2000)]));
 const bookingError=(error:string,fd:FormData):BookingState=>({error,input:inputSnapshot(fd)});
 function args(fd:FormData){return {p_property:text(fd,'pid'),p_type:text(fd,'type_id'),p_in:text(fd,'check_in'),p_out:text(fd,'check_out'),p_adults:Number(fd.get('adults')),p_children:Number(fd.get('children')),p_rate:text(fd,'rate_id')||null};}
 function validation(a:ReturnType<typeof args>){
@@ -33,10 +33,10 @@ export async function checkAvailability(_:QuoteState,fd:FormData):Promise<QuoteS
 export async function createBooking(_:BookingState,fd:FormData):Promise<BookingState>{
  const a=args(fd),error=validation(a);if(error)return bookingError(error,fd);
  const name=text(fd,'name'),phone=text(fd,'phone'),email=text(fd,'email'),request=text(fd,'request'),unit=text(fd,'unit_id');
- if(name.length<2||name.length>120||phone.length>40||(email&&!validEmail(email)))return bookingError('Check the guest name, phone, and email.',fd);
- if(!validId(request)||(unit&&!validId(unit)))return bookingError('Reload this booking form and try again.',fd);
+ if(!text(fd,'guest_id')&&(name.length<2||name.length>120||phone.length>40||(email&&!validEmail(email))))return bookingError('Check the guest name, phone, and email.',fd);
+ if(!validId(request)||(text(fd,'guest_id')&&!validId(text(fd,'guest_id')))||(unit&&!validId(unit)))return bookingError('Reload this booking form and try again.',fd);
  if(!text(fd,'quote')||!Number.isFinite(Number(fd.get('quote'))))return bookingError('Check availability before confirming the booking.',fd);
- const db=await createClient();const {data,error:e}=await db.rpc('frontdesk_create_reviewed',{...a,p_currency:text(fd,'currency'),p_request:request,p_guest_name:name,p_phone:phone,p_email:email,p_unit:unit||null,p_notes:text(fd,'notes'),p_source:text(fd,'source'),p_quote:Number(fd.get('quote'))});
+ const db=await createClient(),common={...a,p_contact_permission:fd.get('contact_permission')==='on',p_contact_evidence:text(fd,'contact_evidence'),p_currency:text(fd,'currency'),p_request:request,p_unit:unit||null,p_notes:text(fd,'notes'),p_source:text(fd,'source'),p_quote:Number(fd.get('quote'))};const {data,error:e}=text(fd,'guest_id')?await db.rpc('frontdesk_create_existing_guest',{...common,p_guest:text(fd,'guest_id')}):await db.rpc('frontdesk_create_whatsapp',{...common,p_guest_name:name,p_phone:phone,p_email:email});
  if(e)return bookingError(message(e),fd);
  revalidatePath('/dashboard');revalidatePath(`/p/${a.p_property}/reservations`);
  redirect(`/p/${a.p_property}/reservations/${data}?notice=created`);

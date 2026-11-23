@@ -27,3 +27,7 @@ verify_jwt = false
 verify_jwt = false
 [functions.whatsapp-worker]
 verify_jwt = false # Server-to-server only; requires the dedicated X-Worker-Secret.
+
+# Staff identity documents require a verified staff JWT and the audited permission RPC.
+[functions.document-access]
+verify_jwt = true

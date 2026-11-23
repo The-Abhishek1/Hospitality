@@ -1,5 +1,7 @@
 # Live WhatsApp guest menu
 
+For the WhatsApp-first booking-to-checkout flow, use [Guest journey setup](whatsapp-guest-journey.md). The legacy portal-led behavior below applies while Guest journey is disabled. Event templates now also support approved text/photo headers and static public URL buttons.
+
 Owners open **WhatsApp Automation → Guest menu & links**. Configure the greeting, categories and template-backed services, then save with automatic replies enabled. Up to 30 categories and 100 services are supported, with automatic paging inside each WhatsApp message. A connected number is required for live delivery. Saving a disabled menu prepares configuration without activating automatic replies. Test by sending a **new** Hi or MENU to that hotel's connected number. New guest messages and manual rich replies wake the cloud worker, throttled to one wake per five seconds. The existing minute cron is the fallback. Nothing backfills old greetings.
 
 Guests receive a real WhatsApp interactive list. Selecting an item sends a CTA link, a photo gallery, a private guest page or a reception handoff acknowledgment. Supported greetings include Hi, Hello, Hey and MENU; commands are case insensitive and tolerate trailing punctuation. After a delivered menu, numbers 1–10 also select the corresponding current option. Repeated greetings within 30 seconds are suppressed. Other incoming text remains for staff; this is a deterministic menu, not a general AI chatbot.

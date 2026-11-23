@@ -23,7 +23,7 @@ test('reject malformed names, unsupported events/languages, overlong or invalid 
 });
 test('reject event-specific fields when the event cannot provide them',()=>{
  for(const key of ['order_reference','request_title','invoice_number','review_url']){assert.ok(!eventFields('checked_in').includes(key));assert.throws(()=>createTemplatePayload({...input,body:`Hello {{guest_name}}, your update: {{${key}}}.`}));}
- assert.throws(()=>createTemplatePayload({...input,event:'booking_cancelled',body:automationStarters.checked_in}));
+ assert.throws(()=>createTemplatePayload({...input,event:'booking_cancelled',body:'Hello {{guest_name}}, view your stay: {{portal_url}}. Contact reception.'}));
 });
 test('static templates need no examples; repeated named fields need only one example',()=>{
  assert.equal(createTemplatePayload({...input,body:'Your check-in has been confirmed. Welcome to our hotel.'}).parameter_format,undefined);

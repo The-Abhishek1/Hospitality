@@ -2,7 +2,7 @@ import{test}from'node:test';import assert from'node:assert/strict';import{normal
 const template={id:'1',name:'stay_update',language:'en_US',category:'UTILITY',status:'APPROVED',components:[{type:'BODY',text:'Hello {{1}} from {{2}}. {{1}}'}]};
 test('parameter ordering and unsupported provider components',()=>{
  assert.deepEqual(normalizeTemplate(template).parameter_names,['1','2']);assert.equal(normalizeTemplate(template).supported,true);
- for(const extra of [{type:'HEADER',format:'IMAGE'},{type:'BUTTONS',buttons:[]}])assert.equal(normalizeTemplate({...template,components:[...template.components,extra]}).supported,false);
+ for(const extra of [{type:'HEADER',format:'VIDEO'},{type:'BUTTONS',buttons:[{type:'QUICK_REPLY',text:'Unsupported'}]}])assert.equal(normalizeTemplate({...template,components:[...template.components,extra]}).supported,false);
  for(const body of ['Hello {{2}}','Hello {{1}} {{guest}}','Hello {{0}}','Hello {{broken'])assert.equal(normalizeTemplate({...template,components:[{type:'BODY',text:body}]}).supported,false);
  assert.deepEqual(normalizeTemplate({...template,components:[{type:'BODY',text:'Hello {{guest_name}} from {{hotel_name}}'}]}).parameter_names,['guest_name','hotel_name']);
 });
@@ -12,8 +12,8 @@ test('sync completes all pages before returning and never accepts a partial dire
  await assert.rejects(()=>fetchTemplates('123','secret','v27.0',async()=>new Response(JSON.stringify({data:[template],paging:{next:'bad'}}))));
  await assert.rejects(()=>fetchTemplates('123','secret','v27.0',async()=>new Response(JSON.stringify({error:{code:190}}),{status:400})));
 });
-test('rich service support is separate from body-only event automation support',()=>{
- const body={...template,components:[{type:'BODY',text:'Our pool is open from 7am to 8pm.'},{type:'HEADER',format:'IMAGE'},{type:'BUTTONS',buttons:[{type:'URL',text:'Directions',url:'https://maps.google.com/hotel'}]}]};const t=normalizeTemplate(body);assert.equal(t.supported,false);assert.equal(t.service_supported,true);
+test('rich event headers and links share delivery support while service fields stay constrained',()=>{
+ const body={...template,components:[{type:'BODY',text:'Our pool is open from 7am to 8pm.'},{type:'HEADER',format:'IMAGE'},{type:'BUTTONS',buttons:[{type:'URL',text:'Directions',url:'https://maps.google.com/hotel'}]}]};const t=normalizeTemplate(body);assert.equal(t.supported,true);assert.equal(t.service_supported,true);
  assert.equal(normalizeTemplate({...body,components:[...body.components,{type:'CAROUSEL'}]}).service_supported,false);
  assert.equal(normalizeTemplate({...body,components:[{type:'BODY',text:'Your total is {{amount}}.'}]}).service_supported,false);
 });

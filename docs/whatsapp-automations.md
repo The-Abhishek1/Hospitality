@@ -1,5 +1,7 @@
 # Event-driven guest messaging
 
+For the WhatsApp-first booking-to-checkout flow, use [Guest journey setup](whatsapp-guest-journey.md). The legacy portal-led behavior below applies while Guest journey is disabled. Event templates now also support approved text/photo headers and static public URL buttons.
+
 Hotel administrators open **WhatsApp Automation** from the management sidebar or **Templates & automations** in Inbox. This is the live event workspace. Offline message drafts, hotel links and guest menu planning are available under its Advanced section; an offline draft never approves a template or enables sending.
 
 ## Hotel setup

@@ -1,0 +1,18 @@
+services:
+  antivirus:
+    image: clamav/clamav:stable
+    restart: unless-stopped
+    volumes:
+      - signatures:/var/lib/clamav
+    # No published ports: identity files stay on the private container network.
+  scanner:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      CLAMAV_HOST: antivirus
+      CLAMAV_PORT: "3310"
+    depends_on:
+      - antivirus
+volumes:
+  signatures:
