@@ -1,0 +1,7 @@
+'use client';
+import{useState}from'react';
+export function FoodPhoto({pid,id,url,onChange,onBusy}:{pid:string;id:string;url:string;onChange:(id:string,url:string)=>void;onBusy:(busy:boolean)=>void}){
+ const[busy,setBusy]=useState(false),[error,setError]=useState('');
+ async function upload(file:File){setBusy(true);onBusy(true);setError('');try{const fd=new FormData();fd.set('photo',file);const response=await fetch(`/api/menu/${pid}/photos`,{method:'POST',body:fd}),data=await response.json();if(!response.ok)throw Error(data.error);onChange(data.photo.id,data.photo.url);}catch(e){setError(e instanceof Error?e.message:'Upload failed.');}finally{setBusy(false);onBusy(false);}}
+ return <div className="food-photo-editor"><input type="hidden" name="image_id" value={id}/><div className="food-photo-preview">{url?<img src={url} alt="Menu item preview"/>:<span aria-hidden="true">▧</span>}</div><div><strong>Food photo</strong><p>Shown on the staff menu and guest food-ordering page.</p><label className="dash-button dash-secondary food-photo-upload">{busy?'Uploading…':url?'Replace photo':'Upload food photo'}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={e=>{const file=e.target.files?.[0];e.target.value='';if(file)void upload(file);}}/></label>{url&&<button type="button" className="food-text-button" disabled={busy} onClick={()=>onChange('','')}>Remove photo</button>}<small>JPEG, PNG or WebP · up to 4 MB</small>{error&&<p className="sr-alert error" role="alert">{error}</p>}</div></div>;
+}

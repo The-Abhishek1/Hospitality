@@ -1,5 +1,6 @@
 "use server";
 import{redirect}from 'next/navigation';import{revalidatePath}from 'next/cache';import{createClient}from '@/lib/supabase/server';import{validId}from '@/lib/reservations';import{inventoryMoney}from '@/lib/inventory';import{parseAmount,paymentMethods}from '@/lib/billing';import{type OrderSetup,type OrderStay}from '@/lib/orders';
+import{foodTypes,foodServices,foodSizePayload}from'@/lib/food-menu';
 export type OrderState={error?:string;fields?:Record<string,string>;selected?:OrderStay|null};
 export type OrderSearchState={error?:string;data?:OrderSetup;query?:string};
 const f=(fd:FormData,k:string)=>String(fd.get(k)??'').trim();
@@ -14,7 +15,7 @@ export async function createOrder(_:OrderState,fd:FormData):Promise<OrderState>{
  if(!validId(pid)||!validId(request)||!['room_service','restaurant'].includes(kind)||reservation&&!validId(reservation)||kind==='room_service'&&!reservation)return fail('Choose an in-house stay for room service.');
  if(f(fd,'table').length>40||f(fd,'notes').length>2000||!['normal','high','urgent'].includes(f(fd,'priority')))return fail('Check the priority, table label (up to 40 characters), and instructions (up to 2000).');
  const target=f(fd,'target_minutes');if(target&&(!/^\d{1,4}$/.test(target)||Number(target)<1||Number(target)>1440))return fail('Use a response target of 1–1440 whole minutes, or leave it blank.');
- const items:{menu_item_id:string;quantity:number;version:number}[]=[];for(const[k,v]of fd.entries())if(k.startsWith('qty_')&&String(v).trim()!==''&&String(v)!=='0'){const id=k.slice(4),qty=String(v);if(!validId(id)||!/^\d{1,2}$/.test(qty)||Number(qty)<1||Number(qty)>50||!/^\d+$/.test(f(fd,'version_'+id)))return fail('Use whole item quantities of 1–50.');items.push({menu_item_id:id,quantity:Number(qty),version:Number(f(fd,'version_'+id))});}
+ const items:{menu_item_id:string;quantity:number;version:number;variant_id?:string;variant_version?:number}[]=[];for(const[k,v]of fd.entries())if(k.startsWith('qty_')&&String(v).trim()!==''&&String(v)!=='0'){const id=k.slice(4),qty=String(v);if(!validId(id)||!/^\d{1,2}$/.test(qty)||Number(qty)<1||Number(qty)>50||!/^\d+$/.test(f(fd,'version_'+id)))return fail('Use whole item quantities of 1–50.');const menuId=f(fd,'menu_'+id)||id,variant=f(fd,'variant_'+id),variantVersion=f(fd,'variant_version_'+id);if(!validId(menuId)||variant&&(!validId(variant)||!/^\d+$/.test(variantVersion)))return fail('Review the selected item size.');items.push({menu_item_id:menuId,quantity:Number(qty),version:Number(f(fd,'version_'+id)),...(variant?{variant_id:variant,variant_version:Number(variantVersion)}:{})});}
  if(!items.length||items.length>30)return fail('Choose 1–30 different menu items.');
  const quote=inventoryMoney(f(fd,'quote'));if(!quote)return fail('Review the cart total before placing the order.');
  const{data,error}=await db.rpc('orders_create',{p_property:pid,p_request:request,p_details:{kind,reservation_id:reservation||null,table:f(fd,'table'),notes:f(fd,'notes'),priority:f(fd,'priority'),target_minutes:target,items,quote,expected_currency:f(fd,'currency')}});if(error)return fail(message(error));refresh(pid);redirect(`/p/${pid}/orders/${data}?notice=created`);
@@ -33,7 +34,18 @@ export async function orderOperation(_:OrderState,fd:FormData):Promise<OrderStat
 export async function saveOrderMenu(_:OrderState,fd:FormData):Promise<OrderState>{
  const pid=f(fd,'pid'),id=f(fd,'id'),request=f(fd,'request'),version=Number(f(fd,'version')),fields=snapshot(fd);fields.active=f(fd,'active')==='yes'?'true':'false';const fail=(error:string)=>({error,fields});
  if(!validId(pid)||!validId(request)||id&&(!validId(id)||!Number.isInteger(version)||version<1))return fail('Reload this menu form.');
- const price=inventoryMoney(f(fd,'price')),tax=inventoryMoney(f(fd,'tax'));if(!price||!tax||Number(tax)>100||f(fd,'name').length<2||f(fd,'name').length>120||f(fd,'category').length<2||f(fd,'category').length>80||f(fd,'description').length>800||f(fd,'dietary_notes').length>200)return fail('Check the name, category, price, tax (0–100%), description and dietary notes.');
+ const diet=f(fd,'dietary_type'),scope=f(fd,'service_scope'),mode=f(fd,'pricing_mode'),image=f(fd,'image_id');
+ if(!Object.hasOwn(foodTypes,diet)||!Object.hasOwn(foodServices,scope)||!['single','sizes'].includes(mode)||image&&!validId(image))return fail('Choose the food type, service destination, pricing and food photo.');
+ let sizes:ReturnType<typeof foodSizePayload>=[];try{if(mode==='sizes')sizes=foodSizePayload(f(fd,'variants'));}catch(e){return fail(e instanceof Error?e.message:'Check the size prices.');}
+ const price=inventoryMoney(mode==='sizes'?sizes.reduce((a,b)=>Number(a.price)<=Number(b.price)?a:b).price:f(fd,'price')),tax=inventoryMoney(f(fd,'tax'));
+ if(!price||!tax||Number(tax)>100||f(fd,'name').length<2||f(fd,'name').length>120||f(fd,'category').length<2||f(fd,'category').length>80||f(fd,'description').length>800||f(fd,'dietary_notes').length>200)return fail('Check the name, category, prices, tax (0–100%), description and dietary notes.');
  const prep=f(fd,'prep_minutes');if(prep&&(!/^\d{1,3}$/.test(prep)||Number(prep)<1||Number(prep)>240))return fail('Use a preparation target of 1–240 whole minutes, or leave it blank.');
- const db=await createClient(),{data,error}=await db.rpc('order_menu_save',{p_property:pid,p_request:request,p_id:id||null,p_version:id?version:null,p_details:{name:f(fd,'name'),category:f(fd,'category'),description:f(fd,'description'),dietary_notes:f(fd,'dietary_notes'),price,tax,prep_minutes:prep,active:fields.active==='true'}});if(error)return fail(message(error));refresh(pid);redirect(`/p/${pid}/orders/menu/${data}?notice=saved`);
+ const db=await createClient(),{data,error}=await db.rpc('order_menu_save',{p_property:pid,p_request:request,p_id:id||null,p_version:id?version:null,p_details:{name:f(fd,'name'),category:f(fd,'category'),description:f(fd,'description'),dietary_notes:f(fd,'dietary_notes'),price,tax,prep_minutes:prep,active:fields.active==='true',dietary_type:diet,service_scope:scope,pricing_mode:mode,image_id:image||null,variants:mode==='sizes'?sizes:[]}});
+ if(error)return fail(message(error));refresh(pid);redirect(`/p/${pid}/orders/menu?notice=saved`);
+}
+export async function menuLifecycle(_:OrderState,fd:FormData):Promise<OrderState>{
+ const pid=f(fd,'pid'),id=f(fd,'id'),request=f(fd,'request'),version=Number(f(fd,'version')),op=f(fd,'operation');
+ if(!validId(pid)||!validId(id)||!validId(request)||!Number.isInteger(version)||!['delete','restore'].includes(op)||f(fd,'confirm')!=='yes')return{error:'Confirm this menu action before continuing.'};
+ const db=await createClient(),{error}=await db.rpc('order_menu_lifecycle',{p_property:pid,p_id:id,p_version:version,p_request:request,p_action:op});
+ if(error)return{error:message(error)};refresh(pid);redirect(`/p/${pid}/orders/menu?state=${op==='delete'?'active':'inactive'}&notice=${op==='delete'?'deleted':'restored'}`);
 }

@@ -90,6 +90,7 @@ finally:
     delete from public.folio_items where tenant_id='{tenant}';
     delete from public.folios where tenant_id='{tenant}';
     delete from public.orders where property_id='{prop}';
+    delete from public.reservations where property_id='{prop}';
     delete from public.tenants where id='{tenant}';
     delete from auth.users where id='{owner}';commit;""")
     assert sql(f"select count(*)from public.tenants where id='{tenant}'").stdout.strip()=='0'

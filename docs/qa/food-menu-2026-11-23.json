@@ -1,0 +1,47 @@
+{
+  "date": "2026-11-23",
+  "environment": "Local Supabase and isolated browser QA apps; synthetic hotel/stay/menu data only",
+  "checks": [
+    "Create item with uploaded food photo, vegetarian classification, two priced sizes and both destinations",
+    "Edit form retains photo, sizes and dietary classification",
+    "Menu editor fits mobile viewport",
+    "Staff order uses selected Full size price and tax (2 \u00d7 180 + 5% = 378)",
+    "Guest sees food photo and only room-service-eligible dishes",
+    "Guest can order two portions of the same dish with correct cart total",
+    "Guest dining page fits mobile viewport",
+    "Guest submits portions through the real kitchen order flow",
+    "Delete action removes food item from active catalog",
+    "Food deletion preserves ordered portion names and bill amounts",
+    "Restore returns item as unavailable for review",
+    "Catalog limits display to ten rows with correct next-page results",
+    "Compact catalog has no horizontal overflow on mobile"
+  ],
+  "database": {
+    "assertions": 1439,
+    "new_food_assertions": 46,
+    "failed_files": 0
+  },
+  "application_tests": {
+    "passed": 124,
+    "failed": 0
+  },
+  "builds": [
+    "Hotel production build",
+    "Guest production build"
+  ],
+  "limits": [
+    "Food photo: JPEG, PNG or WebP, up to 4 MB",
+    "Up to 12 priced portions per dish",
+    "Management pages: 10 default, 20 or 50 optional rows",
+    "Guest food pages: 10 dishes",
+    "No live guest notifications or campaigns sent for this food QA run"
+  ],
+  "concurrency_checks": [
+    "8 duplicate orders produce one order",
+    "8 duplicate payments produce one payment",
+    "Competing refunds stay within original payment",
+    "4 menu-edit/order-create races preserve price snapshots or reject stale quotes",
+    "8 duplicate serving submissions post one folio charge",
+    "Serving/invoice race preserves ledger balance"
+  ]
+}
