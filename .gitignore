@@ -21,3 +21,6 @@ configure.txt
 
 # Isolated guest-portal production artifacts
 .next-production/
+
+# Temporary CLI metadata for targeted hosted Auth configuration
+infrastructure/hosted-auth/supabase/.temp/

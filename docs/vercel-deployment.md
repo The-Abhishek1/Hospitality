@@ -87,3 +87,27 @@ Build: `npm ci --prefix services/notification-worker` then `npm run build --pref
 Sign in, select the hotel and check dashboard/Inbox navigation. Confirm the guest portal opens a legitimate reservation-scoped link, without publishing the link in a repository. After migration 77 and Meta allowlisting, create a separate test hotel for a second number, connect with Meta, send a fresh inbound message and reply from Inbox. Verify disconnect/reconnect retains history and isolates the hotels. A successful Vercel build alone does not establish any provider approval or message-delivery result.
 
 References: [Vercel monorepo settings](https://vercel.com/docs/monorepos/monorepo-faq), [Next.js file tracing](https://nextjs.org/docs/pages/api-reference/config/next-config-js/output), [Meta Embedded Signup](https://developers.facebook.com/documentation/business-messaging/whatsapp/embedded-signup/implementation).
+
+## Hosted confirmation-link configuration
+
+The hosted Hospitality Auth URL settings are tracked separately in
+`infrastructure/hosted-auth/supabase/config.toml`. This file declares only the
+production Site URL and the hotel app's `/auth/confirm` callbacks, including the
+`next` query parameter used by sign-up, confirmation resend and password recovery.
+The main `supabase/config.toml` retains the local development URLs.
+
+With Supabase CLI v3, preview and apply this targeted configuration using:
+
+```bash
+supabase config diff --remote=qqqsjvzserjyggcezvac --workdir=infrastructure/hosted-auth
+supabase config push --remote=qqqsjvzserjyggcezvac --workdir=infrastructure/hosted-auth --yes
+```
+
+Confirm that only `auth.site_url` and `auth.additional_redirect_urls` are updated.
+Undeclared settings are preserved. Do not push the root local-development Auth
+configuration to production: its localhost URLs and local confirmation setting
+are intended for the local stack.
+
+After correcting hosted URLs, request a fresh confirmation or recovery email.
+Previously delivered emails retain the links they were generated with. See
+[Supabase redirect configuration](https://supabase.com/docs/guides/auth/redirect-urls).

@@ -1,0 +1,10 @@
+# Hosted Auth URLs only. Keep local development settings in supabase/config.toml.
+# Undeclared settings are preserved by Supabase CLI v3 config push.
+project_id = "hospitality-hosted-auth"
+
+[auth]
+site_url = "https://xcloak-hospitality.vercel.app"
+additional_redirect_urls = [
+  "https://xcloak-hospitality.vercel.app/auth/confirm",
+  "https://xcloak-hospitality.vercel.app/auth/confirm?next=**"
+]

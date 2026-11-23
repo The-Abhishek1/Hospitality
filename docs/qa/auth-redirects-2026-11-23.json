@@ -1,0 +1,15 @@
+{
+  "date": "2026-11-23",
+  "scope": "Hosted Supabase Auth URL configuration; no emails sent and no valid user tokens consumed",
+  "site_url_before": "http://localhost:3000",
+  "site_url_after": "https://xcloak-hospitality.vercel.app",
+  "email_confirmation_still_enabled": true,
+  "checks": [
+    "Signup confirmation callback retains production /auth/confirm and next=/dashboard",
+    "Password recovery callback retains production /auth/confirm and next=/reset-password",
+    "Hotel return path and its query string are retained",
+    "An unapproved external redirect falls back to the production Site URL",
+    "Read-back config diff has no declared URL changes remaining"
+  ],
+  "limitation": "Redirect behavior checked with intentionally invalid diagnostic tokens; SMTP delivery and a fresh real-user confirmation were not exercised."
+}
