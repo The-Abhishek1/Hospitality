@@ -1,4 +1,4 @@
-// Scheduled, authenticated queue consumer. No browser invocation and no campaign expansion.
+// Scheduled, authenticated queue consumer. Campaign expansion requires an explicit server flag.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { decryptToken } from '../_shared/whatsapp-crypto.js';
 import { fetchTemplates } from '../_shared/whatsapp-templates.js';
@@ -11,6 +11,7 @@ Deno.serve(async req=>{
  const db=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,{auth:{persistSession:false,autoRefreshToken:false}}),started=Date.now();
  const graph=Deno.env.get('WHATSAPP_GRAPH_URL')??'https://graph.facebook.com/v27.0';
  const automations=Deno.env.get('WHATSAPP_AUTOMATIONS_ENABLED')==='true';
+ const campaigns=Deno.env.get('WHATSAPP_CAMPAIGNS_ENABLED')==='true';
  const manual:Record<string,string>=JSON.parse(Deno.env.get('WHATSAPP_TOKENS_JSON')??'{}');
  const credential=async(ref:string)=>{if(!ref.startsWith('managed:'))return manual[ref];const r=await db.rpc('whatsapp_delivery_credential',{p_reference:ref});if(r.error||!r.data)throw Error('Authorization unavailable');return decryptToken(r.data,ref,Deno.env.get('WHATSAPP_ENCRYPTION_KEY'));};
  type Job=SendJob&{message_id:string;attempt:number};
@@ -28,9 +29,10 @@ Deno.serve(async req=>{
    const dispatch=await db.rpc('dispatch_whatsapp_automations',{p_limit:50,p_portal_origin:Deno.env.get('GUEST_PORTAL_URL')??null});if(dispatch.error)throw dispatch.error;
   }
   const guestReplies=await db.rpc('dispatch_whatsapp_guest_replies',{p_limit:50,p_portal_origin:Deno.env.get('GUEST_PORTAL_URL')??null});if(guestReplies.error)throw guestReplies.error;
+  if(campaigns){const dispatch=await db.rpc('dispatch_whatsapp_campaigns',{p_limit:50});if(dispatch.error)throw dispatch.error;}
   // Claim one message at a time so a bounded invocation never abandons a whole batch.
   while(processed<20&&Date.now()-started<85000){
-   const jobs=await db.rpc('claim_outbound_messages_v5',{p_limit:1,p_allow_campaigns:false,p_allow_automations:automations});if(jobs.error)throw jobs.error;const job=jobs.data?.[0]as Job|undefined;if(!job)break;
+   const jobs=await db.rpc('claim_outbound_messages_v5',{p_limit:1,p_allow_campaigns:campaigns,p_allow_automations:automations});if(jobs.error)throw jobs.error;const job=jobs.data?.[0]as Job|undefined;if(!job)break;
    const valid=await db.rpc('validate_outbound_claim',{p_id:job.message_id,p_attempt:job.attempt});
    if(valid.error)throw valid.error;
    if(!valid.data?.ok){await complete(job,null,new DeliveryError(valid.data?.error??'Message no longer eligible'));processed++;continue;}

@@ -1,11 +1,11 @@
 {
   "date": "2026-11-23",
   "timezone": "Asia/Kolkata",
-  "overall_status": "local_journey_passed_live_whatsapp_confirmation_pending",
-  "scope": "One new owner and one complete synthetic guest stay, with a separate hosted demo sender/template/campaign check.",
+  "overall_status": "local_and_hosted_guest_journeys_passed_document_review_incomplete",
+  "scope": "A fresh owner and complete guest journey tested locally, followed by a complete hosted demo stay with real WhatsApp consent, event delivery and one single-recipient campaign.",
   "environments": {
     "local": "Isolated staff and guest app copies, local Supabase and a disposable regression database clone. Local provider events and scanner results are explicitly synthetic.",
-    "hosted": "Demo Beach Hotel QA records only; existing hotel and guest records were preserved. The user-selected real recipient is the only recipient in the campaign draft."
+    "hosted": "Demo Beach Hotel QA records only; existing hotel and guest records preserved. All actual QA sends targeted the user-selected test number. Synthetic payment records moved no external money."
   },
   "checks": [
     {
@@ -25,33 +25,33 @@
     },
     {
       "feature": "Reservation and guest portal",
-      "status": "passed_local",
-      "evidence": "Quoted and booked one night at INR 2500, allocated the clean room, generated a private guest-app link and saved guest arrival details. Repeated keyboard edits incremented versions without losing the confirmation."
+      "status": "passed_local_and_hosted",
+      "evidence": "Quoted and booked one night at INR 2500, allocated the clean room, generated a private guest-app link and saved guest arrival details. Repeated keyboard edits incremented versions without losing the confirmation. Hosted QA reservation also completed check-in through checkout; WhatsApp event links point to private guest-app stays."
     },
     {
       "feature": "Check-in and guest permissions",
-      "status": "passed_local",
-      "evidence": "Checked in the guest after cleaning. Separate stay/marketing choices, number verification and STOP were exercised with explicitly local inbound fixtures."
+      "status": "passed_local_and_hosted",
+      "evidence": "Checked in the guest after cleaning. Separate stay/marketing choices, number verification and STOP were exercised with explicitly local inbound fixtures. The hosted guest independently confirmed both scopes through a real inbound WhatsApp message; source is guest_whatsapp."
     },
     {
       "feature": "Food ordering",
-      "status": "passed_local",
-      "evidence": "Guest ordered two sandwiches; kitchen advanced placed/preparing/ready/served. Exactly one INR 420 charge, including tax, reached the folio."
+      "status": "passed_local_and_hosted",
+      "evidence": "Guest ordered two sandwiches; kitchen advanced placed/preparing/ready/served. Exactly one INR 420 charge, including tax, reached the folio. The hosted guest-token order also progressed to served with one INR 420 folio charge."
     },
     {
       "feature": "Services and housekeeping",
-      "status": "passed_local",
-      "evidence": "Guest service request created one linked task; starting/completing work updated both. Guest feedback persisted. Checkout created one new cleaning task; all three checklist steps were completed and room became clean."
+      "status": "passed_local_and_hosted",
+      "evidence": "Guest service request created one linked task; starting/completing work updated both. Guest feedback persisted. Checkout created one new cleaning task; all three checklist steps were completed and room became clean. Hosted service, routed task, guest checkout-assistance request and automatic post-checkout cleaning also completed."
     },
     {
       "feature": "Billing and reporting",
-      "status": "passed_local",
-      "evidence": "Unpaid checkout was blocked. Posted INR 2500 room nights plus INR 420 food. Offset INR 100 adjustment/credit, recorded synthetic INR 500 deposit plus INR 2420 settlement, issued invoice, downloaded ledger and reconciled INR 2920 receipts in hotel reports. No external money movement."
+      "status": "passed_local_and_hosted",
+      "evidence": "Unpaid checkout was blocked. Posted INR 2500 room nights plus INR 420 food. Offset INR 100 adjustment/credit, recorded synthetic INR 500 deposit plus INR 2420 settlement, issued invoice, downloaded ledger and reconciled INR 2920 receipts in hotel reports. No external money movement. Hosted stay separately settled the same INR 2920 total with QA-SYNTHETIC-NO-MONEY reference, issued an invoice and checked out. Hosted test records are synthetic financial entries, not payment-gateway transactions."
     },
     {
       "feature": "Checkout and early departure availability",
-      "status": "passed_local",
-      "evidence": "Completed checkout, confirmed room turnaround and post-checkout ordering restrictions. Fixed remaining nights staying blocked after early checkout; retained past-night history and original financial stay dates."
+      "status": "passed_local_and_hosted",
+      "evidence": "Completed checkout, confirmed room turnaround and post-checkout ordering restrictions. Fixed remaining nights staying blocked after early checkout; retained past-night history and original financial stay dates. Hosted early-departure hold was released and room cleaned. Automatic checkout message retains room history after release."
     },
     {
       "feature": "Document upload and review",
@@ -70,8 +70,8 @@
     },
     {
       "feature": "Event automation",
-      "status": "passed_local",
-      "evidence": "Assigned and activated 15 action rules through UI. Fourteen exercised domain event types were captured in this stay. SQL regression suite validates all 23 catalog events, reminder scheduling, template compatibility, authorization, deduplication and event suppression. Actual live event delivery is pending real guest verification."
+      "status": "passed_local_and_hosted",
+      "evidence": "Local browser activated 15 rules; 14 domain event types were exercised. SQL validates all 23 catalog events and scheduler/security guards. Hosted QA activated nine compatible event types and produced 11 actual messages (service and checkout assistance are distinct requests). All 11 have delivered/read receipts and private guest-portal URLs."
     },
     {
       "feature": "Campaign filter, schedule and withdrawal",
@@ -80,8 +80,8 @@
     },
     {
       "feature": "Live campaign delivery",
-      "status": "blocked",
-      "evidence": "Real one-recipient draft prepared with the approved hotel marketing template. It remains draft with zero eligible recipients: marketing permission not recorded. No campaign launch, Meta send or delivery receipt is claimed. The guest portal created verification challenges, but no new real inbound confirmation reached the webhook."
+      "status": "passed_hosted",
+      "evidence": "Real single-recipient campaign launched after guest-origin marketing consent. Exactly one campaign message exists, campaign completed, and Meta receipt is read. Fixed the hosted worker omitting campaign expansion/claim capability; platform campaign processing enabled only after explicit user approval."
     }
   ],
   "fixes": [
@@ -91,39 +91,136 @@
     "Early checkout releases unused nights while preserving past occupied-night history.",
     "Arrival form keeps confirmation state and takes its saved version directly from the server result.",
     "Campaign controls preserve result confirmation across server version updates.",
-    "Reservation view points to the actual guest WhatsApp preferences; service-action copy acknowledges enabled notifications."
+    "Reservation view points to the actual guest WhatsApp preferences; service-action copy acknowledges enabled notifications.",
+    "Checkout event and review-template room lookup retains the latest departed room after its inventory hold is released.",
+    "Hosted scheduled worker supports explicitly enabled campaign expansion and claims; disabled-by-default gating, authorization and failure behavior tested."
   ],
   "verification": {
-    "sql_files": 41,
-    "sql_assertions_passed": 1308,
+    "sql_files": 42,
+    "sql_assertions_passed": 1314,
     "application_tests_passed": 116,
-    "notification_transport_tests_passed": 10,
+    "notification_transport_tests_passed": 14,
     "staff_production_build": "passed",
     "guest_production_build": "passed",
     "browser": "Chromium; staff/guest workflow, desktop and mobile onboarding screenshots inspected",
-    "hosted_webhook_probe": "Empty signed POST returned 200; no inbound guest identity fabricated. Meta account subscription and messages field were present."
+    "hosted_webhook_probe": "Empty signed POST returned 200; real inbound verification subsequently recorded both permission scopes. No production inbound identity was fabricated.",
+    "notification_tests_description": "Ten transport tests plus four hosted worker campaign gating/orchestration tests.",
+    "deployed_ui": "Reservation, issued invoice, campaign read receipt, new onboarding and completed guest bill rendered successfully on deployed apps; screenshots inspected."
   },
   "hosted_qa": {
     "property_id": "c66a4598-13fa-48ec-8f46-da53137e434b",
     "reservation_id": "fcc21f82-ec0d-4535-8e3c-13afc790c7e0",
-    "reservation_status": "confirmed_pending_real_whatsapp_verification",
+    "reservation_status": "checked_out",
     "campaign_id": "57773fde-0481-4870-922d-61430c2a5bc2",
-    "campaign_status": "draft",
+    "campaign_status": "completed",
     "recipient_count_selected": 1,
-    "live_campaign_messages_sent": 0,
+    "live_campaign_messages_sent": 1,
     "utility_template": "qa_stay_event_1795417527849",
-    "marketing_template": "qa_hotel_offer_1795417527849"
+    "marketing_template": "qa_hotel_offer_1795417527849",
+    "room_status": "clean",
+    "invoice_id": "9b9d1ea4-da51-4e5a-8eee-2456742c389d",
+    "test_bill_total": "2920.00",
+    "test_bill_balance": "0.00",
+    "test_payment_is_synthetic": true,
+    "campaign_delivery": "read",
+    "live_event_messages_delivered_or_read": 11,
+    "live_event_receipts": [
+      {
+        "event": "checked_in",
+        "event_id": "a64614bc-0fc9-46d9-90e9-811f95aa3dd9",
+        "message_id": "fe33e706-02ed-4268-8e95-c51dccbddcd4",
+        "state": "read",
+        "error": null
+      },
+      {
+        "event": "order_placed",
+        "event_id": "6385eb98-779e-4d13-9673-a742c276d6bb",
+        "message_id": "19b23396-87f2-4fb8-9a5c-2d06b986f580",
+        "state": "delivered",
+        "error": null
+      },
+      {
+        "event": "order_ready",
+        "event_id": "3252d6f9-b652-4fd3-b1fc-f9a2d35aba5d",
+        "message_id": "24eeb6d5-8215-4e4a-863d-87170a02af97",
+        "state": "delivered",
+        "error": null
+      },
+      {
+        "event": "order_served",
+        "event_id": "6ff87dda-72eb-4767-b39c-64bb74b6d1dc",
+        "message_id": "e5c5fbd4-3aa7-4724-89a8-07cf380324a9",
+        "state": "delivered",
+        "error": null
+      },
+      {
+        "event": "request_received",
+        "event_id": "c8554925-b803-4d81-8700-5fb824ebf0b8",
+        "message_id": "14f0b1d5-a081-48a1-a534-89b4dd254677",
+        "state": "delivered",
+        "error": null
+      },
+      {
+        "event": "request_completed",
+        "event_id": "c37ee028-cbc8-4f39-b0b2-3aa35b10de53",
+        "message_id": "34f6665a-7475-4159-83bf-b4c27f46f2b7",
+        "state": "delivered",
+        "error": null
+      },
+      {
+        "event": "payment_received",
+        "event_id": "93493b4c-e44b-4e1d-aa36-4f5562d3fefb",
+        "message_id": "19da61cf-3390-470a-9178-053534ad71ea",
+        "state": "delivered",
+        "error": null
+      },
+      {
+        "event": "invoice_issued",
+        "event_id": "bf85286a-b078-45e4-8f56-978a284fe847",
+        "message_id": "f90ff194-12f9-4a51-a662-5973c4df5692",
+        "state": "delivered",
+        "error": null
+      },
+      {
+        "event": "request_received",
+        "event_id": "d010eebb-d48b-4643-a90f-71b1985da6fa",
+        "message_id": "7b8a7794-f29d-4dbb-bebe-6bff7a794d96",
+        "state": "delivered",
+        "error": null
+      },
+      {
+        "event": "request_completed",
+        "event_id": "07f33ff3-8686-4a8f-a42a-7dd9b1075940",
+        "message_id": "7328ce57-558c-4b39-afee-320fcae5c5d5",
+        "state": "delivered",
+        "error": null
+      },
+      {
+        "event": "checked_out",
+        "event_id": "95b478f3-e7a2-40ed-830d-68a3cb743a43",
+        "message_id": "040c5864-d7c8-498d-854b-3162c925165d",
+        "state": "delivered",
+        "error": null
+      }
+    ],
+    "consent_source": "guest_whatsapp",
+    "guest_links_verified": true,
+    "unused_diagnostic_template": "qa_connection_check_1795425857254 (submitted during webhook diagnosis; no diagnostic message sent)"
   },
   "remaining": [
-    "Production malware scanner and staff document review screen.",
-    "Receive a fresh, real WhatsApp consent confirmation from the selected test guest, then finish live event delivery and launch exactly one test campaign.",
+    "Production malware scanner and staff document review screen. Only local scanner fixtures were used; no real guest document was marked clean without a scan.",
+    "Guest menu creation, grouping, custom services, template assignment, navigation and STOP were tested locally. This audit does not certify a live guest-menu selection exchange for the hosted hotel.",
     "Hosted signup confirmation email delivery and independent-hotel Meta approval/onboarding were not certified by this audit."
   ],
   "deployment": {
     "hosted_migrations": [
       "20261105000088",
-      "20261105000089"
+      "20261105000089",
+      "20261105000090"
     ],
-    "code": "ready_to_push"
+    "staff_and_guest_commit": "78fad20",
+    "staff_and_guest_vercel_status": "success",
+    "hosted_worker": "deployed_and_campaign_processing_enabled_with_explicit_user_approval",
+    "audit_and_worker_changes": "Committed with this report after the initial UI fix deployment."
   }
 }

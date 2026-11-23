@@ -45,11 +45,12 @@ WHATSAPP_WORKER_SECRET=<64 random hexadecimal characters>
 WHATSAPP_ENCRYPTION_KEY=<same key as the web app>
 WHATSAPP_GRAPH_URL=https://graph.facebook.com/v27.0
 WHATSAPP_AUTOMATIONS_ENABLED=true
+WHATSAPP_CAMPAIGNS_ENABLED=false # set true only when campaign dispatch is intended
 GUEST_PORTAL_URL=https://xcloak-hospitality-guest.vercel.app
 WHATSAPP_TOKENS_JSON=<optional mapping for existing manual test connections>
 ```
 
-Supabase provides `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to the function. Configure the dedicated invocation secret, project origin and enabled state through service-role-only `configure_whatsapp_cloud_worker`. Keep the web app encryption key and worker key identical. Do not publish these values. The cloud worker does not expand or send marketing campaigns; its campaign flag is always false. A review-request rule has its own marketing-consent gate. To stop the scheduler, disable its configuration or pause the cron job; individual hotels pause their rules.
+Supabase provides `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to the function. Configure the dedicated invocation secret, project origin and enabled state through service-role-only `configure_whatsapp_cloud_worker`. Keep the web app encryption key and worker key identical. Do not publish these values. The cloud worker also expands and sends due marketing campaigns when `WHATSAPP_CAMPAIGNS_ENABLED=true`. It defaults off and is independent of the automation flag. Campaign permission, frozen recipients, approved-template checks and pre-send validation still apply. This project enabled the flag with the owner’s explicit approval during the 2026-11-23 audit. A review-request rule has its own marketing-consent gate. To stop the scheduler, disable its configuration or pause the cron job; individual hotels pause their rules.
 
 The optional continuous Node worker supports the same event pipeline with `WHATSAPP_AUTOMATIONS_ENABLED=true`, the shared encryption key and trusted `GUEST_PORTAL_URL`. Avoid unnecessary duplicate consumers. Vercel hosts the web UI, not the continuous worker. Use `node scripts/sync-whatsapp-edge.mjs` after changing canonical crypto, template or transport helpers; `--check` verifies the deployable shared copies in CI. Keep standard import formatting in the Edge Function so the CLI discovers its assets.
 
