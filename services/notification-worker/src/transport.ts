@@ -3,7 +3,7 @@ export class DeliveryError extends Error{constructor(message:string,readonly ret
 export async function send(job:SendJob,token:string|undefined,graph:string,fetcher:typeof fetch=fetch):Promise<string>{
  if(!token)throw new DeliveryError(`Missing credentials for reference ${job.credentials_ref}.`);
  const rich=job.outbound_payload;
- if(rich&&(!['text','interactive','image'].includes(String(rich.type))||rich.type!==job.msg_type))throw new DeliveryError('Unsupported guest reply payload.');
+ if(rich&&(!['text','interactive','image','template'].includes(String(rich.type))||rich.type!==job.msg_type))throw new DeliveryError('Unsupported guest reply payload.');
  const content=rich?{type:rich.type,[String(rich.type)]:rich[String(rich.type)]}:null;
  const payload=content?{messaging_product:'whatsapp',to:job.wa_contact_id,...content}:job.msg_type==='template'?{messaging_product:'whatsapp',to:job.wa_contact_id,type:'template',template:{name:job.template_name,language:{code:job.template_language??'en'},...(job.template_components?.length?{components:job.template_components}:{})}}:{messaging_product:'whatsapp',to:job.wa_contact_id,type:'text',text:{body:job.msg_body}};
  let res:Response;

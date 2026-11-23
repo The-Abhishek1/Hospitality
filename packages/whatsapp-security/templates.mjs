@@ -7,7 +7,9 @@ export function normalizeTemplate(t){
  const supported=typeof body==='string'&&body.length>0&&body.length<=1024&&unique.length<=15&&(positional||named)&&(!positional||ordered.every((x,i)=>Number(x)===i+1))&&
  components.filter(c=>c.type==='BODY').length===1&&components.every(c=>c.type==='BODY'||c.type==='FOOTER'&&!String(c.text??'').includes('{{'))&&
  !body.replace(/\{\{\s*([a-z_][a-z0-9_]*|[1-9][0-9]*)\s*\}\}/g,'').includes('{{')&&['UTILITY','MARKETING'].includes(t.category);
- return {provider_id:String(t.id),name:t.name,language:t.language,category:t.category?.toLowerCase(),provider_status:t.status,body,parameter_names:ordered,supported,definition:{components,parameter_format:t.parameter_format??(named&&unique.length?'NAMED':'POSITIONAL'),category:t.category}};
+ const serviceFields=['guest_name','hotel_name','hotel_phone','portal_url','booking_reference','check_in','check_out','room_name','review_url'];
+ const service_supported=body.length>0&&body.length<=1024&&named&&unique.every(x=>serviceFields.includes(x))&&components.filter(c=>c.type==='BODY').length===1&&components.filter(c=>c.type==='HEADER').length<=1&&components.filter(c=>c.type==='FOOTER').length<=1&&components.filter(c=>c.type==='BUTTONS').length<=1&&['UTILITY','MARKETING'].includes(t.category)&&!body.replace(/\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}/g,'').includes('{{')&&components.every(c=>c.type==='BODY'||c.type==='HEADER'&&(c.format==='IMAGE'||c.format==='TEXT'&&!String(c.text??'').includes('{{'))||c.type==='FOOTER'&&!String(c.text??'').includes('{{')||c.type==='BUTTONS'&&Array.isArray(c.buttons)&&c.buttons.length<=2&&c.buttons.every(b=>b.type==='URL'&&typeof b.url==='string'&&b.url.startsWith('https://')&&!b.url.includes('/s/')&&!b.url.includes('{{')));
+ return {provider_id:String(t.id),name:t.name,language:t.language,category:t.category?.toLowerCase(),provider_status:t.status,body,parameter_names:ordered,supported,service_supported,definition:{components,parameter_format:t.parameter_format??(named&&unique.length?'NAMED':'POSITIONAL'),category:t.category}};
 }
 export async function fetchTemplates(waba,token,version,fetcher=fetch){
  const rows=[];let after='';

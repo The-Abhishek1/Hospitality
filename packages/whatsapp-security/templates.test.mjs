@@ -12,3 +12,8 @@ test('sync completes all pages before returning and never accepts a partial dire
  await assert.rejects(()=>fetchTemplates('123','secret','v27.0',async()=>new Response(JSON.stringify({data:[template],paging:{next:'bad'}}))));
  await assert.rejects(()=>fetchTemplates('123','secret','v27.0',async()=>new Response(JSON.stringify({error:{code:190}}),{status:400})));
 });
+test('rich service support is separate from body-only event automation support',()=>{
+ const body={...template,components:[{type:'BODY',text:'Our pool is open from 7am to 8pm.'},{type:'HEADER',format:'IMAGE'},{type:'BUTTONS',buttons:[{type:'URL',text:'Directions',url:'https://maps.google.com/hotel'}]}]};const t=normalizeTemplate(body);assert.equal(t.supported,false);assert.equal(t.service_supported,true);
+ assert.equal(normalizeTemplate({...body,components:[...body.components,{type:'CAROUSEL'}]}).service_supported,false);
+ assert.equal(normalizeTemplate({...body,components:[{type:'BODY',text:'Your total is {{amount}}.'}]}).service_supported,false);
+});

@@ -37,3 +37,7 @@ test('unsupported or mismatched rich content never reaches Meta',async()=>{
   await assert.rejects(()=>send({...job,msg_type:'interactive',outbound_payload:payload},'test','https://provider.invalid',async()=>{assert.fail('Must not send');}),e=>e instanceof DeliveryError&&!e.uncertain);
  }
 });
+test('service templates preserve approved components without changing the guest recipient',async()=>{
+ const rich={type:'template',template:{name:'hotel_pool',language:{code:'en_US'},components:[{type:'header',parameters:[{type:'image',image:{link:'https://hotel.invalid/pool.jpg'}}]}]}};
+ await send({...job,msg_type:'template',outbound_payload:{...rich,to:'wrong'}},'test','https://provider.invalid',async(_url,opts)=>{const p=JSON.parse(opts.body);assert.equal(p.to,job.wa_contact_id);assert.deepEqual(p.template,rich.template);return new Response(JSON.stringify({messages:[{id:'service-template-id'}]}));});
+});

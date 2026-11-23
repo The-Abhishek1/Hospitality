@@ -5,6 +5,7 @@ import vm from 'node:vm';
 import ts from 'typescript';
 const compile=file=>ts.transpileModule(readFileSync(new URL(file,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
 const flow={};vm.runInNewContext(compile('../src/lib/automation-flow.ts'),{exports:flow});
+const rich={};vm.runInNewContext(compile('../src/lib/rich-templates.ts'),{exports:rich,require:()=>flow,URL});
 const routeCode=compile('../src/app/api/whatsapp/[propertyId]/templates/route.ts');
 const origin='https://hotel.example',pid='test-property',payload={action:'submit',event:'checked_in',name:'hotel_checked_in',language:'en_US',body:flow.automationStarters.checked_in};
 function harness(options={}){
@@ -13,8 +14,8 @@ function harness(options={}){
  const deps={
   'next/server':{NextResponse:{json:(body,init)=>new Response(JSON.stringify(body),init)}},
   '@/lib/supabase/server':{createClient:async()=>({auth:{getUser:async()=>({data:{user:options.anonymous?null:{id:'owner'}}})},rpc:async()=>({data:{connection:{status:'active',id:'connection',waba_id:'hotel-waba'}},error:options.forbidden?{message:'Forbidden'}:null})})},
-  '@/lib/whatsapp-onboarding':{SetupError,graphVersion:'v27.0',savedToken:async()=>{calls.push('credential');return'private-token';},meta:async(path,token,method='GET',body,context)=>{calls.push({path,method,body,context});if(options.providerError&&method==='POST')throw new SetupError(options.providerError);return{data:options.duplicate?[{name:payload.name,language:payload.language}]:[],id:'provider-id'};},backend:()=>({rpc:async()=>{calls.push('sync-db');return{error:options.syncFailure?{}:null};},from:()=>({select:()=>({eq:()=>({eq:()=>({eq:()=>({maybeSingle:async()=>({data:{id:'local-template-id'}})})})})})})})},
-  '@/lib/automation-flow':flow,
+  '@/lib/whatsapp-onboarding':{SetupError,graphVersion:'v27.0',savedToken:async()=>{calls.push('credential');return'private-token';},meta:async(path,token,method='GET',body,context)=>{calls.push({path,method,body,context});if(options.providerError&&method==='POST')throw new SetupError(options.providerError);return{data:options.duplicate?[{name:payload.name,language:payload.language}]:[],id:'provider-id'};},backend:()=>({rpc:async()=>{calls.push('sync-db');return{error:options.syncFailure?{}:null};},from:()=>({upsert:async()=>({error:null}),select:()=>({eq:()=>({eq:()=>({eq:()=>({maybeSingle:async()=>({data:{id:'local-template-id'}})})})})})})})},
+  '@/lib/automation-flow':flow,'@/lib/rich-templates':rich,'@/lib/template-media':{uploadTemplateSample:async()=>"sample-handle"},
   '../../../../../../../../packages/whatsapp-security/templates.mjs':{fetchTemplates:async()=>{calls.push('fetch-directory');return rows;}}
  };
  vm.runInNewContext(routeCode,{exports:out,require:name=>{assert.ok(deps[name],`Unexpected dependency: ${name}`);return deps[name];},process:{env:{WHATSAPP_ONBOARDING_ORIGIN:origin}},URLSearchParams,console});
@@ -42,4 +43,9 @@ test('accepted submission with failed sync is not reported as needing a new subm
 test('provider submission failures preserve the specific actionable template rejection',async()=>{
  const message="Meta rejected the template request (code 100/2388299): Variables can't be at the start or end of the template.",h=harness({providerError:message}),result=await h.invoke(payload);
  assert.equal(result.status,400);assert.equal(result.body.error,message);assert.ok(!h.calls.includes('sync-db'));
+});
+
+test('explicit image template submission supplies the Meta upload handle and saves the template',async()=>{
+ const h=harness(),result=await h.invoke({...payload,event:'service_reply',header_kind:'image',image_url:'https://hotel.example/sample.jpg',footer:'Hotel team',buttons:[{text:'Location',url:'https://maps.google.com/hotel'}]});
+ assert.equal(result.status,200);assert.equal(result.body.submitted,true);const post=h.calls.find(c=>c.method==='POST');const parts=JSON.parse(post.body.components);assert.equal(parts[0].example.header_handle[0],'sample-handle');assert.equal(parts.at(-1).buttons[0].url,'https://maps.google.com/hotel');
 });

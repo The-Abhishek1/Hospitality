@@ -32,13 +32,13 @@ export function eventFields(event:string){return Object.keys(automationFields).f
 }
 export function createTemplatePayload(input:{event:string;name:string;language:string;body:string}){
  const name=input.name.trim(),body=input.body.trim(),variables=templateVariables(body);
- if(!Object.hasOwn(automationStarters,input.event))throw Error('Choose a hotel event.');
+ if(input.event!=='service_reply'&&!Object.hasOwn(automationStarters,input.event))throw Error('Choose a hotel event.');
  if(!/^[a-z][a-z0-9_]{2,127}$/.test(name))throw Error('Use a template name with lowercase letters, numbers and underscores (3–128 characters).');
  if(!['en_US','en_GB','en','hi','ta','te','ml','kn','ar'].includes(input.language))throw Error('Choose a supported template language.');
  if(body.length<10||body.length>1024||variables.length>15||body.replace(/\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}/g,'').includes('{{'))throw Error('Use 10–1024 characters and named variables such as {{guest_name}}.');
  if(/^[^\p{L}\p{N}]*\{\{/u.test(body)||/\}\}[^\p{L}\p{N}]*$/u.test(body))throw Error('Meta requires written text before the first variable and after the last variable. Add a closing sentence after the final field; punctuation alone is not enough.');
  if(variables.some(v=>!Object.hasOwn(automationFields,v)))throw Error('Use the supported guest and stay variables shown in the editor.');
- if(variables.includes('order_reference')&&!input.event.startsWith('order_')||variables.includes('request_title')&&!input.event.startsWith('request_')||variables.includes('invoice_number')&&input.event!=='invoice_issued'||variables.includes('review_url')&&input.event!=='review_request'||variables.includes('portal_url')&&input.event==='booking_cancelled')throw Error('This template uses a field that is unavailable for the chosen event.');
+ if(variables.includes('order_reference')&&!input.event.startsWith('order_')||variables.includes('request_title')&&!input.event.startsWith('request_')||variables.includes('invoice_number')&&input.event!=='invoice_issued'||variables.includes('review_url')&&!['review_request','service_reply'].includes(input.event)||variables.includes('portal_url')&&input.event==='booking_cancelled')throw Error('This template uses a field that is unavailable for the chosen event.');
  return{name,language:input.language,category:input.event==='review_request'?'MARKETING':'UTILITY',...(variables.length?{parameter_format:'NAMED'}:{}),components:[{type:'BODY',text:body,...(variables.length?{example:{body_text_named_params:variables.map(param_name=>({param_name,example:sampleValues[param_name]}))}}:{})}]};
 }
 export function templateUsable(template:{supported:boolean;status:string;category:string;checked_at:string},event:string,now=Date.now()){
