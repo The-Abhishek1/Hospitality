@@ -29,6 +29,13 @@ export async function signUp(_: AuthState, fd: FormData): Promise<AuthState> {
   const { data, error } = await db.auth.signUp({ email, password, options: { data: { full_name: name }, emailRedirectTo: await callbackUrl(next) } });
   if (error) return { error: error.status === 429 ? 'Please wait a few minutes before requesting another email.' : 'We couldn’t create your account. Try again, or sign in if you already have an account.' };
   if (!data.session) return { message: 'Check your inbox for a confirmation link. If you already have an account, sign in or reset your password.' };
+  if (next === '/dashboard') {
+    // Resolve first-time setup before the client follows the action redirect.
+    // An invited teammate should enter their assigned workspace instead.
+    await db.rpc('accept_staff_invitations');
+    const {data: memberships, error: membershipError} = await db.from('tenant_memberships').select('tenant_id').eq('user_id', data.user!.id).limit(1);
+    if (!membershipError && !memberships?.length) redirect('/onboarding');
+  }
   redirect(next);
 }
 export async function requestReset(_: AuthState, fd: FormData): Promise<AuthState> {

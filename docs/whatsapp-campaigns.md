@@ -1,10 +1,10 @@
 # Hotel WhatsApp campaigns
 
-The campaign workflow is implemented locally. **No hosted migration, live campaign activation or WhatsApp send was performed.** This is separate from the still-prepared guest journey automation.
+Campaigns use the hotel’s connected WhatsApp account, approved marketing templates and separate marketing permission. Deployment or a saved draft does not prove provider delivery; check each recipient’s delivery status. See `docs/qa/full-flow-2026-11-23.json` for the latest audit results.
 
 ## Hotel workflow
 
-Open **Campaigns** from the Management sidebar (`/p/<property>/campaigns`). Hotel administrators/managers with `staff.manage` can:
+Open **WhatsApp Campaigns** from the Management sidebar (`/p/<property>/campaigns`). Hotel administrators/managers with `staff.manage` can:
 
 1. Filter hotel guests by stay period, booking source, reservation status, name or phone. Default: checked-out past guests. For last summer, enter the actual start/end dates. The end date is inclusive; a stay must overlap the period (checkout day does not count as an occupied night). Cancelled/no-show bookings are excluded. Guests whose only bookings belong to another property never enter this hotel's audience.
 2. Preview counts and excluded reasons, then choose all eligible matches or manually selected contacts. Selection survives preview pagination; applying different filters clears it. Preview pages contain 30 contacts. Phone numbers require an explicit international `+` country code. Multiple guest records sharing a normalized phone receive at most one message per campaign.
@@ -19,7 +19,7 @@ The current maximum is 10,000 distinct eligible phones per campaign; manual sele
 
 Business-initiated marketing uses approved marketing templates, even for guests who stayed a long time ago. [WhatsApp Business Messaging Policy](https://whatsappbusiness.com/policy/) and [Meta's business chat guidance](https://about.fb.com/news/2025/04/ways-to-manage-your-businesses-chats-on-whatsapp/) describe permission and approved-template requirements.
 
-Our product requires a recorded marketing permission before campaign delivery. Staff can save arbitrary draft copy, but cannot grant provider template approval through the campaign UI. Launch requires an approved **text-only** marketing template from this hotel with exactly matching text. Variables/media/required header or button parameters are not supported in this release. The entire provider definition must be verified before a trusted template-sync/operator process sets `message_templates.campaign_supported=true`; an approved body alone is not sufficient evidence. This flag defaults false. The draft studio's “content reviewed” state is not Meta approval, and there is no new template submission/synchronization implementation in this change.
+Our product requires a recorded marketing permission before campaign delivery. Staff can save arbitrary draft copy, but cannot grant provider template approval through the campaign UI. Launch requires an approved **text-only** marketing template from this hotel with exactly matching text. Variables/media/required header or button parameters are not supported in this release. The entire provider definition must be verified before a trusted template-sync/operator process sets `message_templates.campaign_supported=true`; an approved body alone is not sufficient evidence. This flag defaults false. Create and submit templates under **WhatsApp Automation → Templates**, then use **Check approval & sync**. Local draft review is separate from Meta approval.
 
 ## Scheduling and delivery
 
@@ -44,4 +44,4 @@ Template deletion clears template references while preserving message text. No c
 - SQL tests cover historical/date filtering, property scope, canonical-phone deduplication, permission/STOP precedence, frozen recipients, timezone scheduling, old worker exclusion, template and sender changes, cancellation, reports and privilege checks.
 - Concurrency tests cover repeated draft saves, competing launches, simultaneous dispatchers and cancellation versus expansion, including fixture cleanup.
 - Frontend tests cover filter boundaries, pagination and timezone display. Web production build and notification transport tests pass.
-- Tests use disposable local fixtures only, with no Meta requests. Visual/browser/device review and end-to-end provider delivery remain pending. Hosted Supabase is unchanged by this task.
+- The full-flow audit also checks the browser journey and real template submission/synchronization. Its report separates local provider fixtures from hosted delivery; a campaign draft or queued message is never reported as delivered.

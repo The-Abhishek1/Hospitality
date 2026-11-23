@@ -1,0 +1,129 @@
+{
+  "date": "2026-11-23",
+  "timezone": "Asia/Kolkata",
+  "overall_status": "local_journey_passed_live_whatsapp_confirmation_pending",
+  "scope": "One new owner and one complete synthetic guest stay, with a separate hosted demo sender/template/campaign check.",
+  "environments": {
+    "local": "Isolated staff and guest app copies, local Supabase and a disposable regression database clone. Local provider events and scanner results are explicitly synthetic.",
+    "hosted": "Demo Beach Hotel QA records only; existing hotel and guest records were preserved. The user-selected real recipient is the only recipient in the campaign draft."
+  },
+  "checks": [
+    {
+      "feature": "Account and sign-in",
+      "status": "passed_local",
+      "evidence": "Created a fresh owner through signup, signed out and back in, and reached first-hotel setup. Hosted email confirmation delivery was not exercised."
+    },
+    {
+      "feature": "Hotel onboarding and settings",
+      "status": "passed_local",
+      "evidence": "Created business and hotel together; validated timezone/currency, identity/contact details, guest arrival instructions and operations defaults. Invalid timezone and database failure leave no orphan business; retries reuse the same hotel."
+    },
+    {
+      "feature": "Rooms, rates and inventory",
+      "status": "passed_local",
+      "evidence": "Created room type, room and rate plan, verified initial cleaning requirement, blocked and released availability with an audit reason."
+    },
+    {
+      "feature": "Reservation and guest portal",
+      "status": "passed_local",
+      "evidence": "Quoted and booked one night at INR 2500, allocated the clean room, generated a private guest-app link and saved guest arrival details. Repeated keyboard edits incremented versions without losing the confirmation."
+    },
+    {
+      "feature": "Check-in and guest permissions",
+      "status": "passed_local",
+      "evidence": "Checked in the guest after cleaning. Separate stay/marketing choices, number verification and STOP were exercised with explicitly local inbound fixtures."
+    },
+    {
+      "feature": "Food ordering",
+      "status": "passed_local",
+      "evidence": "Guest ordered two sandwiches; kitchen advanced placed/preparing/ready/served. Exactly one INR 420 charge, including tax, reached the folio."
+    },
+    {
+      "feature": "Services and housekeeping",
+      "status": "passed_local",
+      "evidence": "Guest service request created one linked task; starting/completing work updated both. Guest feedback persisted. Checkout created one new cleaning task; all three checklist steps were completed and room became clean."
+    },
+    {
+      "feature": "Billing and reporting",
+      "status": "passed_local",
+      "evidence": "Unpaid checkout was blocked. Posted INR 2500 room nights plus INR 420 food. Offset INR 100 adjustment/credit, recorded synthetic INR 500 deposit plus INR 2420 settlement, issued invoice, downloaded ledger and reconciled INR 2920 receipts in hotel reports. No external money movement."
+    },
+    {
+      "feature": "Checkout and early departure availability",
+      "status": "passed_local",
+      "evidence": "Completed checkout, confirmed room turnaround and post-checkout ordering restrictions. Fixed remaining nights staying blocked after early checkout; retained past-night history and original financial stay dates."
+    },
+    {
+      "feature": "Document upload and review",
+      "status": "partial",
+      "evidence": "Uploaded a synthetic file through guest Edge Function and signed private storage. Staff access was denied while quarantined. Audit/review and document-approved event passed only after a local scanner fixture. Production malware scanning and a staff review screen are missing."
+    },
+    {
+      "feature": "Template creation and synchronization",
+      "status": "passed_hosted",
+      "evidence": "Submitted a real utility stay-update template and a static marketing template through the app. Meta approved both and synchronization marked them compatible. Migrated the same demo sender credential into the existing encrypted per-hotel store without changing the sender."
+    },
+    {
+      "feature": "Guest menu",
+      "status": "passed_local",
+      "evidence": "Assigned approved local fixtures to existing services, added Wellness category and custom Spa information service. Local Hi/category/service selections queued the assigned template with the private guest portal URL. Replay produced no duplicate reply; menu rows stayed within platform limits."
+    },
+    {
+      "feature": "Event automation",
+      "status": "passed_local",
+      "evidence": "Assigned and activated 15 action rules through UI. Fourteen exercised domain event types were captured in this stay. SQL regression suite validates all 23 catalog events, reminder scheduling, template compatibility, authorization, deduplication and event suppression. Actual live event delivery is pending real guest verification."
+    },
+    {
+      "feature": "Campaign filter, schedule and withdrawal",
+      "status": "passed_local",
+      "evidence": "Filtered by stay dates and guest name, selected exactly one contact and saved a template-backed draft. Hotel-local future schedule froze one recipient and did not dispatch early. Due fixture queued once; repeat dispatch did not duplicate. Local STOP prevented transport. Campaign cancellation confirmation remained visible after refresh."
+    },
+    {
+      "feature": "Live campaign delivery",
+      "status": "blocked",
+      "evidence": "Real one-recipient draft prepared with the approved hotel marketing template. It remains draft with zero eligible recipients: marketing permission not recorded. No campaign launch, Meta send or delivery receipt is claimed. The guest portal created verification challenges, but no new real inbound confirmation reached the webhook."
+    }
+  ],
+  "fixes": [
+    "Atomic, idempotent first-business/hotel creation with rollback on failure.",
+    "Labeled responsive first-hotel setup with hotel currency and timezone.",
+    "New uninvited signup resolves first-time setup before the client follows the redirect.",
+    "Early checkout releases unused nights while preserving past occupied-night history.",
+    "Arrival form keeps confirmation state and takes its saved version directly from the server result.",
+    "Campaign controls preserve result confirmation across server version updates.",
+    "Reservation view points to the actual guest WhatsApp preferences; service-action copy acknowledges enabled notifications."
+  ],
+  "verification": {
+    "sql_files": 41,
+    "sql_assertions_passed": 1308,
+    "application_tests_passed": 116,
+    "notification_transport_tests_passed": 10,
+    "staff_production_build": "passed",
+    "guest_production_build": "passed",
+    "browser": "Chromium; staff/guest workflow, desktop and mobile onboarding screenshots inspected",
+    "hosted_webhook_probe": "Empty signed POST returned 200; no inbound guest identity fabricated. Meta account subscription and messages field were present."
+  },
+  "hosted_qa": {
+    "property_id": "c66a4598-13fa-48ec-8f46-da53137e434b",
+    "reservation_id": "fcc21f82-ec0d-4535-8e3c-13afc790c7e0",
+    "reservation_status": "confirmed_pending_real_whatsapp_verification",
+    "campaign_id": "57773fde-0481-4870-922d-61430c2a5bc2",
+    "campaign_status": "draft",
+    "recipient_count_selected": 1,
+    "live_campaign_messages_sent": 0,
+    "utility_template": "qa_stay_event_1795417527849",
+    "marketing_template": "qa_hotel_offer_1795417527849"
+  },
+  "remaining": [
+    "Production malware scanner and staff document review screen.",
+    "Receive a fresh, real WhatsApp consent confirmation from the selected test guest, then finish live event delivery and launch exactly one test campaign.",
+    "Hosted signup confirmation email delivery and independent-hotel Meta approval/onboarding were not certified by this audit."
+  ],
+  "deployment": {
+    "hosted_migrations": [
+      "20261105000088",
+      "20261105000089"
+    ],
+    "code": "ready_to_push"
+  }
+}

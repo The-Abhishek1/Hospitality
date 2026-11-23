@@ -18,7 +18,7 @@ export default async function CampaignDetail({params,searchParams}:{params:Promi
  <div className="sr-table-scroll"><table className="sr-table"><thead><tr><th>Guest</th><th>Phone</th><th>{c.status==='draft'?'Eligibility':'Delivery status'}</th></tr></thead><tbody>{a.rows.map((r:any)=><tr key={r.id||r.guest_id}><td>{r.guest_name}</td><td>{r.phone?'+'+r.phone:'Invalid phone'}</td><td>{c.status==='draft'?r.exclusion||'Eligible':r.state}{r.reason&&<small>{r.reason}</small>}</td></tr>)}</tbody></table></div>
  <div className="sr-pagination"><span>Page {page} · 30 contacts per page</span><div>{page>1&&<Link href={`?page=${page-1}`}>← Previous</Link>}{page*30<a.total&&<Link href={`?page=${page+1}`}>Next →</Link>}</div></div>
  {c.status==='draft'&&<CampaignDraftEditor key={`edit-${c.version}`} pid={pid} id={id} version={c.version} request={randomUUID()} body={c.body} template={c.template_id} templates={templates.filter(t=>!t.body.includes('{{'))}/>}
- <CampaignControls key={c.version} pid={pid} id={id} version={c.version} status={c.status} timezone={zone} eligible={a.eligible??0}/>
+ <CampaignControls key={id} pid={pid} id={id} version={c.version} status={c.status} timezone={zone} eligible={a.eligible??0}/>
  <p className="campaign-note">“Sent” means accepted by WhatsApp; delivered and read are separate provider receipts. “Dispatch finished” can include failures and skipped contacts.</p>
  </section></div>;
 }
