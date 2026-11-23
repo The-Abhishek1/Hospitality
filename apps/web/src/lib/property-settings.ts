@@ -1,5 +1,5 @@
-export const settingsTabs=['overview','identity','localization','guest','operations','history']as const;
-export const settingsLabel=(s:string)=>({overview:'Hotel overview',identity:'Identity & contact',localization:'Timezone & currency',guest:'Guest experience',operations:'Operational defaults',history:'Change history'}[s]??s);
+export const settingsTabs=['overview','identity','localization','guest','information','operations','history']as const;
+export const settingsLabel=(s:string)=>({overview:'Hotel overview',identity:'Identity & contact',localization:'Timezone & currency',guest:'Guest experience',information:'Hotel information',operations:'Operational defaults',history:'Change history'}[s]??s);
 export const validLocalTime=(s:string)=>/^([01]\d|2[0-3]):[0-5]\d$/.test(s);
 export const boundedWhole=(s:string,min:number,max:number)=>/^\d+$/.test(s)&&Number(s)>=min&&Number(s)<=max;
 export function settingsFilters(p:Record<string,string|undefined>){return{tab:settingsTabs.includes(p.tab as typeof settingsTabs[number])?p.tab!:'overview',page:p.page&&/^\d+$/.test(p.page)?Math.min(100000,Math.max(1,Number(p.page))):1};}
