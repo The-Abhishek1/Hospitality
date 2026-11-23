@@ -1,4 +1,4 @@
-import Link from'next/link';import{notFound,redirect}from'next/navigation';import{createClient}from'@/lib/supabase/server';import{WorkspaceLayout}from'@/components/workspace/layout';import{PropertyLifecycleForm}from'@/components/properties/lifecycle-form';
+import Link from'next/link';import{notFound,redirect}from'next/navigation';import{createClient}from'@/lib/supabase/server';import{WorkspaceLayout}from'@/components/workspace/layout';import{PropertyLifecycleForm}from'@/components/properties/lifecycle-form';import'./lifecycle.css';
 export const metadata={title:'Close or reopen property · Hospitality'};
 export default async function Lifecycle({params}:{params:Promise<{propertyId:string}>}){
  const{propertyId:pid}=await params;if(!/^[0-9a-f-]{36}$/i.test(pid))notFound();const db=await createClient();const{data:{user}}=await db.auth.getUser();if(!user)redirect('/login');

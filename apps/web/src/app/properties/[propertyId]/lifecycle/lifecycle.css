@@ -1,0 +1,28 @@
+.property-lifecycle{width:100%;min-width:0}
+.property-lifecycle .property-card{min-width:0}
+.property-lifecycle .property-card>p,.property-lifecycle .property-card li{font-size:16px;line-height:1.75}
+.property-lifecycle .property-card ul{list-style:disc;padding-left:22px;margin:18px 0 0}
+.property-lifecycle .property-closure-checks{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.property-lifecycle .property-closure-checks>a{display:flex;align-items:center;min-height:56px;padding:14px 16px;border:1px solid #e1e5eb;border-radius:8px;background:#f6f8fb;color:#294464;font-size:15px;line-height:1.6;overflow-wrap:anywhere}
+.property-lifecycle .property-closure-checks>a:hover{border-color:#9cacc1;background:#eef2f8}
+.property-lifecycle .property-lifecycle-form{padding:24px;background:#fffefa}
+.property-lifecycle .property-lifecycle-form fieldset{min-width:0;margin:0;padding:0;border:0}
+.property-lifecycle .property-lifecycle-form legend{padding:0;margin:0 0 8px;font-size:20px;font-weight:600;line-height:1.5;color:#26374b}
+.property-lifecycle-intro{margin:0 0 24px;color:#68717d;font-size:15px;line-height:1.7}
+.property-lifecycle-fields{display:grid;gap:24px;min-width:0}
+.property-lifecycle-field{display:grid;gap:9px;min-width:0;font-size:16px;line-height:1.65;font-weight:500;color:#303b48}
+.property-lifecycle-field>span{display:block;overflow-wrap:anywhere}
+.property-lifecycle .property-lifecycle-form .property-lifecycle-field :is(input,textarea){display:block;box-sizing:border-box;width:100%;min-width:0;font:400 16px/1.6 Arial,Helvetica,sans-serif;padding:12px 14px;border:1px solid #d7dce3;border-radius:8px;background:#fff;color:#26374b}
+.property-lifecycle .property-lifecycle-form .property-lifecycle-field input{min-height:48px}
+.property-lifecycle .property-lifecycle-form .property-lifecycle-field textarea{min-height:126px;resize:vertical}
+.property-lifecycle-field small,.property-lifecycle-check small{display:block;font-size:14px;font-weight:400;line-height:1.6;color:#6c7683}
+.property-lifecycle .property-lifecycle-form .property-lifecycle-check{display:grid!important;grid-template-columns:20px minmax(0,1fr);gap:12px;align-items:start;padding:16px;border:1px solid #e1e5eb;border-radius:8px;background:#f6f8fb;font-size:15px;line-height:1.7;color:#465362}
+.property-lifecycle-check small{margin-top:5px}
+.property-lifecycle .property-lifecycle-form .property-lifecycle-check input{width:18px!important;height:18px;margin:4px 0 0;padding:0;accent-color:var(--brand-primary)}
+.property-lifecycle .property-lifecycle-form :is(input,textarea):disabled{opacity:1;background:#f6f6f4;color:#727b86;cursor:not-allowed}
+.property-lifecycle .property-lifecycle-form :is(input,textarea):focus-visible{outline:2px solid #52749c;outline-offset:3px}
+.property-lifecycle-footer{display:flex;flex-direction:column;align-items:flex-start;gap:14px;margin-top:24px;padding-top:22px;border-top:1px solid #e5e7eb}
+.property-lifecycle-footer p{margin:0;font-size:14px;line-height:1.6;color:#6c7683}
+.property-lifecycle .property-lifecycle-footer .dash-button{min-height:46px;padding:11px 18px;font-size:15px}
+.property-lifecycle .property-lifecycle-footer .dash-button:disabled{cursor:not-allowed;background:#718096;border-color:#718096;color:#fff;opacity:1}
+@media(max-width:640px){.property-lifecycle .property-closure-checks{grid-template-columns:minmax(0,1fr)}.property-lifecycle .property-lifecycle-form{padding:18px}.property-lifecycle .property-lifecycle-form legend{font-size:19px}.property-lifecycle .property-lifecycle-check{padding:13px}.property-lifecycle-footer{align-items:stretch}.property-lifecycle-footer .dash-button{white-space:normal;width:100%}}
