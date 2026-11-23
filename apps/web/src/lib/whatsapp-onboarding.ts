@@ -4,10 +4,10 @@ import{encryptToken,decryptToken}from'../../../../packages/whatsapp-security/ind
 export const graphVersion=process.env.WHATSAPP_GRAPH_VERSION||'v27.0';
 export function onboardingReady(){return Boolean(process.env.WHATSAPP_APP_ID&&process.env.WHATSAPP_APP_SECRET&&process.env.WHATSAPP_CONFIG_ID&&/^[a-f0-9]{64}$/i.test(process.env.WHATSAPP_ENCRYPTION_KEY??'')&&process.env.SUPABASE_SERVICE_ROLE_KEY&&/^https:\/\/[^/]+$/.test(process.env.WHATSAPP_ONBOARDING_ORIGIN??''));}
 export function backend(){return backendClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.SUPABASE_SERVICE_ROLE_KEY!,{auth:{persistSession:false,autoRefreshToken:false}});}
-export class SetupError extends Error{}
+export class SetupError extends Error{constructor(message:string,public readonly httpStatus?:number){super(message);}}
 export async function meta(path:string,token:string,method='GET',body?:Record<string,string>,context?:'template'){
  const response=await fetch(`https://graph.facebook.com/${graphVersion}/${path}`,{method,headers:{Authorization:`Bearer ${token}`,...(body?{'Content-Type':'application/x-www-form-urlencoded'}:{})},body:body?new URLSearchParams(body):undefined,signal:AbortSignal.timeout(20000),cache:'no-store'});
- const data=await response.json();if(!response.ok||data.error)throw new SetupError(context==='template'?templateProviderError(data.error??{},response.status,token):`Meta rejected this step (code ${data.error?.code??response.status}). Check permissions, number registration and account status in Meta, then reconnect.`);
+ const data=await response.json();if(!response.ok||data.error)throw new SetupError(context==='template'?templateProviderError(data.error??{},response.status,token):`Meta rejected this step (code ${data.error?.code??response.status}). Check permissions, number registration and account status in Meta, then reconnect.`,response.status);
  return data;
 }
 export async function exchangeCode(code:string){

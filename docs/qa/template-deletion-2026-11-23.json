@@ -1,0 +1,11 @@
+{
+  "date": "2026-11-23",
+  "scope": "Local synthetic data; browser confirmation and actual database guards; provider success simulated",
+  "checks": [
+    "Dialog identifies the selected language and requires exact-name confirmation",
+    "Cancel leaves the template unchanged",
+    "Active-event blocker includes a link to its configuration",
+    "Confirmed deletion hides only the selected language; another translation remains",
+    "Confirmation fits the mobile viewport"
+  ]
+}

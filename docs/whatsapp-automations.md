@@ -84,3 +84,39 @@ STOP/UNSUBSCRIBE revoke both scopes and cancel pending proofs. STOP OFFERS/STOP 
 WhatsApp Automation → Consent & exceptions shows paginated guest records, missing/changed numbers, pending confirmations, withdrawals, source and timestamps. Manual verified records are a collapsed staff fallback. Share existing private stay links through permitted booking/email channels or at check-in; the guest controls agreement and the final WhatsApp send. Unknown inbound contacts must obtain their personal link through a trusted hotel channel; a phone match never exposes a booking.
 
 Validation: `037_whatsapp_guest_consent.test.sql`, the WhatsApp/campaign/guest-menu/security regressions, guest portal consent action tests and both production builds. Automated fixtures roll back and do not send real messages. Phone-based end-to-end testing requires a dedicated reservation with the tester’s actual WhatsApp number and their explicit confirmation.
+
+## Delete a submitted template
+
+Open **WhatsApp Automation → Templates**, expand a hotel template and select
+**Delete template**. The dialog fetches current usage, identifies the exact name
+and language, and requires the owner to type the name. Meta samples have no
+Delete control. Deleted and externally missing templates disappear from the
+library; historical messages, event records and inactive assignments are retained.
+
+Deletion is blocked by active event rules, published menu services, scheduled or
+running campaigns, queued/sending messages, unknown delivery outcomes, or another
+active hotel connected to the same Meta WABA. The dialog links to the affected
+hotel configuration. Pause or replace uses before deleting. Templates are WABA
+assets rather than individual phone-number assets, so shared-account deletion
+must be reviewed in Meta.
+
+The server checks the authenticated hotel administrator and request origin, then
+reserves deletion transactionally. Reference guards serialize event activation,
+menu publication, campaign scheduling and outgoing messages with that reservation.
+The provider request uses **both `hsm_id` and `name`**, deleting only the selected
+translation. Credentials and account IDs are taken from trusted server context,
+not from client-supplied account identifiers.
+
+A successful provider response retires the local record rather than deleting its
+foreign-key history. An unknown provider outcome holds the template from new uses;
+**Check approval & sync** reconciles the full provider directory before another
+attempt. An interrupted reservation can be reconciled after two minutes. A new
+provider ID under a reused name is recognized as a new provider template after
+Meta permits recreation. Deleting an approved template prevents reusing its name
+for 30 days; already-sent messages are not recalled. See
+[Meta template management](https://developers.facebook.com/documentation/business-messaging/whatsapp/templates/template-management#delete-templates).
+
+Deploy migration 103 before the updated hotel app. Validation includes
+`049_whatsapp_template_deletion.test.sql`, `template-deletion-concurrency.py`,
+`template-deletion-api.test.mjs` and the scoped browser evidence in
+`docs/qa/template-deletion-2026-11-23.json`.
