@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     if (!f || Number(f.metadata?.size) !== doc.size_bytes || f.metadata?.mimetype !== doc.mime_type) return json({ error: "upload not found or size mismatch" }, 400);
     const { error } = await db.rpc("portal_confirm_document", { p_token: b.token, p_doc: b.document_id });
     if (error) return json({ error: error.message }, error.code === "28000" ? 401 : 400);
-    return json({ ok: true }); // status is now 'uploaded'; staff cannot open it until the scanner marks it clean
+    return json({ ok: true }); // Remains private until the configured image processor or antivirus worker finishes.
   }
   return json({ error: "unknown action" }, 400);
 });

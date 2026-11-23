@@ -6,6 +6,8 @@ insert into auth.users (id, email) values
 insert into public.tenants (id, name, slug) values ('a2000000-0000-0000-0000-000000000001', 'Tenant 9', 'tenant-9');
 insert into public.properties (id, tenant_id, name, property_type) values
   ('a3000000-0000-0000-0000-000000000001', 'a2000000-0000-0000-0000-000000000001', 'Prop 9', 'hotel');
+-- This regression covers the existing antivirus route. Photo review has separate coverage.
+insert into public.whatsapp_journey_settings(property_id,document_review_mode) values('a3000000-0000-0000-0000-000000000001','antivirus');
 insert into public.tenant_memberships (tenant_id, user_id, role) values
   ('a2000000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-000000000001', 'owner'),
   ('a2000000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-000000000002', 'member');

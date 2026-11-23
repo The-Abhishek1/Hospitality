@@ -1,0 +1,16 @@
+{
+  "date": "2026-11-23",
+  "scope": "local synthetic data; real signed storage upload and Sharp processing",
+  "checks": [
+    "Guest document page has no staff login or workspace navigation",
+    "Photo-only file chooser excludes PDF",
+    "Real signed upload and hosted image rebuild succeeds",
+    "One-time upload closes while hotel reviews",
+    "Actual document remains image_ready with no antivirus verdict",
+    "Staff reservation explains inactive welcome configuration",
+    "Staff receives a separate rebuilt preview, never original",
+    "Private signed preview is a real rebuilt JPEG",
+    "Manual approval completes guest task and keeps upload closed",
+    "Approval never invents an antivirus scan"
+  ]
+}

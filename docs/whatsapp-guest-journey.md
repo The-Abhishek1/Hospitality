@@ -18,7 +18,7 @@ The first welcome is captured automatically by the booking transaction and sent 
 
 1. The guest replies Hi. A unique, previously verified booking contact is offered **Enable stay updates**, **No automatic updates**, and **Optional offers**. An ambiguous or unknown number is handed to reception without showing private information. These are real interactive buttons, not a portal consent form.
 2. Choosing updates records the real inbound message, time, purpose and wording version. The guest gets document-upload guidance, a guest-menu button and a separate optional-offers choice. Declining updates still permits guest-requested help during the current reply window; it does not enable automatic event messages. STOP UPDATES, STOP OFFERS and STOP revoke their respective scopes.
-3. Documents open only the secure document page. Identity files remain private and quarantined until an antivirus scan succeeds. Staff use **Reservation → Arrival documents & check-in readiness** to open a short-lived audited review link and approve or request replacement. A completion event is captured only after the required identity-document review is complete.
+3. Documents open only the secure document page. Identity files remain private until their configured checks finish: photo-only review rebuilds JPG/PNG images inside the hotel app; antivirus mode requires a successful scanner verdict. Neither check approves the identity automatically. Staff use **Reservation → Arrival documents & check-in readiness** to open a short-lived audited review link and approve or request replacement. A completion event is captured only after the required identity-document review is complete.
 4. Configure **Arrival reminder** for 120–180 minutes before the hotel’s local check-in time. Approved messages include the time and “Reply CHECK IN”. Check-in requires approved documents, the booked date, arrival time, an active clean room and no other checked-in guest. The guest explicitly confirms; the reservation, audit and configured check-in event are updated together. Staff status changes also enforce the document gate.
 5. Hi opens the owner’s published menu or the built-in menu. Stay details are displayed in WhatsApp. Food opens the exact food-selection helper; order templates report dishes, quantities, amount and room. **Request a service** lists the hotel’s active service catalog with paging. Selecting and confirming creates a real WhatsApp-source request and uses existing staff task routing. Repeated requests reuse the same unfinished catalog request. Reception handoff pauses automatic chat replies.
 6. Checkout asks the guest to confirm, posts the full booked room nights and checks settlement and unfinished food orders. An unsettled stay remains checked in and offers the bill/reception options. A settled stay checks out, releases future inventory, marks the room dirty, queues cleaning and sends a confirmation. The final confirmation remains deliverable after the reservation closes.
@@ -33,7 +33,11 @@ Additional fields: `check_in_time`, `check_out_time`, and order-event-only `orde
 
 Configure the corresponding rules for document receipt/approval/rejection, check-in, food placed/preparing/ready/served/cancelled, service received/started/completed/cancelled, payment/refund/invoice and checkout. Reviews require separate marketing permission. Freeform menus/actions use the guest’s current 24-hour reply window; approval does not grant an unlimited freeform window. [WhatsApp messaging policy](https://whatsappbusiness.com/policy/).
 
-## Document scanner deployment
+## Document file-check mode
+
+The default is **Hosted photo-only review**: no separate server, JPG/PNG only, actual decoding and fresh JPEG output, followed by manual staff approval. PDFs are disabled and no antivirus scan is claimed. See [guest document handling](guest-tasks.md#hosted-photo-only-review). The scanner warning is displayed only when the hotel chooses antivirus mode.
+
+## Optional antivirus scanner deployment
 
 The scanner is a separate continuous process, not a Vercel web function. From `services/document-scanner`:
 
@@ -48,8 +52,22 @@ The compose file runs the scanner alongside the official ClamAV daemon with pers
 
 Alternatively, run `npm ci && npm start` with the configured `.env` and a private existing ClamAV daemon. The Guest journey screen shows the scanner’s recent heartbeat and pending-file count. The worker checks the daemon before claiming files. Only a literal successful antivirus verdict releases quarantine. Infection is blocked; download mismatch, timeout, malformed response or unavailable scanner retains quarantine and retries later. Leases prevent two workers scanning the same document and reject stale acknowledgments. No antivirus verdict was fabricated to test guest check-in. Local SQL fixtures explicitly represent previously scanned documents.
 
-Deploy migrations 91–96 and the existing `guest-documents`, `document-access` and updated `whatsapp-worker` functions. No new browser secrets are required. Keep the scanner’s service-role credential server-side. Review the existing worker’s automation feature flag and trusted guest portal origin before enabling hotel rules. Hosted document review cannot complete until a scanner is actually running; the app deliberately provides no “skip scan” approval button.
+Deploy migrations 91–96 and the existing `guest-documents`, `document-access` and updated `whatsapp-worker` functions. No new browser secrets are required. Keep the scanner’s service-role credential server-side. Review the existing worker’s automation feature flag and trusted guest portal origin before enabling hotel rules. Antivirus-mode document review cannot complete until a scanner is actually running. Photo-only review is a separate configured path and never fabricates a clean scan.
 
 ## Validation
 
 `043_whatsapp_guest_journey.test.sql` covers automatic welcome capture, contact-permission holds, no implicit ongoing/marketing consent, in-chat choices, document gating, check-in, request/task routing, replay/expiry/STOP handling, checkout balances/orders, inventory release and cleaning. `044_document_scan_leases.test.sql` covers quarantine and scanner leases. Node scanner tests cover explicit clean/infected verdicts, malformed replies, timeouts and oversized files. Provider delivery must additionally be tested against the real connected number; local assertions do not establish live delivery.
+
+## Missing booking welcome
+
+A reservation now shows the actual booking-welcome configuration and delivery
+state. The new-booking form warns when the journey or welcome rule is off.
+Enabling a rule does not silently backfill previous reservations. For a confirmed
+booking created within the last 24 hours, with recorded prior contact permission
+and a ready approved template containing `portal_url`, an authorized reservation
+writer can select **Send booking welcome once**. Repeated requests, concurrent
+clicks and queued/sent messages reuse the original deduplicated event.
+
+This initial contact permission remains separate from ongoing stay updates and
+optional marketing. It never opts the guest into either scope. Other event rules
+still require the owner's deliberate template assignment and activation.

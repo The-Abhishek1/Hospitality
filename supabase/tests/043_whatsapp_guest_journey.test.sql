@@ -147,7 +147,7 @@ select public.ingest_whatsapp_inbound('12345678001','journey-stop','919111111111
 reset role;
 select is((select status from public.whatsapp_guest_authorizations where property_id=:'pid'),'revoked','STOP revokes chat stay-update permission');
 select ok(private.inbox_delivery_error((select id from public.messages where journey_purpose='confirm_checkin'and property_id=:'pid'))is not null,'STOP suppresses already queued journey replies');
-select ok(not has_function_privilege('anon','public.save_whatsapp_journey(uuid,integer,boolean,integer,boolean)','execute'),'anonymous visitor cannot change journey settings');
+select ok(not has_function_privilege('anon','public.save_whatsapp_journey(uuid,integer,boolean,integer,boolean,text)','execute'),'anonymous visitor cannot change journey settings');
 select ok(not has_function_privilege('authenticated','private.complete_guest_checkout(uuid,uuid)','execute'),'staff cannot invoke the private guest checkout core directly');
 set local role authenticated;
 select throws_ok($$select public.frontdesk_create_whatsapp(p_property=>'e3000000-0000-0000-0000-000000000001',p_currency=>'INR',p_request=>'ea000000-0000-0000-0000-000000000001',p_guest_name=>'Atomic invalid QA',p_phone=>'+919333333333',p_email=>'',p_type=>'ef000000-0000-0000-0000-000000000001',p_in=>current_date+5,p_out=>current_date+7,p_adults=>1,p_children=>0,p_quote=>5000,p_contact_permission=>true,p_contact_evidence=>'')$$,'22023',null,'booking with invalid contact evidence fails atomically');
