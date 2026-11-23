@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import ts from 'typescript';
 import {normalizeTemplate} from '../../../packages/whatsapp-security/templates.mjs';
 const code=ts.transpileModule(readFileSync(new URL('../src/lib/automation-flow.ts',import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
-const {automationStarters,eventFields,createTemplatePayload,templateUsable,setupNext,previewAutomation,templateProviderError}=await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
+const {isMetaSampleTemplate,automationStarters,eventFields,createTemplatePayload,templateUsable,setupNext,previewAutomation,templateProviderError}=await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
 const input={event:'checked_in',name:'hotel_checked_in',language:'en_US',body:automationStarters.checked_in};
 test('all 23 event starters produce provider templates compatible with actual delivery transport',()=>{
  assert.equal(Object.keys(automationStarters).length,23);
@@ -68,3 +68,5 @@ test('template errors preserve provider reason and redact credentials without un
  assert.match(error,/2388299/);assert.match(error,/Variables can't/);assert.doesNotMatch(error,/private-test-token|Reconnect/);
  assert.match(templateProviderError({code:190,message:'Expired token'},400,''),/Reconnect/);
 });
+
+test('only known Meta samples are separated from hotel templates',()=>{for(const name of ['hello_world','jaspers_market_image_cta_v1','jaspers_market_media_carousel_v1','jaspers_market_order_confirmation_v1','jaspers_market_plain_text_v1'])assert.equal(isMetaSampleTemplate(name),true);for(const name of ['hotel_checkin','hotel_review','jaspers_market_airport_pickup','hello_world_hotel'])assert.equal(isMetaSampleTemplate(name),false);});

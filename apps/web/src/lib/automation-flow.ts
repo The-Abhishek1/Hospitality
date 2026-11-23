@@ -60,3 +60,6 @@ export function templateProviderError(error:{code?:number;error_subcode?:number;
  const advice=subcode===2388299?' Add written text before and after variables; a full stop alone does not count.':code===190?' Reconnect this hotel’s WhatsApp account to renew authorization.':[10,200].includes(code)?' Check this hotel’s WhatsApp management permissions in Meta.':' Review the template details and try again.';
  return `Meta rejected the template request (code ${code}${subcode?'/'+subcode:''}): ${detail}${advice}`;
 }
+
+const metaSampleNames=new Set(['hello_world','jaspers_market_image_cta_v1','jaspers_market_media_carousel_v1','jaspers_market_order_confirmation_v1','jaspers_market_plain_text_v1']);
+export function isMetaSampleTemplate(name:string){return metaSampleNames.has(name);}
