@@ -54,3 +54,24 @@ Template creation can copy a shared destination into message text or a static li
 New uploads create property-scoped photo metadata only after storage succeeds. Existing menu and template photo references are retained in the library. Removing a library entry archives its metadata while preserving the public object and existing template delivery image. Cross-hotel access and unvalidated client metadata writes are denied. Hotel-link changes are version-checked and appear in property settings history; neither resource changes nor template creation activate sending.
 
 Validation: `036_hotel_message_resources.test.sql` covers isolation, stale-menu protection, template preservation and independent settings versions. `npm run test:hotel-information --prefix apps/web` covers button snapshots, photo ownership, upload authorization, content detection, failed-registration cleanup and archival without file deletion.
+
+## Menu greeting and publishing
+
+The Guest menu editor no longer has an editable welcome-message field. Saving
+supplies the standard menu introduction automatically; owners configure categories,
+services and their approved templates. The introduction appears as the body of
+the WhatsApp category list, not as an unrelated message or a personal guest link.
+The automatic booking welcome remains a separate event rule.
+
+The editor shows the saved publication state and provides save controls near the
+top as well as below the category editor. **Save menu draft** does not activate
+custom replies. Select **Use this custom menu for automatic replies** and choose
+**Save & publish guest menu** after assigning compatible approved templates to all
+enabled services. The saved state changes only after a successful server save.
+With Guest journey enabled and no published custom menu, its built-in menu remains
+the fallback. Required booking verification, messaging preferences, STOP and
+reception handoff still apply.
+
+Regression coverage: `050_guest_menu_greeting.test.sql` traces inbound messages to
+the actual category-list payload and confirms draft greetings are not used live;
+`guest-menu-save.test.mjs` verifies automatic introduction and publication state.

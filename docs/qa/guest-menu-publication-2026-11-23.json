@@ -1,0 +1,12 @@
+{
+  "date": "2026-11-23",
+  "scope": "Local synthetic hotel settings; no outbound WhatsApp messages",
+  "checks": [
+    "No editable welcome/greeting field remains",
+    "Unpublished status explains the real built-in fallback",
+    "Saving automatically supplies the greeting and keeps service assignments",
+    "Explicit publishing updates the live status",
+    "Unpublishing returns to the built-in menu without disabling the guest journey",
+    "Menu editor fits the mobile viewport"
+  ]
+}
