@@ -6,7 +6,7 @@
     "dev": "next dev -p 3001",
     "build": "next build",
     "start": "next start -p 3001",
-    "test": "node --test tests/portal.test.mjs"
+    "test": "node --test tests/portal.test.mjs tests/consent.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.46.0",
