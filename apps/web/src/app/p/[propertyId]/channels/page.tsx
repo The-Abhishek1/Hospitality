@@ -40,17 +40,17 @@ export default async function ChannelsPage({
     <div className="service-workspace channels-workspace">
       <div className="sr-toolbar"><div><span className="sr-live-dot"/>Distribution workspace<small>Map hotel inventory, prepare connections and monitor delivery.</small></div><Link className="dash-button" href={`/p/${pid}/channels/review`}>Review reservation imports →</Link></div>
       {failed && <p role="alert">Channel data could not be loaded. Refresh or ask your hotel administrator for access.</p>}
-      <div id="channel-setup" className="channel-provider-grid">{providers.map(p=>{const c=conns?.find(c=>c.provider===p.key);return <section className="channel-card" key={p.key}>
+      <div id="channel-setup" className="channel-provider-grid">{providers.map(p=>{const c=conns?.find(c=>c.provider===p.key);return <details className="channel-card" name="channel-provider" key={p.key}><summary><strong>{p.name}</strong><span>{c?.sandbox_approved?'Sandbox testing':c?'Setup saved · paused':'Not connected'}</span></summary><div className="channel-provider-content">
         <span className="sr-eyebrow">{c?.sandbox_approved ? "Sandbox testing" : c ? "Setup saved · paused" : "Not connected"}</span><h2>{p.name}</h2><p>{p.note}</p><a href={p.url} target="_blank" rel="noreferrer">Partner documentation ↗</a>
         <form action={prepareChannel}><input type="hidden" name="pid" value={pid}/><input type="hidden" name="provider" value={p.key}/>
           <label>Provider hotel ID<input className={f} name="hotel" defaultValue={c?.external_property_id??""} inputMode="numeric" pattern="[1-9][0-9]{0,19}" required/></label>
           <label>Server credential reference (optional)<input className={f} name="reference" placeholder="Configured by your platform operator" pattern="[-a-zA-Z0-9_:]{1,100}"/></label>
           <small>Enter a reference name only. Never paste an API key or password.</small><button className="dash-button">{c?"Update setup and pause":"Save connection setup"}</button>
-        </form></section>;})}</div>
+        </form></div></details>;})}</div>
       {error && <p className="rounded bg-red-50 p-2 text-sm text-red-700">{error}</p>}
       <p className="channel-notice">Agoda sandbox development now includes products, nightly rates and restrictions, and reservation polling. Only eligible single-room Property Collect snapshots import automatically; other cases require review. Provider validation and certification are pending. Booking.com remains availability-only. Saving setup does not enable OTA traffic.</p>
 
-      <section>
+      <details className="simple-disclosure"><summary>Connection mappings & test tools</summary><section>
         <h2 className="mb-2 font-medium">Connections</h2>
         {!conns?.some(c=>c.provider === "mock") && (
           <form action={connectChannel} className="flex gap-2">
@@ -76,7 +76,7 @@ export default async function ChannelsPage({
             </form>
           </div>
         ))}
-      </section>
+      </section></details>
 
       {conns?.filter(c=>c.provider==='agoda').map(c=>{
         const product=products?.find(p=>p.connection_id===c.id),poll=polls?.find(p=>p.connection_id===c.id);
@@ -102,7 +102,7 @@ export default async function ChannelsPage({
           </>:<p>Products must be retrieved from an authorized Agoda sandbox before rate mapping and price publication are available.</p>}
         </section>;
       })}
-      <DistributionCatalog/>
+      <details className="simple-disclosure"><summary>Explore other distribution channels</summary><DistributionCatalog/></details>
 
       <section>
         <h2 className="mb-2 font-medium">Needs attention</h2>

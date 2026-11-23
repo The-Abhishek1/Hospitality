@@ -1,0 +1,224 @@
+/* Shared, compact hotel operations UI. Existing focused inbox and reservation views stay scoped separately. */
+.workspace-feature.workspace-simple .workspace-page-heading{padding-bottom:18px;margin-bottom:20px;align-items:flex-start}
+.workspace-feature.workspace-simple .workspace-page-heading h1{font:600 28px/1.3 var(--font-sans,Arial,sans-serif);letter-spacing:-.5px;margin:0}
+.workspace-feature.workspace-simple .workspace-page-heading p{font-size:16px;line-height:1.6;margin:7px 0 0;color:#627184;max-width:800px}
+.workspace-feature.workspace-simple .workspace-back{font-size:13px;padding-top:10px}
+.workspace-feature.workspace-simple .service-workspace,.workspace-feature.workspace-simple .billing-workspace{gap:18px;max-width:1280px;margin:0 auto;min-width:0}
+.workspace-feature.workspace-simple .sr-toolbar,.workspace-feature.workspace-simple .bill-toolbar{margin:0;gap:14px;align-items:center;font-size:14px}
+.workspace-feature.workspace-simple .sr-toolbar>div:first-child,.workspace-feature.workspace-simple .bill-toolbar>div:first-child{color:#627184;line-height:1.5}
+.workspace-feature.workspace-simple .sr-toolbar>div:last-child{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.workspace-feature.workspace-simple .sr-toolbar small{font-size:12px;margin-top:3px}
+.workspace-feature.workspace-simple .sr-stats,.workspace-feature.workspace-simple .bill-stats{gap:0;border:1px solid #dce2e9;border-radius:10px;background:#fff;overflow:hidden}
+.workspace-feature.workspace-simple .sr-stats>a,.workspace-feature.workspace-simple .bill-stats>div{padding:14px 18px;border:0;border-right:1px solid #e4e8ee;background:transparent;border-radius:0;color:#203956;min-width:0}
+.workspace-feature.workspace-simple .sr-stats>a:last-child,.workspace-feature.workspace-simple .bill-stats>div:last-child{border-right:0}
+.workspace-feature.workspace-simple .sr-stats>a>span,.workspace-feature.workspace-simple .bill-stats>div>span{font-size:13px;line-height:1.5;color:#627184}
+.workspace-feature.workspace-simple .sr-stats>a>strong,.workspace-feature.workspace-simple .bill-stats>div>strong{font-size:23px;line-height:1.3;margin:5px 0 0;font-weight:600;color:#203956}
+.workspace-feature.workspace-simple .sr-stats>a>small{display:none}
+.workspace-feature.workspace-simple .bill-stats>div>small{font-size:12px;line-height:1.4;margin-top:5px;color:#627184}
+.workspace-feature.workspace-simple .sr-stats>a:hover{background:#f2f5fa}
+.workspace-feature.workspace-simple .sr-stats>a.attention{background:#fff5ed}
+.workspace-feature.workspace-simple .sr-panel,.workspace-feature.workspace-simple .bill-panel,.workspace-feature.workspace-simple .campaign-panel{border:1px solid #dce2e9;border-radius:11px;padding:22px;background:#fffefa;min-width:0}
+.workspace-feature.workspace-simple :is(.sr-panel-heading,.bill-panel-heading,.sr-subheading){gap:16px;align-items:flex-start;margin-bottom:18px}
+.workspace-feature.workspace-simple :is(.sr-panel-heading,.bill-panel-heading,.sr-subheading) h2{font:600 20px/1.4 var(--font-sans,Arial,sans-serif);margin:0 0 5px}
+.workspace-feature.workspace-simple :is(.sr-panel-heading,.bill-panel-heading,.sr-subheading) p{font-size:15px;line-height:1.6;margin:0;color:#627184}
+.workspace-feature.workspace-simple .sr-tabs,.workspace-feature.workspace-simple .bill-tabs,.workspace-feature.workspace-simple .food-status-tabs,.workspace-feature.workspace-simple .task-mode-tabs{flex-wrap:wrap;gap:6px;overflow:visible;padding:0 0 14px;margin:0 0 16px}
+.workspace-feature.workspace-simple :is(.sr-tabs,.bill-tabs,.food-status-tabs,.task-mode-tabs)>a{padding:9px 12px;border:1px solid #dce2e9;border-radius:7px;font-size:14px;line-height:1.3;background:#fffefa;white-space:normal;text-decoration:none}
+.workspace-feature.workspace-simple :is(.sr-tabs,.bill-tabs,.food-status-tabs,.task-mode-tabs)>a[aria-current=page]{background:#e7eef7;color:#1d3859;border-color:#a9bbd0;font-weight:600;box-shadow:none}
+.workspace-feature.workspace-simple :is(.sr-tabs,.bill-tabs,.food-status-tabs,.task-mode-tabs)>a:hover{background:#eef3f9}
+.workspace-feature.workspace-simple .simple-filter-form{display:grid;gap:10px;padding:0;margin:0 0 18px;border:0;background:transparent;min-width:0}
+.workspace-feature.workspace-simple .simple-search-row{display:flex;align-items:flex-end;gap:10px;min-width:0;flex-wrap:wrap}
+.workspace-feature.workspace-simple .simple-search-row>label{flex:1 1 240px;max-width:650px;min-width:0;display:grid;gap:6px;font-size:14px;font-weight:500}
+.workspace-feature.workspace-simple .simple-search-row>label>input{width:100%;box-sizing:border-box}
+.workspace-feature.workspace-simple .simple-search-row>a{font-size:13px;padding:9px 3px}
+.workspace-feature.workspace-simple .simple-extra-filters>summary{font-size:14px;color:#3d536d;cursor:pointer;list-style-position:inside;width:fit-content;padding:6px 0;font-weight:500}
+.workspace-feature.workspace-simple .simple-extra-filters>summary>span{background:#e7eef7;border-radius:14px;padding:3px 7px;margin-left:6px;font-size:12px}
+.workspace-feature.workspace-simple .simple-filter-fields{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;padding:14px 16px;background:#f3f6fa;border:1px solid #e1e6ed;border-radius:9px;margin-top:8px}
+.workspace-feature.workspace-simple .simple-filter-fields>label{display:grid;gap:6px;flex:1 1 150px;min-width:0;font-size:14px;font-weight:500}
+.workspace-feature.workspace-simple .simple-filter-fields select,.workspace-feature.workspace-simple .simple-filter-fields input{width:100%;box-sizing:border-box}
+.workspace-feature.workspace-simple :is(.sr-table-scroll,.bill-table-scroll){max-height:620px;max-height:min(68dvh,620px);overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;min-width:0;border-top:1px solid #e4e8ee}
+.workspace-feature.workspace-simple :is(.sr-table,.bill-table){margin:0;font-size:14px;width:100%}
+.workspace-feature.workspace-simple :is(.sr-table,.bill-table) th{position:sticky;top:0;z-index:1;background:#f3f6fa;color:#627184;font-size:12px;padding:12px 10px;white-space:normal;line-height:1.5}
+.workspace-feature.workspace-simple :is(.sr-table,.bill-table) td{padding:14px 10px;line-height:1.5;border-bottom:1px solid #e5e9ef;vertical-align:top}
+.workspace-feature.workspace-simple :is(.sr-table,.bill-table) td small{font-size:12px;line-height:1.6;color:#627184;display:block;overflow-wrap:anywhere}
+.workspace-feature.workspace-simple :is(.sr-table,.bill-table) td a{overflow-wrap:anywhere}
+.workspace-feature.workspace-simple :is(.sr-pagination,.bill-pagination){padding:15px 0 0;gap:12px;flex-wrap:wrap;font-size:13px;margin:0}
+.workspace-feature.workspace-simple :is(.sr-pagination,.bill-pagination)>div{gap:14px;flex-wrap:wrap}
+.workspace-feature.workspace-simple :is(.sr-footnote,.bill-footnote){font-size:13px;line-height:1.65;margin:0;color:#627184}
+.workspace-feature.workspace-simple .simple-disclosure{padding:16px 20px;border:1px solid #dce2e9;border-radius:10px;background:#fffefa;min-width:0}
+.workspace-feature.workspace-simple .simple-disclosure>summary{font-size:15px;font-weight:600;cursor:pointer;line-height:1.5}
+.workspace-feature.workspace-simple .simple-disclosure[open]>summary{margin-bottom:18px}
+.workspace-feature.workspace-simple .simple-disclosure :is(section,.bill-audit-grid){margin-top:16px}
+.workspace-feature.workspace-simple .simple-section{margin-top:18px}
+.workspace-feature.workspace-simple .sr-detail-grid,.workspace-feature.workspace-simple .bill-detail-grid{gap:20px;align-items:start}
+.workspace-feature.workspace-simple :is(.sr-detail-main,.bill-detail-main){min-width:0;display:grid;gap:18px}
+.workspace-feature.workspace-simple :is(.sr-detail-side,.bill-detail-side){min-width:0;display:grid;gap:18px}
+.workspace-feature.workspace-simple :is(.sr-form,.bill-form,.order-form,.inventory-form,.settings-form,.team-form,.property-form) label{font-size:14px;line-height:1.5;min-width:0}
+.workspace-feature.workspace-simple :is(.sr-form,.bill-form,.order-form,.inventory-form,.settings-form,.team-form,.property-form) :is(input,select,textarea){width:100%;box-sizing:border-box}
+.workspace-feature.workspace-simple input[type=checkbox]{width:16px!important;height:16px!important;min-height:16px!important;flex:0 0 16px;accent-color:#203a5b}
+.workspace-feature.workspace-simple .dash-button{font-size:14px;line-height:1.4;white-space:normal;text-align:center}
+.workspace-feature.workspace-simple :is(.sr-timeline,.bill-timeline,.settings-history,.team-audit-list){max-height:520px;overflow:auto;overscroll-behavior:contain}
+.workspace-feature.workspace-simple :is(.order-board,.task-room-grid,.inventory-card-grid,.food-menu-grid){max-height:700px;overflow:auto;overscroll-behavior:contain}
+.workspace-feature.workspace-simple .inventory-card,.workspace-feature.workspace-simple .task-room{padding:18px;border-radius:10px}
+.workspace-feature.workspace-simple .inventory-card h3{font-size:19px}
+.workspace-feature.workspace-simple .property-card h3{font:600 21px/1.4 var(--font-sans,Arial,sans-serif)}
+.workspace-feature.workspace-simple .property-card-actions{flex-wrap:wrap;gap:12px}
+.workspace-feature.workspace-simple .settings-summary-grid{gap:16px}
+.workspace-feature.workspace-simple .settings-summary{padding:18px}
+.workspace-feature.workspace-simple .settings-summary h2{font:600 22px/1.4 var(--font-sans,Arial,sans-serif);margin:8px 0}
+.workspace-feature.workspace-simple .settings-summary.featured{background:#edf2f8;color:#203956}
+.workspace-feature.workspace-simple .settings-summary.featured :is(p,a){color:#526376}
+.workspace-feature.workspace-simple .settings-config-grid{gap:12px}
+.workspace-feature.workspace-simple .settings-config-grid>a{padding:18px}
+.workspace-feature.workspace-simple .settings-config-grid h3{font-size:17px;margin:0 0 8px}
+.workspace-feature.workspace-simple .settings-config-grid p{font-size:14px;line-height:1.6}
+.workspace-feature.workspace-simple .report-range-panel{padding:18px 20px;gap:16px}
+.workspace-feature.workspace-simple .report-range-panel h2{font-size:18px;margin:0 0 5px}
+.workspace-feature.workspace-simple .report-range-panel p{font-size:14px;margin:0}
+.workspace-feature.workspace-simple .report-metrics{gap:12px}
+.workspace-feature.workspace-simple .report-metric{padding:18px}
+.workspace-feature.workspace-simple .report-metric>strong{font-size:27px}
+.workspace-feature.workspace-simple .report-period-note{gap:8px;flex-wrap:wrap;font-size:13px}
+.workspace-feature.workspace-simple .report-action-grid{gap:12px}
+.workspace-feature.workspace-simple .report-action-grid>a{padding:16px}
+.workspace-feature.workspace-simple .report-presets{flex-wrap:wrap}
+.workspace-feature.workspace-simple .channel-provider-grid{grid-template-columns:1fr;gap:12px}
+.workspace-feature.workspace-simple .channel-card{padding:0;overflow:hidden;border:1px solid #dce2e9;border-radius:10px;background:#fffefa}
+.workspace-feature.workspace-simple .channel-card>summary{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:18px;cursor:pointer;font-size:16px;font-weight:600;list-style:none}
+.workspace-feature.workspace-simple .channel-card>summary>span{font-size:13px;font-weight:400;color:#627184}
+.workspace-feature.workspace-simple .channel-card>summary::after{content:'⌄';font-size:20px}
+.workspace-feature.workspace-simple .channel-card[open]>summary::after{transform:rotate(180deg)}
+.workspace-feature.workspace-simple .channel-provider-content{padding:0 20px 20px}
+.workspace-feature.workspace-simple .channel-provider-content p{margin:0 0 12px;font-size:14px}
+.workspace-feature.workspace-simple .channel-notice{font-size:14px;padding:14px 16px;line-height:1.6}
+.workspace-feature.workspace-simple .channel-provider-content form{margin-top:18px}
+.workspace-feature.workspace-simple .simple-empty{padding:28px 18px;text-align:center;color:#627184;line-height:1.6}
+.workspace-feature.workspace-simple .simple-empty h3{font-size:18px;color:#203956;margin:0 0 8px}
+.workspace-feature.workspace-simple .campaign-form,.workspace-feature.workspace-simple .campaign-filters{gap:16px}
+.workspace-feature.workspace-simple .campaign-stats>div{padding:14px}
+.workspace-feature.workspace-simple .campaign-stats strong{font-size:24px}
+.workspace-feature.workspace-simple .campaign-note{font-size:13px;line-height:1.65}
+.workspace-feature.workspace-simple :is(input,select,textarea){border-color:#cdd6e1;background:#fffefa}
+.workspace-feature.workspace-simple :is(button,a,summary,input,select,textarea):focus-visible{outline:2px solid #315581;outline-offset:3px}
+@media(max-width:1050px){
+ .workspace-feature.workspace-simple .sr-detail-grid,.workspace-feature.workspace-simple .bill-detail-grid{grid-template-columns:1fr}
+ .workspace-feature.workspace-simple .sr-detail-side,.workspace-feature.workspace-simple .bill-detail-side{position:static;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .workspace-feature.workspace-simple .report-service-grid{grid-template-columns:1fr}
+}
+@media(max-width:700px){
+ .workspace-feature.workspace-simple .workspace-page-heading h1{font-size:24px}
+ .workspace-feature.workspace-simple .workspace-page-heading p{font-size:15px}
+ .workspace-feature.workspace-simple .workspace-back{display:none}
+ .workspace-feature.workspace-simple .sr-toolbar,.workspace-feature.workspace-simple .bill-toolbar{flex-direction:column;align-items:stretch}
+ .workspace-feature.workspace-simple .sr-toolbar>div:last-child{justify-content:flex-start}
+ .workspace-feature.workspace-simple .sr-toolbar>div:last-child>*{flex:0 1 auto}
+ .workspace-feature.workspace-simple .sr-panel,.workspace-feature.workspace-simple .bill-panel,.workspace-feature.workspace-simple .campaign-panel{padding:16px}
+ .workspace-feature.workspace-simple :is(.sr-panel-heading,.bill-panel-heading,.sr-subheading){flex-wrap:wrap;gap:12px}
+ .workspace-feature.workspace-simple :is(.sr-panel-heading,.bill-panel-heading,.sr-subheading) h2{font-size:18px}
+ .workspace-feature.workspace-simple .sr-stats,.workspace-feature.workspace-simple .bill-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .workspace-feature.workspace-simple .sr-stats>a,.workspace-feature.workspace-simple .bill-stats>div{padding:12px 14px;border-bottom:1px solid #e4e8ee}
+ .workspace-feature.workspace-simple .sr-stats>a:nth-child(2n),.workspace-feature.workspace-simple .bill-stats>div:nth-child(2n){border-right:0}
+ .workspace-feature.workspace-simple .sr-stats>a:nth-last-child(-n+2),.workspace-feature.workspace-simple .bill-stats>div:nth-last-child(-n+2){border-bottom:0}
+ .workspace-feature.workspace-simple .sr-stats>a>strong,.workspace-feature.workspace-simple .bill-stats>div>strong{font-size:21px}
+ .workspace-feature.workspace-simple .simple-search-row>label{flex-basis:100%;max-width:none}
+ .workspace-feature.workspace-simple .simple-filter-fields{padding:12px;display:grid;grid-template-columns:1fr}
+ .workspace-feature.workspace-simple .simple-disclosure{padding:14px 16px}
+ .workspace-feature.workspace-simple .sr-detail-side,.workspace-feature.workspace-simple .bill-detail-side{grid-template-columns:1fr}
+ .workspace-feature.workspace-simple .simple-data-table{min-width:0!important;display:block}
+ .workspace-feature.workspace-simple .simple-data-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+ .workspace-feature.workspace-simple .simple-data-table tbody{display:grid;gap:10px;padding:10px 0}
+ .workspace-feature.workspace-simple .simple-data-table tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;border:1px solid #dce2e9;border-radius:9px;padding:16px;background:#fffefa}
+ .workspace-feature.workspace-simple .simple-data-table td{display:block;border:0;padding:0;min-width:0;overflow-wrap:anywhere;font-size:14px}
+ .workspace-feature.workspace-simple .simple-data-table td::before{content:attr(data-label);display:block;font-size:12px;font-weight:500;color:#627184;margin-bottom:5px;line-height:1.4}
+ .workspace-feature.workspace-simple .simple-data-table td:first-child{grid-column:1/-1;font-size:16px;font-weight:600}
+ .workspace-feature.workspace-simple .simple-data-table td:first-child::before{display:none}
+ .workspace-feature.workspace-simple .simple-data-table td:last-child:has(a){grid-column:1/-1;padding-top:8px;border-top:1px solid #e5e9ef}
+ .workspace-feature.workspace-simple .simple-data-table td:last-child:has(a)::before{display:none}
+ .workspace-feature.workspace-simple .simple-data-table tr:has(td[colspan]){display:block}
+ .workspace-feature.workspace-simple .simple-data-table td[colspan]::before{display:none}
+ .workspace-feature.workspace-simple :is(.sr-table-scroll,.bill-table-scroll){scrollbar-gutter:auto}
+ .workspace-feature.workspace-simple :is(.task-room-grid,.inventory-card-grid,.settings-config-grid,.settings-summary-grid,.settings-setup-grid,.property-cards){grid-template-columns:1fr}
+ .workspace-feature.workspace-simple .report-range-form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+ .workspace-feature.workspace-simple .report-range-form>button{grid-column:1/-1}
+ .workspace-feature.workspace-simple .report-range-form label{min-width:0}
+ .workspace-feature.workspace-simple .report-range-form input{width:100%;box-sizing:border-box;min-width:0}
+ .workspace-feature.workspace-simple .report-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .workspace-feature.workspace-simple .report-metric{padding:14px;min-width:0}
+ .workspace-feature.workspace-simple .report-metric>strong{font-size:23px;overflow-wrap:anywhere}
+ .workspace-feature.workspace-simple .channel-card>summary{padding:16px;flex-wrap:wrap;gap:8px}
+ .workspace-feature.workspace-simple .channel-provider-content{padding:0 16px 16px}
+ .workspace-feature.workspace-simple .property-business-filter{display:grid;grid-template-columns:1fr;gap:8px;align-items:stretch}
+ .workspace-feature.workspace-simple .property-business-filter select{width:100%;box-sizing:border-box}
+}
+@media(max-width:380px){
+ .workspace-feature.workspace-simple .simple-data-table tr{padding:12px;gap:10px}
+ .workspace-feature.workspace-simple :is(.sr-tabs,.bill-tabs,.food-status-tabs)>a{font-size:13px;padding:8px 9px}
+ .workspace-feature.workspace-simple .report-metrics{grid-template-columns:1fr}
+}
+.workspace-feature.workspace-simple .campaign-step-nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px;border-bottom:1px solid #dce2e9;padding-bottom:14px}.workspace-feature.workspace-simple .campaign-step-nav button{background:#fffefa;border:1px solid #dce2e9;color:#627184;padding:10px 14px}.workspace-feature.workspace-simple .campaign-step-nav button[aria-current=step]{background:#e7eef7;color:#203956;border-color:#a9bbd0;font-weight:600}.workspace-feature.workspace-simple .campaign-audience-step[hidden],.workspace-feature.workspace-simple .campaign-form[hidden]{display:none}.workspace-feature.workspace-simple .campaign-back{justify-self:start;background:none;border:0;color:#3d536d;padding-left:0}.workspace-feature.workspace-simple .food-table-wrap{max-height:min(68dvh,620px);overflow:auto;overscroll-behavior:contain}.workspace-feature.workspace-simple .food-menu-table th{position:sticky;top:0;z-index:1;background:#f3f6fa}.workspace-feature.workspace-simple .food-pagination{flex-wrap:wrap;gap:12px}.workspace-feature.workspace-simple .food-pagination>div{flex-wrap:wrap;gap:12px}.workspace-feature.workspace-simple .report-metric.featured{background:#edf2f8;color:#203956}.workspace-feature.workspace-simple .report-metric.featured :is(span,p,small){color:#526376}.workspace-feature.workspace-simple .report-metric p{font-size:13px;line-height:1.55}.workspace-feature.workspace-simple .simple-disclosure .report-daily{padding:0;border:0;margin:0;background:transparent}
+
+.workspace-feature.workspace-simple :is(.sr-directory,.bill-directory){padding:0}
+.workspace-feature.workspace-simple .sr-directory>.sr-panel-heading,.workspace-feature.workspace-simple .bill-directory>.bill-panel-heading{padding:18px 22px;margin:0}
+.workspace-feature.workspace-simple .sr-directory>.sr-panel-heading p,.workspace-feature.workspace-simple .bill-directory>.bill-panel-heading p{display:none}
+.workspace-feature.workspace-simple :is(.sr-directory,.bill-directory)>.simple-filter-form{padding:16px 22px;margin:0}
+.workspace-feature.workspace-simple :is(.sr-directory,.bill-directory)>.sr-tabs,.workspace-feature.workspace-simple .bill-directory>.bill-tabs{padding:0 22px 14px;margin:0}
+.workspace-feature.workspace-simple :is(.sr-directory,.bill-directory)>:is(.sr-pagination,.bill-pagination){padding:14px 22px}
+.workspace-feature.workspace-simple .sr-stats>a{gap:5px}
+.workspace-feature.workspace-simple .sr-stats>a>strong{font-family:var(--font-sans,Arial,sans-serif)}
+.workspace-feature.workspace-simple .simple-disclosure>section{border:0;padding:0;background:transparent}
+.workspace-feature.workspace-simple :is(.sr-detail-grid,.bill-detail-grid,.res-detail-grid)>div:first-child{display:grid;gap:18px;align-content:start;min-width:0}
+.workspace-feature.workspace-simple :is(.sr-detail-grid,.bill-detail-grid,.res-detail-grid)>aside{display:grid;gap:18px;align-content:start;min-width:0}
+.workspace-feature.workspace-simple .res-detail-grid{gap:20px}
+.workspace-feature.workspace-simple :is(.sr-detail-grid,.bill-detail-grid,.res-detail-grid)>div>section{margin:0}
+.workspace-feature.workspace-simple .sr-comments{max-height:420px;overflow:auto}
+.workspace-feature.workspace-simple input[type=radio]{width:16px!important;height:16px!important;min-height:16px!important;flex:0 0 16px;accent-color:#203a5b}
+.workspace-feature.workspace-simple .simple-detail-shortcuts{display:flex;gap:8px;flex-wrap:wrap;padding:0 0 6px}
+.workspace-feature.workspace-simple .simple-detail-shortcuts a{padding:8px 12px;border:1px solid #dce2e9;border-radius:7px;background:#fffefa;font-size:14px}
+.workspace-feature.workspace-simple :is(#stay-documents,#stay-actions,#folio-actions,#work-actions){scroll-margin-top:24px}
+@media(max-width:700px){
+ .workspace-feature.workspace-simple :is(.sr-directory,.bill-directory)>.simple-filter-form{padding:14px 16px}
+ .workspace-feature.workspace-simple .sr-directory>.sr-panel-heading,.workspace-feature.workspace-simple .bill-directory>.bill-panel-heading{padding:16px}
+ .workspace-feature.workspace-simple :is(.sr-directory,.bill-directory)>.sr-tabs,.workspace-feature.workspace-simple .bill-directory>.bill-tabs{padding-left:16px;padding-right:16px}
+ .workspace-feature.workspace-simple :is(.sr-directory,.bill-directory)>:is(.sr-pagination,.bill-pagination){padding:14px 16px}
+ .workspace-feature.workspace-simple .res-detail-grid{grid-template-columns:1fr}
+ .workspace-feature.workspace-simple .res-booking-layout{grid-template-columns:1fr}
+ .workspace-feature.workspace-simple .res-booking-summary{position:static}
+ .workspace-feature.workspace-simple .sr-catalog-grid{grid-template-columns:1fr}
+}
+.workspace-feature.workspace-simple .order-menu-options{max-height:min(65dvh,580px);overflow:auto;overscroll-behavior:contain;padding-right:6px;display:grid;gap:10px;min-width:0}
+.workspace-feature.workspace-simple .order-menu-option{display:grid;grid-template-columns:64px minmax(0,1fr) 85px;gap:14px;padding:14px;border:1px solid #dce2e9;border-radius:10px;align-items:start}
+.workspace-feature.workspace-simple .order-menu-option:not(:has(img)){grid-template-columns:minmax(0,1fr) 85px}
+.workspace-feature.workspace-simple .order-menu-option .food-order-photo{width:64px;height:64px;object-fit:cover;border-radius:8px}
+.workspace-feature.workspace-simple .order-menu-option .food-order-info{min-width:0}
+.workspace-feature.workspace-simple .order-menu-option strong{font-size:16px}
+.workspace-feature.workspace-simple .order-menu-option p{font-size:13px;line-height:1.6;margin:5px 0}
+.workspace-feature.workspace-simple .order-menu-option label{min-width:0;font-size:12px}
+.workspace-feature.workspace-simple .order-menu-option input{width:100%;text-align:center;box-sizing:border-box}
+.workspace-feature.workspace-simple .order-cart{padding:20px;min-width:0}
+.workspace-feature.workspace-simple .order-cart ul{max-height:340px;overflow:auto}
+.workspace-feature.workspace-simple .order-cart h2{font-size:20px}
+.workspace-feature.workspace-simple .order-compose{gap:20px;align-items:start}
+.workspace-feature.workspace-simple .order-main-form{gap:18px}
+.workspace-feature.workspace-simple .order-compose>div{display:grid;gap:18px;min-width:0}
+.workspace-feature.workspace-simple .settings-operations-group{padding:16px;border:1px solid #dce2e9;border-radius:10px}
+.workspace-feature.workspace-simple .settings-operations-group>summary{cursor:pointer;font-size:16px;font-weight:600}
+.workspace-feature.workspace-simple .settings-operations-group[open]>summary{margin-bottom:18px}
+.workspace-feature.workspace-simple .res-form .auto-check{display:flex;align-items:flex-start;gap:8px}
+@media(max-width:900px){.workspace-feature.workspace-simple .order-compose{grid-template-columns:1fr}.workspace-feature.workspace-simple .order-cart{position:static}}
+@media(max-width:440px){.workspace-feature.workspace-simple .order-menu-option{grid-template-columns:48px minmax(0,1fr);gap:10px;padding:12px}.workspace-feature.workspace-simple .order-menu-option .food-order-photo{width:48px;height:48px}.workspace-feature.workspace-simple .order-menu-option:not(:has(img)){grid-template-columns:minmax(0,1fr)}.workspace-feature.workspace-simple .order-menu-option>label{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px}.workspace-feature.workspace-simple .order-menu-option>label>input{width:85px}.workspace-feature.workspace-simple .order-menu-search{display:grid;grid-template-columns:1fr}.workspace-feature.workspace-simple .order-stay-search{flex-wrap:wrap}}
+.workspace-feature.workspace-simple .food-photo-upload{position:relative}
+.workspace-feature.workspace-simple .food-photo-upload input[type=file]{position:absolute;left:0;top:0;width:1px!important;height:1px!important;min-height:0!important;padding:0!important;border:0!important;overflow:hidden;clip-path:inset(50%)}
+.workspace-feature.workspace-simple fieldset{min-width:0}
+.workspace-feature.workspace-simple .sr-catalog-grid{max-height:700px;overflow:auto;overscroll-behavior:contain}
+.workspace-feature.workspace-simple .property-cards{max-height:700px;overflow:auto;overscroll-behavior:contain}
+.workspace-feature.workspace-simple .simple-property-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:13px;color:#627184;margin-top:18px}
+.workspace-feature.workspace-simple .simple-property-pagination>div{display:flex;gap:16px}
+.workspace-feature.workspace-simple .report-metric-info>summary{font-size:12px;cursor:pointer;color:#627184;margin:8px 0;line-height:1.5}
+.workspace-feature.workspace-simple .report-metric-info p{font-size:13px;margin:6px 0}
+.workspace-feature.workspace-simple .report-custom-range>summary{font-size:14px;font-weight:500;cursor:pointer;padding:8px 0}
+.workspace-feature.workspace-simple .report-custom-range[open]>form{margin-top:12px}
+.workspace-feature.workspace-simple .report-action-grid>a{padding:14px;min-width:0}
+.workspace-feature.workspace-simple .report-action-grid strong{font-size:22px}
+.workspace-feature.workspace-simple .settings-config-grid>a>span{font-size:13px;margin-top:6px}
+@media(max-width:700px){.workspace-feature.workspace-simple .report-action-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.workspace-feature.workspace-simple .report-action-grid>a>span{font-size:13px;line-height:1.5}.workspace-feature.workspace-simple .settings-config-grid>a{padding:14px}.workspace-feature.workspace-simple .settings-summary{padding:16px}.workspace-feature.workspace-simple .report-range-panel{display:grid;grid-template-columns:1fr}}
+.workspace-feature.workspace-simple .order-board-column{max-height:600px;overflow:auto;overscroll-behavior:contain}
+.workspace-feature.workspace-simple .order-board-heading{position:sticky;top:0;z-index:1;background:#f3f6fa;padding-bottom:12px}
