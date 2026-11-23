@@ -43,8 +43,10 @@ export function createTemplatePayload(input:{event:string;name:string;language:s
  if(variables.includes('order_reference')&&!input.event.startsWith('order_')||variables.includes('request_title')&&!input.event.startsWith('request_')||variables.includes('invoice_number')&&input.event!=='invoice_issued'||variables.includes('review_url')&&!['review_request','service_reply'].includes(input.event)||variables.includes('portal_url')&&input.event==='booking_cancelled')throw Error('This template uses a field that is unavailable for the chosen event.');
  return{name,language:input.language,category:input.event==='review_request'?'MARKETING':'UTILITY',...(variables.length?{parameter_format:'NAMED'}:{}),components:[{type:'BODY',text:body,...(variables.length?{example:{body_text_named_params:variables.map(param_name=>({param_name,example:sampleValues[param_name]}))}}:{})}]};
 }
-export function templateUsable(template:{supported:boolean;status:string;category:string;checked_at:string},event:string,now=Date.now()){
- return template.supported&&template.status==='APPROVED'&&template.category===(event==='review_request'?'marketing':'utility')&&Number.isFinite(Date.parse(template.checked_at))&&Date.parse(template.checked_at)>=now-24*60*60*1000;
+export function templateUsable(template:{supported:boolean;status:string;category:string;checked_at:string;parameters?:string[]},event:string,now=Date.now()){
+ if(!Object.hasOwn(automationStarters,event))return false;
+ const available=eventFields(event);
+ return template.supported&&template.status==='APPROVED'&&template.category===(event==='review_request'?'marketing':'utility')&&Number.isFinite(Date.parse(template.checked_at))&&Date.parse(template.checked_at)>=now-24*60*60*1000&&(template.parameters??[]).every(name=>!Object.hasOwn(automationFields,name)||available.includes(name));
 }
 export function setupNext(input:{connected:boolean;approved:number;rules:number;permissions:number;worker:boolean}){
  if(!input.connected)return'connection';if(!input.approved)return'templates';if(!input.rules)return'rules';if(!input.permissions)return'permissions';if(!input.worker)return'worker';return'test';

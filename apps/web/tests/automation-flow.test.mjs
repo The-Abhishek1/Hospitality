@@ -40,6 +40,15 @@ test('numbered parameters are never silently guessed in the preview',()=>{
  assert.equal(previewAutomation('Hello {{1}}',[],['1']),'Hello [Choose 1]');
  assert.equal(previewAutomation('Hello {{1}}',['guest_name'],['1']),'Hello Alex');
 });
+test('existing templates expose only fields available for the selected event',()=>{
+ const now=Date.now(),template={supported:true,status:'APPROVED',category:'utility',checked_at:new Date(now).toISOString()};
+ for(const field of ['order_reference','request_title','invoice_number','review_url'])assert.equal(templateUsable({...template,parameters:[field]},'checked_in',now),false,field);
+ assert.equal(templateUsable({...template,parameters:['portal_url']},'booking_cancelled',now),false);
+ assert.equal(templateUsable({...template,parameters:['order_reference']},'order_ready',now),true);
+ assert.equal(templateUsable({...template,parameters:['1','customer']},'checked_in',now),true,'numbered and custom names can be explicitly mapped');
+ for(const event of ['service_reply','unknown'])assert.equal(templateUsable(template,event,now),false,'only catalog events can be activation targets');
+ for(const[event,body]of Object.entries(automationStarters))assert.equal(templateUsable({...template,category:event==='review_request'?'marketing':'utility',parameters:[...body.matchAll(/\{\{(\w+)\}\}/g)].map(m=>m[1])},event,now),true,event);
+});
 test('setup recommends the first incomplete step in order',()=>{
  const state={connected:false,approved:0,rules:0,permissions:0,worker:false};
  assert.equal(setupNext(state),'connection');state.connected=true;
