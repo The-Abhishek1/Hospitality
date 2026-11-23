@@ -10,7 +10,7 @@
 
 **Preparation workspace:** local template authoring, named variables and sample previews, photo-header drafts, URL/quick-reply definitions, hotel links, guest-menu configuration, journey plans, a simulator and preparation JSON exports now exist. These are offline content/configuration features.
 
-**Live integration:** provider template sync, text body variables, hotel domain-event hooks, scheduled reminders, explicit guest authorization/binding and secure stay links are implemented in the separate [Automations workspace](whatsapp-automations.md). The guided WhatsApp messages workspace supports explicit in-app submission to Meta, approval sync and event selection. Interactive service-window menus, public links, verified guest-page buttons and photo replies are implemented in the [live guest menu](whatsapp-guest-menu.md). Proactive media/button templates, arbitrary conversational AI, guest self-verification, full provider quality monitoring and activation of old offline journey-plan records remain unimplemented. Cloud API Embedded Signup, encrypted hotel credentials, connection checks and disconnect/reconnect controls are implemented separately; see [onboarding requirements and remaining Meta setup](whatsapp-onboarding.md).
+**Live integration:** provider template sync, text body variables, hotel domain-event hooks, scheduled reminders, explicit guest authorization/binding and secure stay links are implemented in the separate [Automations workspace](whatsapp-automations.md). The guided WhatsApp Automation workspace supports explicit in-app submission to Meta, approval sync and event selection. Interactive service-window menus, public links, verified guest-page buttons and photo replies are implemented in the [live guest menu](whatsapp-guest-menu.md). Proactive media/button templates, arbitrary conversational AI, guest self-verification, full provider quality monitoring and activation of old offline journey-plan records remain unimplemented. Cloud API Embedded Signup, encrypted hotel credentials, connection checks and disconnect/reconnect controls are implemented separately; see [onboarding requirements and remaining Meta setup](whatsapp-onboarding.md).
 
 ## Advanced staff inbox
 
@@ -59,12 +59,12 @@ uncertain outcome, subject to current consent/window/template checks.
 Run `npm test` in the notification worker for mocked transport tests,
 `npm run test:inbox` in the web app for filter/state checks, and
 `supabase test db supabase/tests/015_advanced_inbox.test.sql` for transactional
-Inbox/queue tests. These tests never send real WhatsApp messages.
+Inbox/queue tests. These tests never send real WhatsApp Automation.
 
 
 ## Prepare guest messaging before API setup
 
-Open **WhatsApp messages → Advanced → Open message drafts & hotel links**.
+Open **WhatsApp Automation → Advanced → Open message drafts & hotel links**.
 For live templates, use **Message templates** in the guided workspace instead. Preparation is available before a business-number connection and does
 not require the current plan to include live WhatsApp messaging. Administrators
 with `staff.manage` edit configuration; `whatsapp.use` staff can inspect drafts,

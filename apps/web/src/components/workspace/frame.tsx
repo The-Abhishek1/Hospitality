@@ -11,9 +11,9 @@ import './navigation.css';
 export type WorkspaceProperty = { id: string; tenant_id: string; name: string; timezone: string; currency: string };
 export type WorkspacePermissions = Record<string, boolean>;
 const features = [
-  {key:'automations',name:'WhatsApp messages',icon:'▤',permission:'settings',description:'Send guest updates automatically after hotel events, with permission and approved templates.'},
-  {key:'whatsapp',name:'WhatsApp setup',icon:'▤',permission:'settings',description:'Connect and manage this hotel’s own WhatsApp Business number.'},
-  {key:'campaigns',name:'Campaigns',icon:'▤',permission:'settings',description:'Build guest audiences, prepare marketing messages and schedule WhatsApp campaigns.'},
+  {key:'automations',name:'WhatsApp Automation',icon:'▤',permission:'settings',description:'Send guest updates automatically after hotel events, with permission and approved templates.'},
+  {key:'whatsapp',name:'WhatsApp Connection',icon:'▤',permission:'settings',description:'Connect and manage this hotel’s own WhatsApp Business number.'},
+  {key:'campaigns',name:'WhatsApp Campaigns',icon:'▤',permission:'settings',description:'Build guest audiences, prepare marketing messages and schedule WhatsApp campaigns.'},
   {key:'guest-messaging',name:'Message drafts',icon:'▤',permission:'guest_messaging',description:'Prepare WhatsApp templates, guest portal links and guest journey plans before connecting live delivery.'},
   {key:'reports',name:'Reports & insights',icon:'◴',permission:'reports',description:'Explore scheduled stays, recorded charges, cash activity and service performance.'},
   {key:'reservations',name:'Reservations',icon:'▦',permission:'reservations',description:'Manage stays, arrivals, departures, and your reservation calendar.'},
