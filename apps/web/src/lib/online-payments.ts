@@ -1,0 +1,5 @@
+export type PaymentConnection={id:string;mode:'test';status:string;key_hint:string;checkout_enabled:boolean;version:number;webhook_seen_at:string|null};
+export type OnlinePayment={id:string;reservation_id:string;connection_id:string;amount:number;currency:string;state:string;short_url:string|null;provider_payment_id:string|null;expires_at:string;last_error:string|null;created_at:string};
+export type PaymentWorkspace={test_hotel:boolean;connection:PaymentConnection|null;can_configure:boolean;can_collect:boolean;worker:{enabled:boolean;last_success_at:string|null;last_result:string|null}|null;requests:OnlinePayment[]};
+export const paymentInProgress=(state:string)=>['pending','creating','unknown','ready','cancel_pending'].includes(state);
+export const onlinePaymentLabel=(state:string)=>({pending:'Preparing link',creating:'Preparing link',unknown:'Checking provider',ready:'Awaiting payment',cancel_pending:'Cancelling',cancelled:'Cancelled',expired:'Expired',paid:'Paid · test',failed:'Needs attention'}[state]??state);

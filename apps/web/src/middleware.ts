@@ -6,7 +6,7 @@ import { safeNext } from "@/lib/auth";
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
   // Guest tasks authenticate with a stay token, independently of staff sessions.
-  if (publicGuestPath(request.nextUrl.pathname)) return response;
+  if (publicGuestPath(request.nextUrl.pathname) || /^\/api\/payments\/razorpay\/webhook\/[a-f0-9-]{36}$/.test(request.nextUrl.pathname)) return response;
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

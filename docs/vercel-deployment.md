@@ -138,3 +138,7 @@ Local testing uses a separate app and a mocked email provider. Never put the rea
 References: [Resend sending API](https://resend.com/docs/api-reference/emails/send-email), [idempotency](https://resend.com/docs/dashboard/emails/idempotency-keys), [Supabase SMTP](https://resend.com/docs/send-with-supabase-smtp).
 
 Platform administrators can inspect `/api/admin/email-status` while signed in to diagnose missing or invalid invitation-email settings. The endpoint returns setting names only, never their values, and rejects hotel owners and unauthenticated requests. Public Supabase build variables are read directly so Next.js can inline them on Vercel; private email and backend credentials remain server-only runtime variables.
+
+## Hotel online payments
+
+Razorpay Test Mode checkout uses the hotel app and a Supabase Edge worker; it requires no separate worker host. Follow [online payment setup](online-payments.md). Each hotel connects its own test merchant keys inside Billing. The existing server-only encryption key must be available in Vercel and Supabase. Keep test payments in a dedicated test property.

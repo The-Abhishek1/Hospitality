@@ -31,3 +31,6 @@ verify_jwt = false # Server-to-server only; requires the dedicated X-Worker-Secr
 # Staff identity documents require a verified staff JWT and the audited permission RPC.
 [functions.document-access]
 verify_jwt = true
+
+[functions.payments-worker]
+verify_jwt = false # Dedicated server-to-server X-Worker-Secret, same scheduling vault as WhatsApp.
