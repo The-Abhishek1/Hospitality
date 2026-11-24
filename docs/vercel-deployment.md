@@ -111,3 +111,28 @@ are intended for the local stack.
 After correcting hosted URLs, request a fresh confirmation or recovery email.
 Previously delivered emails retain the links they were generated with. See
 [Supabase redirect configuration](https://supabase.com/docs/guides/auth/redirect-urls).
+
+## Team invitation emails
+
+Supabase Auth SMTP sends account confirmations and password resets. Team invitations use the Resend API separately; configuring SMTP alone does not configure these application emails.
+
+Set these **server-only** variables on the hotel app's Vercel project, then redeploy:
+
+```env
+RESEND_API_KEY=<private Resend sending key for the verified domain>
+TEAM_EMAIL_FROM="Xcloak Hospitality <admin@xcloak.tech>"
+APP_URL=https://xcloak-hospitality.vercel.app
+SUPABASE_SERVICE_ROLE_KEY=<backend-only Supabase key>
+```
+
+`TEAM_EMAIL_FROM` defaults to `Xcloak Hospitality <admin@xcloak.tech>` for this installation. Other installations must override it with their verified sender. Use a sending-only Resend key. Never use `NEXT_PUBLIC_` for these keys. The account must have sending enabled for the sender domain. Keep the same stable `APP_URL` as Supabase's allowed authentication callbacks; invitation links go to the app's `/login` and `/signup` pages.
+
+Apply migration `20261105000110_team_invitation_emails.sql` before deploying the UI. Owners and business administrators can create and email property-staff invitations; only owners can email administrator invitations. New invitations and renewed invitations attempt one email send automatically. A failed email preserves the invitation and its role assignments. The invitation page offers explicit resend, manual sharing, and the latest result. The directory shows acceptance and email status separately.
+
+Email records enforce a two-minute resend interval, ten attempts per invitation per day, and one hundred attempts per business per hour. Replayed submissions do not send a second email. Network timeouts and ambiguous provider responses are marked unconfirmed and are not retried automatically. Check the provider logs or ask the recipient before explicitly resending. “Email sent” means Resend accepted the email, not that it reached an inbox; inbox placement, bounces and delivery events remain in the Resend dashboard.
+
+The recipient must use the invited address, confirm their email if requested, then open Today to accept the invitation. Existing accounts use sign-in; no duplicate Auth account is created. Revoked or expired invitations do not grant access, even if their earlier email is opened. Revoking an accepted invitation does not remove a teammate: use Team & access to review or remove membership.
+
+Local testing uses a separate app and a mocked email provider. Never put the real Resend key into the local synthetic-fixture environment. Live email tests require a designated recipient; do not invite arbitrary hotel guests or team members to test delivery.
+
+References: [Resend sending API](https://resend.com/docs/api-reference/emails/send-email), [idempotency](https://resend.com/docs/dashboard/emails/idempotency-keys), [Supabase SMTP](https://resend.com/docs/send-with-supabase-smtp).

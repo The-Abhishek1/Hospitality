@@ -1,5 +1,6 @@
 "use server";
 import{redirect}from 'next/navigation';import{revalidatePath}from 'next/cache';import{createClient}from '@/lib/supabase/server';import{validId}from '@/lib/reservations';import{parseGrants}from '@/lib/team';
+import{deliverTeamInvitation}from '@/lib/send-team-invitation';
 export type TeamState={error?:string;fields?:Record<string,string>};
 const f=(fd:FormData,k:string)=>String(fd.get(k)??'').trim();
 const snapshot=(fd:FormData)=>Object.fromEntries(['email','business_role','grants','days','reason','operation','confirm_email','property_id'].map(k=>[k,f(fd,k)]));
@@ -10,7 +11,18 @@ export async function inviteStaff(_:TeamState,fd:FormData):Promise<TeamState>{
  if(!validId(tid)||!validId(request)||!/^\d{1,2}$/.test(days)||Number(days)<1||Number(days)>30)return fail('Use a valid business and invitation validity of 1–30 days.');
  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)||email.length>254||!['admin','member'].includes(role)||!grants||grants.some(g=>!validId(g.property_id)))return fail('Check the email address, business role, and hotel roles.');
  if(f(fd,'confirm')!=='yes')return fail('Review and confirm the access this invitation grants.');
- const db=await createClient(),{data,error}=await db.rpc('team_action',{p_tenant:tid,p_request:request,p_action:'invite',p_target:null,p_version:null,p_details:{email,business_role:role,grants:role==='admin'?[]:grants,days:Number(days)}});if(error)return fail(friendly(error));refresh(tid);redirect(`/t/${tid}/team/invitations/${data}?notice=created&property=${encodeURIComponent(f(fd,'active_property'))}`);
+ const db=await createClient(),{data,error}=await db.rpc('team_action',{p_tenant:tid,p_request:request,p_action:'invite',p_target:null,p_version:null,p_details:{email,business_role:role,grants:role==='admin'?[]:grants,days:Number(days)}});if(error)return fail(friendly(error));
+ const{data:detail}=await db.rpc('team_invitation_detail',{p_tenant:tid,p_id:data});
+ const delivery=detail?await deliverTeamInvitation(tid,data,detail.invitation.version,request):{status:'unknown'};
+ refresh(tid);redirect(`/t/${tid}/team/invitations/${data}?notice=created&email=${delivery.status}&property=${encodeURIComponent(f(fd,'active_property'))}`);
+}
+export async function emailInvitation(_:TeamState,fd:FormData):Promise<TeamState>{
+ const tid=f(fd,'tid'),target=f(fd,'target'),request=f(fd,'request'),version=Number(f(fd,'version'));
+ if(!validId(tid)||!validId(target)||!validId(request)||!Number.isInteger(version)||version<1||f(fd,'confirm')!=='yes')return{error:'Confirm the recipient before sending the invitation.'};
+ const result=await deliverTeamInvitation(tid,target,version,request);
+ if(result.status==='blocked')return{error:result.error};
+ if(result.status==='unconfigured')return{error:'Invitation email is not configured. Ask platform support to check the email sender settings. You can copy and share the signup instructions below.'};
+ refresh(tid);redirect(`/t/${tid}/team/invitations/${target}?notice=emailed&email=${result.status}&property=${encodeURIComponent(f(fd,'active_property'))}`);
 }
 export async function teamOperation(_:TeamState,fd:FormData):Promise<TeamState>{
  const tid=f(fd,'tid'),request=f(fd,'request'),target=f(fd,'target'),op=f(fd,'operation'),version=Number(f(fd,'version')),fields=snapshot(fd),roles=fd.getAll('roles').map(String);fields.roles=JSON.stringify(roles);const fail=(error:string)=>({error,fields});
@@ -25,5 +37,6 @@ export async function teamOperation(_:TeamState,fd:FormData):Promise<TeamState>{
  const{error}=await db.rpc('team_action',{p_tenant:tid,p_request:request,p_action:op,p_target:target,p_version:version,p_details:details});if(error)return fail(friendly(error));refresh(tid);
  const{data:{user}}=await db.auth.getUser();if(user?.id===target&&(op==='remove'||op==='role'&&details.business_role==='member'))redirect('/dashboard');
  const property=encodeURIComponent(f(fd,'active_property'));if(op==='remove')redirect(`/t/${tid}/team?notice=removed&property=${property}`);
- redirect(`/t/${tid}/team/${['renew','revoke'].includes(op)?'invitations':'members'}/${target}?notice=${op}&property=${property}`);
+ let emailStatus='';if(op==='renew'){const{data:detail}=await db.rpc('team_invitation_detail',{p_tenant:tid,p_id:target});emailStatus=detail?(await deliverTeamInvitation(tid,target,detail.invitation.version,request)).status:'unknown';refresh(tid);}
+ redirect(`/t/${tid}/team/${['renew','revoke'].includes(op)?'invitations':'members'}/${target}?notice=${op}&property=${property}${emailStatus?`&email=${emailStatus}`:''}`);
 }

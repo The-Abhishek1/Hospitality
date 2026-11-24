@@ -16,7 +16,7 @@
     "test:tasks": "node --test tests/tasks.test.mjs",
     "test:inventory": "node --test tests/inventory.test.mjs",
     "test:orders": "node --test tests/orders.test.mjs",
-    "test:team": "node --test tests/team.test.mjs",
+    "test:team": "node --test tests/team.test.mjs tests/team-email.test.mjs",
     "test:settings": "node --test tests/property-settings.test.mjs",
     "test:reports": "node --test tests/reports.test.mjs",
     "test:platform": "node --test tests/platform.test.mjs",
