@@ -9,7 +9,7 @@ export type TaskState={error?:string;fields?:Record<string,string>};
 const field=(f:FormData,k:string)=>String(f.get(k)??'').trim();
 const snapshot=(f:FormData)=>Object.fromEntries(['title','description','kind','priority','assignee','unit','department','target_minutes','checklist','operation','status','reason','body','deadline','label'].map(k=>[k,field(f,k).slice(0,k==='checklist'?4000:2000)]));
 const message=(e:{code?:string;message:string})=>e.code==='42501'?'Your role does not allow this action. Claim an available task before starting work.':e.code==='40001'?'This task changed. Refresh and review its latest progress.':e.code==='23505'?'This room already has active cleaning work, or this action is already recorded. Refresh and open the existing task.':['22023','P0002'].includes(e.code??'')?e.message:'Couldn’t save this task. Refresh and try again.';
-const refresh=(pid:string)=>{revalidatePath('/dashboard');revalidatePath(`/p/${pid}/tasks`,'layout');revalidatePath(`/p/${pid}/requests`,'layout');revalidatePath(`/p/${pid}/reservations`,'layout');};
+const refresh=(pid:string)=>{revalidatePath('/dashboard');revalidatePath(`/p/${pid}/tasks`,'layout');revalidatePath(`/p/${pid}/requests`,'layout');revalidatePath(`/p/${pid}/inventory`,'layout');revalidatePath(`/p/${pid}/reservations`,'layout');};
 export async function createTask(_:TaskState,fd:FormData):Promise<TaskState>{
  const pid=field(fd,'pid'),request=field(fd,'request'),fields=snapshot(fd);const fail=(error:string)=>({error,fields});
  if(!validId(pid)||!validId(request))return fail('Reload this form.');

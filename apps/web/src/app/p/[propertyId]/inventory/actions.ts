@@ -22,3 +22,12 @@ export async function saveInventory(_:InventoryState,fd:FormData):Promise<Invent
  for(const path of ['inventory','tasks','reservations'])revalidatePath(`/p/${pid}/${path}`,'layout');revalidatePath('/dashboard');
  redirect(`/p/${pid}/inventory/${section==='release'?'blocks':section}/${data}?notice=saved`);
 }
+
+export async function roomCleaning(_:InventoryState,fd:FormData):Promise<InventoryState>{
+ const pid=field(fd,'pid'),id=field(fd,'id'),request=field(fd,'request'),version=Number(field(fd,'version')),operation=field(fd,'operation');
+ if(!validId(pid)||!validId(id)||!validId(request)||!Number.isInteger(version)||version<1||!['start','complete'].includes(operation)||fd.get('confirmed')!=='on')return{error:'Refresh the room and confirm the cleaning action.'};
+ const db=await createClient(),{error}=await db.rpc('inventory_cleaning_action',{p_property:pid,p_unit:id,p_version:version,p_request:request,p_action:operation});
+ if(error)return{error:error.code==='42501'?'Inventory and task-management access is required for room cleaning.':friendly(error)};
+ revalidatePath(`/p/${pid}/inventory`,'layout');revalidatePath(`/p/${pid}/tasks`,'layout');revalidatePath(`/p/${pid}/reservations`,'layout');revalidatePath('/dashboard');
+ return{};
+}

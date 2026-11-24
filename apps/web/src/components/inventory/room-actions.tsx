@@ -1,0 +1,11 @@
+'use client';
+import Link from'next/link';
+import{useActionState,useState}from'react';
+import{roomCleaning,type InventoryState}from'@/app/p/[propertyId]/inventory/actions';
+import{type InventoryItem}from'@/lib/inventory';
+export function RoomActions({pid,room,canManage,canTasks,canReservations,request}:{pid:string;room:InventoryItem;canManage:boolean;canTasks:boolean;canReservations:boolean;request:string}){
+ const[state,action,pending]=useActionState(roomCleaning,{}as InventoryState),[confirm,setConfirm]=useState(false),job=room.cleaning_task,canComplete=job&&!job.linked_request&&job.remaining===0,canStart=!job||job.status==='open'&&!job.linked_request,operation=canComplete&&job?.status==='in_progress'?'complete':'start',label=operation==='complete'?'Mark clean':'Start cleaning',offer=room.active&&canManage&&(room.housekeeping_status!=='clean'||!!job)&&(canComplete||canStart);
+ return <div className="inventory-room-actions">{canReservations&&room.current_stay&&<Link className="inventory-action-link" href={`/p/${pid}/reservations/${room.current_stay}`}>Open stay →</Link>}{job&&canTasks&&<Link className="inventory-action-link" href={`/p/${pid}/tasks/${job.id}`}>{job.remaining?`Cleaning checklist (${job.remaining} left)`:'Open cleaning task'} →</Link>}{offer&&<button type="button" className="inventory-action-button" disabled={pending} aria-expanded={confirm} onClick={()=>setConfirm(!confirm)}>{label}</button>}
+ {confirm&&offer&&<form action={action} className="inventory-clean-confirm" aria-label={`${label} ${room.name}`}><input name="pid" type="hidden" value={pid}/><input name="id" type="hidden" value={room.id}/><input name="request" type="hidden" value={request}/><input name="version" type="hidden" value={room.version}/><input name="operation" type="hidden" value={operation}/><label><input name="confirmed" type="checkbox" required disabled={pending}/>{operation==='complete'?'I inspected this room and confirm cleaning is complete.':'Cleaning is starting. Existing cleaning work will be reused.'}</label>{state.error&&<p role="alert">{state.error}</p>}<div><button className="dash-button" disabled={pending}>{pending?'Saving…':`Confirm ${label.toLowerCase()}`}</button><button className="dash-button dash-secondary" type="button" disabled={pending} onClick={()=>setConfirm(false)}>Cancel</button></div></form>}
+ </div>;
+}
