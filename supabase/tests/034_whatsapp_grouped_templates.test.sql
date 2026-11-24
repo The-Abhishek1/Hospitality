@@ -28,6 +28,10 @@ set local role service_role;
 select set_config('test.group_conv',public.ingest_whatsapp_inbound('12345678001','msg:group-hi','919111111111','Asha','group-hi','text','Hi','{}')::text,true);
 select is(public.dispatch_whatsapp_guest_replies(50,'https://guest.test'),1,'Hi sends grouped root menu');
 select is((select jsonb_array_length(outbound_payload#>'{interactive,action,sections,0,rows}')from public.messages where conversation_id=current_setting('test.group_conv')::uuid and direction='out'),1,'main menu contains category instead of fifteen options');
+select public.ingest_whatsapp_inbound('12345678001','msg:group-hi-second','919111111111','Asha','group-hi-second','text','Hello','{}');
+select public.ingest_whatsapp_inbound('12345678001','msg:group-hi-third','919111111111','Asha','group-hi-third','text','Menu','{}');
+select is(public.dispatch_whatsapp_guest_replies(50,'https://guest.test'),2,'each distinct greeting receives the published menu, even in the same worker tick');
+select is(public.dispatch_whatsapp_guest_replies(50,'https://guest.test'),0,'processed menu greetings are not replayed');
 select public.ingest_whatsapp_inbound('12345678001','msg:group-category','919111111111','Asha','group-category','interactive','[interactive]','{"interactive":{"list_reply":{"id":"guest:v:1:category:10000000-0000-4000-8000-000000000001:1","title":"Hotel information"}}}');
 select is(public.dispatch_whatsapp_guest_replies(50,'https://guest.test'),1,'category page selection accepted');
 select is((select jsonb_array_length(outbound_payload#>'{interactive,action,sections,0,rows}')from public.messages where guest_reply_to=(select id from public.messages where wa_message_id='group-category')and direction='out'),10,'middle page has seven services plus Previous, More and Main menu');
@@ -41,6 +45,7 @@ select ok((select body like '%verify your stay%'from public.messages where guest
 reset role;set local role authenticated;
 select set_config('request.jwt.claims','{"sub":"e1000000-0000-0000-0000-000000000001","role":"authenticated"}',true);
 select public.authorize_whatsapp_stay_updates('e3000000-0000-0000-0000-000000000001','e5000000-0000-0000-0000-000000000001',0,'granted','Guest identity and number verified at reception.',true);
+select public.save_whatsapp_journey('e3000000-0000-0000-0000-000000000001',0,true,1,false,'photo');
 reset role;set local role service_role;
 select public.ingest_whatsapp_inbound('12345678001','msg:group-verified','919111111111','Asha','group-verified','interactive','[interactive]','{"interactive":{"list_reply":{"id":"guest:v:1:service:20000000-0000-4000-8000-000000000014","title":"My stay"}}}');
 select is(public.dispatch_whatsapp_guest_replies(50,'https://guest.test'),1,'verified service renders personal fields');

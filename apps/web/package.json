@@ -25,7 +25,7 @@
     "test:distribution": "node --test tests/distribution-catalog.test.mjs",
     "test:channel-review": "node --test tests/channel-review.test.mjs",
     "test:campaigns": "node --test tests/campaigns.test.mjs",
-    "test:automations": "node --test tests/automation-flow.test.mjs tests/automation-template-api.test.mjs",
+    "test:automations": "node --test tests/automation-flow.test.mjs tests/automation-template-api.test.mjs tests/booking-welcome.test.mjs",
     "test:concierge": "node --test tests/guest-concierge.test.mjs tests/grouped-menu.test.mjs tests/template-media.test.mjs",
     "test:hotel-information": "node --test tests/hotel-message-resources.test.mjs"
   },

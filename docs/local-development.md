@@ -544,3 +544,15 @@ python3 supabase/tests/group-booking-concurrency.py
 ```
 
 The database suite rolls back its fixtures. The concurrency script creates and removes an isolated local hotel; it cannot target hosted Supabase. Inspect pgTAP output for `not ok` as well as SQL errors. Browser QA uses local Supabase and synthetic rooms/guests, including a fifty-room reservation and partial group checkout. It does not send real guest messages.
+
+### WhatsApp automation setup
+
+Templates are shared by three separate sending flows. Create or sync approved templates in **WhatsApp Automation → Templates**, then assign them to:
+
+- **Booking welcome**: use the editable starter with a personal document-task link and an optional photo. Submit revisions under a new template name; the current approved welcome remains assigned until its replacement is explicitly selected. Choose the approved welcome, then turn it On. It sends once per confirmed booking with recorded prior contact permission, including a returning guest's new booking. Turning it on does not enable document admission gates or other events, and does not replay old bookings.
+- **Guest menu**: configure categories and services, assign each service's approved template, then publish. Each distinct Hi, Hello or Menu receives a reply; provider-message IDs and processed inbound jobs still prevent duplicate webhook replies. Published services use their assigned template, including its photo and personal task link. Native check-in/out confirmations retain the document, room and settlement checks.
+- **Event messages**: choose a predefined event, select a compatible approved template, and activate it. Timed reminders use the hotel's timezone. Booking welcome is managed separately; old `tab=rules&event=booking_confirmed` links still open it.
+
+**Inbox → Free text → Photo** accepts JPG/PNG up to 4 MB with an optional 1,024-character caption while the guest's 24-hour reply window is open. The app decodes and rebuilds the image, stores it in the private `whatsapp-inbox-photos` bucket, and queues the existing image transport. Delivery links last seven days; authorized staff receive fresh short-lived links when viewing history. Duplicate submissions use the same conversation/request ID. Delivery and retry recheck opt-out, identity reset, hotel/sender status, the reply window and attachment expiry. Outside the reply window, use an approved photo template. No additional scanner server is needed for these image attachments.
+
+Migration 112 adds the private attachment bucket, protected metadata, photo commands and flow updates. Local regression: `supabase/tests/112_whatsapp_simple_flow.test.sql`; run it with the affected WhatsApp tests 032–035, 043 and 048. Web regression: `npm run test:automations --prefix apps/web`, `npm run test:inbox --prefix apps/web`, `npm run test:concierge --prefix apps/web`, and the image validation tests. Use synthetic local recipients or provider stubs for UI tests; do not send live guest messages just to verify page layout.

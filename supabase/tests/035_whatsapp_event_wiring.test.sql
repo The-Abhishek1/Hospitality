@@ -13,6 +13,7 @@ insert into public.whatsapp_connections(id,tenant_id,property_id,phone_number_id
 
 set local role service_role;
 select public.sync_whatsapp_provider_templates('e6000000-0000-0000-0000-000000000001','12345678002','[
+ {"provider_id":"43505","name":"wired_welcome","language":"en_US","category":"utility","provider_status":"APPROVED","body":"Welcome. Upload documents here: {{portal_url}}. Reply Hi for help.","parameter_names":["portal_url"],"supported":true,"definition":{"components":[{"type":"BODY"}]}},
  {"provider_id":"43501","name":"wired_utility","language":"en_US","category":"utility","provider_status":"APPROVED","body":"Your hotel has recorded a stay update. Contact reception for details.","parameter_names":[],"supported":true,"definition":{"components":[{"type":"BODY","text":"Your hotel has recorded a stay update. Contact reception for details."}]}},
  {"provider_id":"43502","name":"wired_marketing","language":"en_US","category":"marketing","provider_status":"APPROVED","body":"Thank you for staying. Contact reception to share your experience.","parameter_names":[],"supported":true,"definition":{"components":[{"type":"BODY","text":"Thank you for staying. Contact reception to share your experience."}]}},
  {"provider_id":"43503","name":"wired_parameter","language":"en_US","category":"utility","provider_status":"APPROVED","body":"Your hotel update: {{1}}. Contact reception for details.","parameter_names":["1"],"supported":true,"definition":{"components":[{"type":"BODY","text":"Your hotel update: {{1}}. Contact reception for details."}]}},
@@ -22,11 +23,11 @@ reset role;
 set local role authenticated;
 select set_config('request.jwt.claims','{"sub":"e1000000-0000-0000-0000-000000000001","role":"authenticated"}',true);
 select lives_ok(format('select public.save_whatsapp_automation_rule(%L,%L,0,true,%L,%L,0)',
- 'e3000000-0000-0000-0000-000000000001',x->>'key',t.id,'[]'),
+ 'e3000000-0000-0000-0000-000000000001',x->>'key',t.id,case when x->>'key'='booking_confirmed'then'["portal_url"]'else'[]'end),
  'Owner can assign an existing approved template and activate '||(x->>'key'))
 from jsonb_array_elements(public.whatsapp_automation_catalog())x
 join public.message_templates t on t.property_id='e3000000-0000-0000-0000-000000000001'
- and t.name=case when x->>'key'='review_request'then'wired_marketing'else'wired_utility'end;
+ and t.name=case when x->>'key'='review_request'then'wired_marketing'when x->>'key'='booking_confirmed'then'wired_welcome'else'wired_utility'end;
 select set_config('test.wire_parameter',(select id::text from public.message_templates where property_id='e3000000-0000-0000-0000-000000000001'and name='wired_parameter'),true);
 select set_config('test.wire_order',(select id::text from public.message_templates where property_id='e3000000-0000-0000-0000-000000000001'and name='wired_order'),true);
 select throws_ok($$select public.save_whatsapp_automation_rule('e3000000-0000-0000-0000-000000000001','checked_in',1,true,current_setting('test.wire_parameter')::uuid,'["order_reference"]',0)$$,'22023',null,'Check-in cannot activate with an order-only field');
