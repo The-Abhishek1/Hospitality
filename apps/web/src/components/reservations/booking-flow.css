@@ -1,0 +1,63 @@
+.workspace-feature .booking-page,.workspace-feature .booking-flow{max-width:1160px;margin:0 auto;min-width:0}
+.workspace-feature .booking-page-heading{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:24px}
+.workspace-feature .booking-page-heading h1{font:600 28px/1.3 var(--font-sans,Arial,sans-serif);letter-spacing:-.5px;margin:8px 0 6px}
+.workspace-feature .booking-page-heading p{font-size:15px;color:#627184;margin:0;line-height:1.6}
+.workspace-feature .booking-page-heading a:not(.dash-button){font-size:14px;color:#526376}
+.workspace-feature .booking-flow .booking-steps{display:flex;gap:8px;border-bottom:1px solid #dce2e9;padding-bottom:16px;margin-bottom:20px}
+.workspace-feature .booking-flow .booking-steps button{display:flex;align-items:center;gap:9px;background:transparent;color:#627184;padding:9px 14px;border:1px solid transparent;font-weight:500;font-size:14px}
+.workspace-feature .booking-flow .booking-steps button>span{display:grid;place-items:center;background:#e7ecf3;border-radius:50%;width:25px;height:25px;font-size:12px}
+.workspace-feature .booking-flow .booking-steps button[aria-current=step]{background:#e7eef7;border-color:#c8d5e5;color:#203956;border-radius:8px;font-weight:600}
+.workspace-feature .booking-flow .booking-steps button[aria-current=step]>span{background:#203956;color:white}
+.workspace-feature .booking-flow .booking-steps button:disabled{opacity:.5;cursor:not-allowed}
+.workspace-feature .booking-flow .booking-layout{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:24px;align-items:start}
+.workspace-feature .booking-flow .booking-main{min-width:0}
+.workspace-feature .booking-flow .booking-panel{border:1px solid #dce2e9;background:#fffefa;padding:24px;border-radius:12px;min-width:0;margin:0}
+.workspace-feature .booking-flow .booking-panel[hidden]{display:none!important}
+.workspace-feature .booking-flow h2{font:600 21px/1.4 var(--font-sans,Arial,sans-serif);letter-spacing:0;margin:0}
+.workspace-feature .booking-flow .booking-description{font-size:15px;color:#627184;line-height:1.6;margin:7px 0 22px}
+.workspace-feature .booking-flow .booking-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;min-width:0}
+.workspace-feature .booking-flow .booking-wide{grid-column:1/-1;min-width:0}
+.workspace-feature .booking-flow .res-form{gap:18px}
+.workspace-feature .booking-flow .res-form label{display:grid;gap:7px;color:#203956;font-size:14px;min-width:0;font-weight:500}
+.workspace-feature .booking-flow :is(input,select,textarea){box-sizing:border-box;max-width:100%;width:100%;font-size:16px!important}
+.workspace-feature .booking-flow :is(fieldset,label,select,input){min-width:0}
+.workspace-feature .booking-flow input[readonly]{background:#f3f6fa;color:#526376}
+.workspace-feature .booking-flow small{font-size:13px;color:#627184;line-height:1.6;font-weight:400}
+.workspace-feature .booking-flow .booking-options{border-top:1px solid #e4e8ee;padding-top:14px}
+.workspace-feature .booking-flow summary{cursor:pointer;font-size:14px;font-weight:500;color:#3d536d;line-height:1.5}
+.workspace-feature .booking-flow .booking-options>label{margin-top:16px}
+.workspace-feature .booking-flow .booking-footer{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;border-top:1px solid #e4e8ee;padding-top:18px;color:#627184;font-size:14px}
+.workspace-feature .booking-flow .booking-footer .dash-button{padding:11px 16px;font-size:14px;line-height:1.5;text-align:center;white-space:normal}
+.workspace-feature .booking-flow .booking-text-button{border:0;padding:0;background:none;color:#365575;font-size:14px;cursor:pointer;min-height:32px}
+.workspace-feature .booking-flow .booking-section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.workspace-feature .booking-flow .booking-available{background:#edf3f9;color:#274b6c;border:1px solid #d3dfeb;border-radius:8px;font-size:14px;line-height:1.6;margin:16px 0 20px;padding:12px 14px}
+.workspace-feature .booking-flow .booking-guest-mode{display:flex;gap:8px}
+.workspace-feature .booking-flow .booking-guest-mode button{border:1px solid #d5dfeb;background:#fffefa;color:#526376;padding:9px 14px;border-radius:7px;font-size:14px}
+.workspace-feature .booking-flow .booking-guest-mode button[aria-pressed=true]{background:#e7eef7;border-color:#a9bbd0;color:#203956;font-weight:600}
+.workspace-feature .booking-flow .booking-returning{display:grid;gap:14px;padding:16px;background:#f3f6fa;border:1px solid #dce2e9;border-radius:9px;min-width:0}
+.workspace-feature .booking-flow .booking-returning a{font-size:13px;color:#365575}
+.workspace-feature .booking-flow .booking-optional{display:inline;color:#7a8797;font-size:12px;font-weight:400}
+.workspace-feature .booking-flow .booking-whatsapp{padding:16px;border:1px solid #dce2e9;border-radius:9px;background:#f6f8fb;display:grid;gap:12px}
+.workspace-feature .booking-flow .booking-whatsapp h3{font:600 16px/1.4 var(--font-sans,Arial,sans-serif);margin:0}
+.workspace-feature .booking-flow .res-form label.booking-checkbox{display:flex;flex-direction:row;align-items:flex-start;gap:10px;font-weight:400;line-height:1.6}
+.workspace-feature .booking-flow .booking-checkbox input{width:16px!important;height:16px!important;min-height:16px;flex:0 0 16px;margin-top:3px;accent-color:#203956}
+.workspace-feature .booking-flow .booking-welcome-status p{font-size:13px;color:#627184;line-height:1.6;margin:10px 0}
+.workspace-feature .booking-flow .booking-welcome-status a{font-size:13px}
+.workspace-feature .booking-flow .booking-summary{position:sticky;top:24px;border:1px solid #d5dfeb;background:#edf2f8;border-radius:12px;padding:22px;min-width:0}
+.workspace-feature .booking-flow .booking-total>span{font-size:13px;color:#627184;line-height:1.5}
+.workspace-feature .booking-flow .booking-total>strong{display:block;font-size:29px;line-height:1.3;font-weight:600;letter-spacing:-.5px;margin:8px 0 16px;overflow-wrap:anywhere;color:#203956}
+.workspace-feature .booking-flow .booking-summary-stay{display:grid;gap:5px;font-size:13px;line-height:1.6;color:#627184;margin-bottom:16px}
+.workspace-feature .booking-flow .booking-summary-stay>strong{font-size:15px;color:#203956}
+.workspace-feature .booking-flow .booking-summary-details{border-top:1px solid #d5dfeb;padding-top:14px}
+.workspace-feature .booking-flow .booking-summary-details h3{font-size:17px;line-height:1.5;margin:16px 0 6px}
+.workspace-feature .booking-flow .booking-summary-details>p{font-size:13px;color:#627184;line-height:1.6}
+.workspace-feature .booking-flow .booking-summary dl{display:grid;gap:12px;margin:18px 0;font-size:13px}
+.workspace-feature .booking-flow .booking-summary dl>div{display:flex;justify-content:space-between;gap:14px}
+.workspace-feature .booking-flow .booking-summary dt{color:#627184}
+.workspace-feature .booking-flow .booking-summary dd{text-align:right;overflow-wrap:anywhere}
+.workspace-feature .booking-flow .booking-hint{font-size:13px;line-height:1.6;color:#627184;margin:14px 0 0}
+.workspace-feature .booking-flow :is(button,input,select,textarea,a,summary):focus-visible{outline:2px solid #315581;outline-offset:3px}
+.workspace-feature .booking-flow h2:focus{outline:none}
+@media(max-width:1100px){.workspace-feature .booking-flow .booking-layout{grid-template-columns:1fr}.workspace-feature .booking-flow .booking-summary{position:static}.workspace-feature .booking-flow .booking-summary-stay{grid-template-columns:1fr;gap:4px}.workspace-feature .booking-flow .booking-total>strong{font-size:25px}}
+@media(max-width:600px){.workspace-feature .booking-page-heading{align-items:flex-start;flex-direction:column;gap:14px}.workspace-feature .booking-page-heading h1{font-size:24px}.workspace-feature .booking-flow .booking-panel{padding:18px}.workspace-feature .booking-flow .booking-steps button{padding:8px 9px;font-size:13px}.workspace-feature .booking-flow .booking-layout{gap:16px}.workspace-feature .booking-flow .booking-fields{gap:16px}.workspace-feature .booking-flow .booking-fields>label:not(.booking-wide){grid-column:1/-1}.workspace-feature .booking-flow .booking-stay-form .booking-fields>label:not(.booking-wide){grid-column:auto}.workspace-feature .booking-flow .booking-summary{padding:18px}.workspace-feature .booking-flow .booking-footer{gap:12px}.workspace-feature .booking-flow .booking-footer .dash-button{flex:1;min-width:160px}.workspace-feature .booking-flow .booking-checkbox{font-size:14px}.workspace-feature .booking-flow .booking-whatsapp{padding:14px}.workspace-feature .booking-flow .booking-section-heading{align-items:flex-start}.workspace-feature .booking-flow h2{font-size:19px}.workspace-feature .booking-flow .booking-returning{padding:12px}.workspace-feature .booking-flow .booking-stay-form input[type=date]{font-size:16px!important;padding:10px 6px}}
+@media(max-width:350px){.workspace-feature .booking-flow .booking-stay-form .booking-fields>label:not(.booking-wide){grid-column:1/-1}.workspace-feature .booking-flow .booking-footer>span{flex-basis:100%}}

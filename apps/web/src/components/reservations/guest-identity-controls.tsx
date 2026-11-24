@@ -6,7 +6,7 @@ export function GuestIdentityControls({pid,guest:g}:{pid:string;guest:ManagedGue
  const[state,action,pending]=useActionState(manageGuestIdentity,{} as GuestIdentityState),[operation,setOperation]=useState(''),[reason,setReason]=useState(''),[confirmation,setConfirmation]=useState('');
  if(state.success)return <p className="guest-identity-result" role="status">{state.success}</p>;
  return <div className="guest-identity-controls">
-  <div className="guest-identity-buttons">{g.linked&&<button type="button" className="dash-button dash-secondary" disabled={pending||g.active_bookings>0} onClick={()=>setOperation(operation==='reset'?'':'reset')}>Reset WhatsApp link</button>}{g.can_delete&&<button type="button" className="dash-button dash-secondary" onClick={()=>setOperation(operation==='delete'?'':'delete')}>Delete unused profile</button>}</div>
+  <div className="guest-identity-buttons">{g.linked&&<button type="button" className="dash-button dash-secondary" disabled={pending||g.active_bookings>0} onClick={()=>setOperation(operation==='reset'?'':'reset')}>Reset WhatsApp link</button>}{g.can_delete&&<button type="button" className="dash-button dash-secondary" disabled={pending} onClick={()=>setOperation(operation==='delete'?'':'delete')}>Delete unused profile</button>}</div>
   {g.active_bookings>0&&g.linked&&<p>Resolve {g.active_bookings} confirmed / in-house stay(s) before resetting. <a href={`/p/${pid}/reservations?view=all&q=${encodeURIComponent(g.full_name)}`}>View bookings →</a></p>}
   {!g.can_delete&&<p>Booking or messaging history is kept. This profile cannot be deleted.</p>}
   {operation&&<form action={action} className="guest-identity-confirm">
