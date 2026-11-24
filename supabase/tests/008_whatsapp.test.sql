@@ -28,7 +28,7 @@ select lives_ok($$select public.ingest_whatsapp_inbound('1001','msg:m1','9199','
 select is(public.ingest_whatsapp_inbound('1001','msg:m1','9199','Asha','m1','text','Hi, need towels','{}'::jsonb), null, 'duplicate webhook delivery ignored');
 select is(public.ingest_whatsapp_inbound('9999','msg:zz','1','x','zz','text','hi','{}'::jsonb), null, 'unknown phone number ignored');
 select lives_ok($$select public.ingest_whatsapp_inbound('1001','msg:m1-retry','9199','Asha','m1','text','Hi, need towels','{}'::jsonb)$$, 'same wamid under a new event key');
-select is((select count(*)::int from public.messages), 1, 'message deduplicated by wamid');
+select is((select count(*)::int from public.messages where property_id='93000000-0000-0000-0000-000000000001'and wa_message_id='m1'), 1, 'message deduplicated by wamid');
 
 -- staff
 reset role; set local role authenticated;
@@ -61,8 +61,10 @@ reset role; set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"91000000-0000-0000-0000-000000000002","role":"authenticated"}', true);
 select lives_ok($$select public.send_whatsapp_message((select id from public.conversations), 'Anything else?')$$, 'opt-in restores messaging');
 
--- worker: claim, retry/backoff, dead letter, status ordering
-reset role; set local role service_role;
+-- worker: isolate this fixture from existing local synthetic hotels (rolled back below).
+reset role;
+update public.messages set next_attempt_at=now()+interval '1 day'where property_id<>'93000000-0000-0000-0000-000000000001'and status='queued';
+set local role service_role;
 select is((select count(*)::int from public.claim_outbound_messages(10)), 3, 'worker claims all queued messages');
 select is((select count(*)::int from public.claim_outbound_messages(10)), 0, 'claimed messages are not handed out twice');
 do $$ begin perform public.complete_outbound_message((select id from public.messages where body = 'Sure, on the way'), null, false, 'timeout'); end $$;
