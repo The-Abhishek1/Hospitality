@@ -1,7 +1,7 @@
 'use client';
 import {useActionState,useState} from 'react';
 import {manageGuestIdentity,type GuestIdentityState} from '@/app/p/[propertyId]/reservations/guests/actions';
-export type ManagedGuest={id:string;full_name:string;phone:string|null;email:string|null;bookings:number;active_bookings:number;linked:boolean;can_delete:boolean};
+export type ManagedGuest={id:string;profile_version:number;full_name:string;phone:string|null;email:string|null;bookings:number;active_bookings:number;linked:boolean;can_delete:boolean};
 export function GuestIdentityControls({pid,guest:g}:{pid:string;guest:ManagedGuest}){
  const[state,action,pending]=useActionState(manageGuestIdentity,{} as GuestIdentityState),[operation,setOperation]=useState(''),[reason,setReason]=useState(''),[confirmation,setConfirmation]=useState('');
  if(state.success)return <p className="guest-identity-result" role="status">{state.success}</p>;

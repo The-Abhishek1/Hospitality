@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import {GuestEditor} from '@/components/reservations/guest-editor';
 import {createClient} from '@/lib/supabase/server';
 import {GuestIdentityControls,type ManagedGuest} from '@/components/reservations/guest-identity-controls';
 import '@/components/reservations/reservations.css';
@@ -15,7 +16,7 @@ export default async function ManageGuests({params,searchParams}:{params:Promise
    <div className="guest-identity-list">{guests.map(g=><details key={g.id} className="guest-profile" name="guest-profile"><summary className="guest-row-summary"><span className="guest-avatar" aria-hidden="true">{g.full_name.split(/\s+/).filter(Boolean).slice(0,2).map(n=>n[0]).join('').toUpperCase()}</span><span className="guest-row-name"><strong>{g.full_name}</strong><small>{g.phone||g.email||'No contact recorded'}</small></span><span className="guest-row-bookings">{g.bookings} {g.bookings===1?'booking':'bookings'}{g.active_bookings>0&&<small>{g.active_bookings} active</small>}</span><span className={`guest-link-badge ${g.linked?'linked':''}`}>{g.linked?'WhatsApp linked':'Not linked'}</span><span className="guest-chevron" aria-hidden="true">⌄</span></summary>
     <div className="guest-profile-content"><div className="guest-profile-contact"><div><span>Phone</span><strong>{g.phone||'Not provided'}</strong></div><div><span>Email</span><strong>{g.email||'Not provided'}</strong></div></div>
      {g.bookings>0&&<div className="guest-profile-actions"><Link className="dash-button" href={`/p/${pid}/reservations/new?guest=${g.id}`}>Book a stay →</Link><Link className="dash-button dash-secondary" href={`/p/${pid}/reservations?view=all&q=${encodeURIComponent(g.full_name)}`}>Search bookings →</Link></div>}
-     <details className="guest-maintenance"><summary>WhatsApp link & profile controls</summary><GuestIdentityControls pid={pid} guest={g}/></details>
+     <GuestEditor pid={pid} guest={g}/><details className="guest-maintenance"><summary>WhatsApp link & profile controls</summary><GuestIdentityControls pid={pid} guest={g}/></details>
     </div>
    </details>)}</div>
    {!guests.length&&<div className="guest-directory-empty"><h2>{q?'No guests found':'No guest profiles yet'}</h2><p>{q?'Try a different name, phone or email.':'Guest profiles appear when you create reservations.'}</p><Link className="dash-button dash-secondary" href={q?'?q=':`/p/${pid}/reservations/new`}>{q?'Clear search':'Create a reservation →'}</Link></div>}
