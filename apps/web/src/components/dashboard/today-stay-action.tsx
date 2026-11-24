@@ -1,0 +1,8 @@
+'use client';
+import{useActionState,useState}from'react';
+import{completeTodayStay,type TodayActionState}from'@/app/dashboard/today-actions';
+export function TodayStayAction({property,id,version,name,operation}:{property:string;id:string;version:number;name:string;operation:'check_in'|'check_out'}){
+ const[open,setOpen]=useState(false),[state,action,pending]=useActionState(completeTodayStay,{}as TodayActionState),label=operation==='check_in'?'Check in':'Check out';
+ if(state.success)return <p className="today-action-success" role="status">{state.success}</p>;
+ return <div className="today-stay-action"><button type="button" className="dash-button" aria-expanded={open} disabled={pending} onClick={()=>setOpen(!open)}>{label}</button>{open&&<form action={action} className="today-action-confirm" aria-label={`${label} ${name}`}><input type="hidden" name="property" value={property}/><input type="hidden" name="reservation" value={id}/><input type="hidden" name="version" value={version}/><input type="hidden" name="operation" value={operation}/><p>{operation==='check_in'?'Documents, room readiness and booked dates are checked before check-in.':'Settle all booked nights and unfinished orders first. Checkout releases the room and creates cleaning work.'}</p><label><input name="confirmed" type="checkbox" required disabled={pending}/>Confirm {label.toLowerCase()} for {name}.</label>{state.error&&<p role="alert" className="today-action-error">{state.error}</p>}<div><button className="dash-button" disabled={pending}>{pending?'Updating…':`Confirm ${label.toLowerCase()}`}</button><button type="button" className="dash-button dash-secondary" disabled={pending} onClick={()=>setOpen(false)}>Cancel</button></div></form>}</div>;
+}
