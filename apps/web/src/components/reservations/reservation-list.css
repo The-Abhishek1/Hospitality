@@ -86,3 +86,4 @@
 .calendar-current-stay{display:block;margin-top:4px;color:#674b92;font-size:10px;font-weight:500;line-height:1.5}
 
 .workspace-reservations-list .reservation-calendar-insights{border:0;border-top:1px solid #e0e5ec;border-radius:0}
+@media(max-width:600px){.reservation-list-heading:has(.reservation-group-booking){flex-wrap:wrap;align-items:flex-start}.reservation-list-heading:has(.reservation-group-booking) .reservation-list-actions{width:100%;justify-content:flex-start;flex-wrap:wrap}}
