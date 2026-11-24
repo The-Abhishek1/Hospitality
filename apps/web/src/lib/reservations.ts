@@ -21,11 +21,13 @@ export type Detail={stay:Stay;guest:{id:string;profile_version:number;full_name:
 export function availableStayActions(detail:Pick<Detail,'stay'|'can_frontdesk'|'can_write'|'can_bill'>,today:string){
  const r=detail.stay;
  return [
-  ...(detail.can_frontdesk&&r.status==='confirmed'?[{id:'check_in',label:'Check in guest'}]:[]),
+  ...(detail.can_frontdesk&&r.status==='confirmed'&&r.check_in<=today&&r.check_out>today?[{id:'check_in',label:'Check in guest'}]:[]),
   ...(detail.can_frontdesk&&r.status==='checked_in'?[{id:'check_out',label:'Check out guest'}]:[]),
   ...(detail.can_frontdesk&&['confirmed','checked_in'].includes(r.status)?[{id:'move',label:'Move room'}]:[]),
   ...(detail.can_bill&&r.status==='checked_in'?[{id:'post_charges',label:'Post booked room charges'}]:[]),
   ...(detail.can_write&&r.status==='confirmed'&&r.source!=='ota'?[{id:'cancel',label:'Cancel reservation'}]:[]),
-  ...(detail.can_write&&r.status==='confirmed'&&r.check_in<=today?[{id:'no_show',label:'Mark as no-show'}]:[]),
+  ...(detail.can_write&&r.status==='confirmed'&&r.check_in<=today?[{id:'no_show',label:'Guest didn’t arrive — release room'}]:[]),
  ];
 }
+
+export const isMissedArrival=(stay:{status:string;check_in:string},today:string)=>stay.status==='confirmed'&&validDay(stay.check_in)&&validDay(today)&&stay.check_in<today;

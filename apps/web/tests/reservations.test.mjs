@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import ts from 'typescript';
 const source=readFileSync(new URL('../src/lib/reservations.ts',import.meta.url),'utf8');
 const {outputText}=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}});
-const {validDay,stayNights,normalizeFilters,validId,availableStayActions}=await import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`);
+const {validDay,stayNights,normalizeFilters,validId,availableStayActions,isMissedArrival}=await import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`);
 test('calendar dates reject impossible dates instead of silently normalizing them',()=>{
  for(const d of ['2027-02-29','2028-02-30','2027-04-31','not-a-date','2027-1-01','2027-01-01T12:00:00Z'])assert.equal(validDay(d),false,d);
  assert.equal(validDay('2028-02-29'),true);
@@ -27,7 +27,7 @@ test('reservation identifiers reject malformed URL and form values',()=>{
  for(const id of ['../../../login','',null,'x'.repeat(36)])assert.equal(validId(id),false);
 });
 
-const actionDetail=(status,rights={},source='direct',arrival='2026-11-24')=>({stay:{status,source,check_in:arrival},can_frontdesk:true,can_write:true,can_bill:true,...rights});
+const actionDetail=(status,rights={},source='direct',arrival='2026-11-24')=>({stay:{status,source,check_in:arrival,check_out:'2026-11-26'},can_frontdesk:true,can_write:true,can_bill:true,...rights});
 test('completed, cancelled and no-show stays expose no active stay actions',()=>{
  for(const status of ['checked_out','cancelled','no_show'])assert.deepEqual(availableStayActions(actionDetail(status),'2026-11-24'),[]);
 });
@@ -45,4 +45,15 @@ test('channel cancellation and premature no-show controls are not offered',()=>{
  assert.ok(!availableStayActions(actionDetail('confirmed',{},'ota'),'2026-11-24').some(a=>a.id==='cancel'));
  assert.ok(!availableStayActions(actionDetail('confirmed',{},'direct','2026-11-25'),'2026-11-24').some(a=>a.id==='no_show'));
  assert.ok(availableStayActions(actionDetail('confirmed',{},'direct','2026-11-23'),'2026-11-24').some(a=>a.id==='no_show'));
+});
+
+test('missed-arrival labels use the hotel day and only unresolved confirmed bookings',()=>{
+ assert.equal(isMissedArrival({status:'confirmed',check_in:'2026-11-23'},'2026-11-24'),true);
+ for(const check_in of ['2026-11-24','2026-11-25','invalid'])assert.equal(isMissedArrival({status:'confirmed',check_in},'2026-11-24'),false);
+ for(const status of ['checked_in','checked_out','cancelled','no_show'])assert.equal(isMissedArrival({status,check_in:'2026-11-23'},'2026-11-24'),false);
+});
+test('expired bookings offer room release while check-in needs a current booked night',()=>{
+ const expired=actionDetail('confirmed');expired.stay.check_out='2026-11-24';
+ const ids=availableStayActions(expired,'2026-11-24').map(a=>a.id);assert.ok(!ids.includes('check_in'));assert.ok(ids.includes('no_show'));
+ assert.ok(!availableStayActions(actionDetail('confirmed',{},'direct','2026-11-25'),'2026-11-24').some(a=>a.id==='check_in'));
 });

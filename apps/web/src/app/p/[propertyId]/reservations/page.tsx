@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import {createClient} from '@/lib/supabase/server';
 import {addDays,parseRange,todayIn} from '@/lib/dates';
-import {normalizeFilters,money,dayLabel,statusLabel,stayNights,type ReservationWorkspace} from '@/lib/reservations';
+import {normalizeFilters,money,dayLabel,statusLabel,stayNights,isMissedArrival,type ReservationWorkspace} from '@/lib/reservations';
 import '@/components/reservations/reservations.css';
 import '@/components/reservations/reservation-list.css';
 export const metadata={title:'Reservations · Hospitality'};
@@ -17,15 +17,16 @@ export default async function ReservationsPage({params,searchParams}:{params:Pro
  if(error)return <section className="res-empty"><h2>{error.code==='42501'?'Reservation access required':'Couldn’t load reservations'}</h2><p>{error.code==='42501'?'Ask your administrator to assign reservation access for this hotel.':'Refresh to try again. Your bookings have not been changed.'}</p><Link className="dash-button" href={`/p/${pid}/reservations`}>Try again</Link></section>;
  const s=data as ReservationWorkspace,base=`/p/${pid}/reservations`;
  const href=(changes:Record<string,string|number>)=>{const q=new URLSearchParams();for(const[key,value]of Object.entries({...f,...changes})){if(String(value)!=='')q.set(key,String(value));}return`${base}?${q}`;};
+ const missedView=f.view==='all'&&f.status==='confirmed'&&!f.from&&f.to===addDays(s.day,-1);
  const current=views.find(v=>v.id===f.view)!,days=Array.from({length:14},(_,i)=>addDays(s.start,i));
  const activeFilters=[...(f.status?[{key:'status',label:`Status: ${statusLabel(f.status)}`}]:[]),...(f.source?[{key:'source',label:`Source: ${sourceLabel(f.source)}`}]:[]),...(f.from?[{key:'from',label:`From: ${dayLabel(f.from)}`}]:[]),...(f.to?[{key:'to',label:`Through: ${dayLabel(f.to)}`}]:[])];
  const filterKey=JSON.stringify([f.view,f.q,f.status,f.source,f.from,f.to]);
  return <div className="reservation-list-page">
   <header className="reservation-list-heading"><div><h1>Reservations</h1><p>{dayLabel(s.day)} · hotel time</p></div><div className="reservation-list-actions">{s.can_write&&permissions?.channels&&<Link className="dash-button dash-secondary reservation-manage-guests" href={`${base}/guests`}>Manage guests</Link>}{(s.can_frontdesk||s.can_write&&permissions?.channels)&&<details className="reservation-more"><summary aria-label="More reservation options">⋯</summary><div>{s.can_write&&permissions?.channels&&<Link href={`${base}/guests`}>Manage guests</Link>}{s.can_frontdesk&&<Link href={`${base}/bulk`}>Group check-in / out</Link>}{s.can_write&&s.can_frontdesk&&<Link href={`${base}/new?walkin=1`}>Walk-in check-in</Link>}</div></details>}{s.can_write&&<Link id="new-booking" className="dash-button" aria-label="New reservation" href={`${base}/new`}><span className="reservation-new-full">＋ New reservation</span><span className="reservation-new-short">＋ New</span></Link>}</div></header>
   <section className="reservation-directory-card" aria-label="Reservations">
-   <div className="reservation-directory-heading"><h2>{f.mode==='calendar'?'Room calendar':current.title}</h2><nav className="reservation-view-switch" aria-label="Reservation display"><Link aria-current={f.mode==='list'?'page':undefined} href={href({mode:'list'})}>List</Link><Link aria-current={f.mode==='calendar'?'page':undefined} href={href({mode:'calendar'})}>Calendar</Link></nav></div>
+   <div className="reservation-directory-heading"><h2>{f.mode==='calendar'?'Room calendar':missedView?'Missed arrivals':current.title}</h2><nav className="reservation-view-switch" aria-label="Reservation display"><Link aria-current={f.mode==='list'?'page':undefined} href={href({mode:'list'})}>List</Link><Link aria-current={f.mode==='calendar'?'page':undefined} href={href({mode:'calendar'})}>Calendar</Link></nav></div>
    {f.mode==='list'?<>
-    <nav className="reservation-list-tabs" aria-label="Reservation views">{views.map(v=><Link key={v.id} scroll={false} aria-current={f.view===v.id?'page':undefined} href={href({view:v.id,page:1,status:''})}>{v.label}</Link>)}</nav>
+    <nav className="reservation-list-tabs" aria-label="Reservation views">{views.map(v=><Link key={v.id} scroll={false} aria-current={!missedView&&f.view===v.id?'page':undefined} href={href({view:v.id,page:1,status:'',...(missedView?{from:'',to:''}:{})})}>{v.label}</Link>)}<Link scroll={false} aria-current={missedView?'page':undefined} href={href({view:'all',status:'confirmed',from:'',to:addDays(s.day,-1),page:1})}>Missed arrivals</Link></nav>
     <form key={filterKey} method="get" className="reservation-list-filter"><input type="hidden" name="view" value={f.view}/><input type="hidden" name="mode" value="list"/>
      <div className="reservation-search-row"><label><span className="sr-only">Search {current.title.toLowerCase()}</span><input type="search" name="q" defaultValue={f.q} maxLength={100} placeholder="Guest name, phone, email or booking ID"/></label><button className="dash-button" type="submit">Search</button>{f.q&&<Link href={href({q:'',page:1})}>Clear search</Link>}</div>
      <details className="reservation-extra-filters"><summary>Filters{activeFilters.length>0&&<span>{activeFilters.length}</span>}</summary><div>
@@ -39,7 +40,7 @@ export default async function ReservationsPage({params,searchParams}:{params:Pro
     </form>
     <div key={`${filterKey}-${s.page}`} className="reservation-results" role="region" aria-label="Reservation results" tabIndex={0}>
      {s.rows.length>0?<><div className="reservation-column-headings" aria-hidden="true"><span>Guest</span><span>Stay</span><span>Room</span><span>Status</span><span>Room total</span><span/></div><ul className="reservation-results-list">{s.rows.map(r=><li key={r.id}><Link className="reservation-result" href={`${base}/${r.id}`}>
-      <span className="reservation-result-guest"><strong>{r.full_name??'Guest'}</strong><small>{r.id.slice(0,8).toUpperCase()} · {sourceLabel(r.source)}</small></span>
+      <span className="reservation-result-guest"><strong>{r.full_name??'Guest'}</strong><small>{r.id.slice(0,8).toUpperCase()} · {sourceLabel(r.source)}</small>{isMissedArrival(r,s.day)&&<small className="reservation-missed-arrival">Arrival missed · review booking</small>}</span>
       <span className="reservation-result-dates"><span>{shortDay(r.check_in,s.day)} – {shortDay(r.check_out,s.day)}</span><small>{stayNights(r.check_in,r.check_out)} night{stayNights(r.check_in,r.check_out)===1?'':'s'} · {r.adults+r.children} guest{r.adults+r.children===1?'':'s'}</small></span>
       <span className="reservation-result-room"><span>{r.room??'Unassigned'}</span><small>{r.type_name??'Room not assigned'}</small></span>
       <span className={`reservation-result-status res-status ${r.status}`}>{statusLabel(r.status)}</span>

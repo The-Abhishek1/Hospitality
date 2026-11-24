@@ -16,7 +16,7 @@
 .reservation-view-switch{display:flex;gap:3px;padding:3px;border-radius:8px;background:#f1f4f8}
 .reservation-view-switch a{font-size:13px;padding:6px 11px;line-height:1.4;color:#65758d;border-radius:5px}
 .reservation-view-switch a[aria-current=page]{background:#fff;color:#234b7a;box-shadow:0 1px 3px #19334c14;font-weight:600}
-.reservation-list-tabs{display:flex;gap:22px;padding:0 20px;border-bottom:1px solid var(--reservation-line);flex:0 0 auto}
+.reservation-list-tabs{display:flex;gap:0 18px;flex-wrap:wrap;padding:0 20px;border-bottom:1px solid var(--reservation-line);flex:0 0 auto}
 .reservation-list-tabs a{padding:11px 0;font-size:14px;white-space:nowrap;line-height:1.5;border-bottom:2px solid transparent;color:#69798f}
 .reservation-list-tabs a[aria-current=page]{color:#234b7a;font-weight:600;border-color:#234b7a}
 .workspace-reservations-list .reservation-list-filter{padding:14px 20px 10px;background:#fbfcfe;border:0;border-bottom:1px solid var(--reservation-line);border-radius:0;margin:0;display:block;flex:0 1 auto;max-height:44%;overflow-y:auto}
@@ -60,3 +60,5 @@
 
 .reservation-new-short{display:none}.reservation-more{display:block;position:relative}.reservation-more summary{cursor:pointer;list-style:none;padding:8px 10px;min-width:36px;min-height:38px;text-align:center;background:#fff;border:1px solid #dce3ed;border-radius:7px;font-size:20px;line-height:1}.reservation-more>div{position:absolute;right:0;top:calc(100% + 8px);z-index:20;background:#fff;border:1px solid #dce3ed;box-shadow:0 8px 25px #18345720;border-radius:8px;width:170px;padding:7px}.reservation-more a{display:block;padding:10px;font-size:14px;color:#355a88}
 @media(max-width:600px){.reservation-list-heading{flex-wrap:nowrap;align-items:center;gap:10px}.reservation-list-heading h1{font-size:23px}.reservation-list-heading p{font-size:11px}.reservation-list-actions{width:auto;flex:0 0 auto;flex-wrap:nowrap;gap:7px;align-items:center}.reservation-list-actions .reservation-manage-guests,.reservation-new-full{display:none}.reservation-more,.reservation-new-short{display:block}.reservation-list-actions .dash-button{font-size:12px;min-height:38px;padding:8px 10px}}
+
+.reservation-result small.reservation-missed-arrival{color:#9d5d45;font-weight:500}
