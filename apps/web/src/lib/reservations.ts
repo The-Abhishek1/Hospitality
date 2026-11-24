@@ -18,3 +18,14 @@ export type CalendarRoom={id:string;name:string;type_id:string;type_name:string;
 export type ReservationWorkspace={day:string;start:string;total:number;page:number;rows:StayRow[];stats:{arrivals:number;departures:number;in_house:number;upcoming:number};can_write:boolean;can_frontdesk:boolean;room_total:number;room_page:number;calendar:CalendarRoom[]};
 export type Stay={id:string;property_id:string;guest_id:string;version:number;status:string;source:string;check_in:string;check_out:string;adults:number;children:number;total_amount:number;currency:string;notes:string;rate_plan_id:string|null;channel_ref:string|null;created_at:string};
 export type Detail={stay:Stay;guest:{id:string;profile_version:number;full_name:string;phone:string|null;email:string|null};room:{id:string;name:string;type_id:string;type_name:string;housekeeping_status:string;active:boolean}|null;events:{event_type:string;created_at:string;details:Record<string,unknown>}[];can_write:boolean;can_frontdesk:boolean;can_bill:boolean;can_finance:boolean;can_portal:boolean;finance?:{folio_id:string|null;folio_status:string|null;posted:number;paid:number;refunded:number;credited?:number;balance:number;unposted_room:number;checkout_balance:number}};
+export function availableStayActions(detail:Pick<Detail,'stay'|'can_frontdesk'|'can_write'|'can_bill'>,today:string){
+ const r=detail.stay;
+ return [
+  ...(detail.can_frontdesk&&r.status==='confirmed'?[{id:'check_in',label:'Check in guest'}]:[]),
+  ...(detail.can_frontdesk&&r.status==='checked_in'?[{id:'check_out',label:'Check out guest'}]:[]),
+  ...(detail.can_frontdesk&&['confirmed','checked_in'].includes(r.status)?[{id:'move',label:'Move room'}]:[]),
+  ...(detail.can_bill&&r.status==='checked_in'?[{id:'post_charges',label:'Post booked room charges'}]:[]),
+  ...(detail.can_write&&r.status==='confirmed'&&r.source!=='ota'?[{id:'cancel',label:'Cancel reservation'}]:[]),
+  ...(detail.can_write&&r.status==='confirmed'&&r.check_in<=today?[{id:'no_show',label:'Mark as no-show'}]:[]),
+ ];
+}
