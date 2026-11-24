@@ -53,3 +53,35 @@ test('Booking.com rejects production machine account before sending availability
  let calls=0;const adapter=new SupplyAdapter('booking_com',()=>creds('booking_com'),true,async()=>{calls++;return Response.json({jwt:'a.'+Buffer.from('{"test":false}').toString('base64url')+'.c'});});
  await assert.rejects(adapter.pushAvailability(ctx,push),/test machine account/);assert.equal(calls,1);
 });
+test('Agoda refreshes an expired HTTP 403 token once and retries the same property update',async()=>{
+ const calls=[];let auth=0;
+ const adapter=new SupplyAdapter('agoda',()=>creds('agoda'),true,async(url,init)=>{
+  calls.push({url,init});
+  if(url.includes('exchange'))return Response.json({access_token:'token'+(++auth),expires_in:3600});
+  return new Response('<result TUID="accepted"/>',{status:init.headers.Authorization==='Bearer token1'?403:200});
+ });
+ await adapter.pushAvailability(ctx,push);
+ const updates=calls.filter(c=>!c.url.includes('exchange'));
+ assert.equal(auth,2);assert.equal(updates.length,2);
+ assert.equal(updates[0].url,updates[1].url);assert.equal(updates[0].init.body,updates[1].init.body);
+ assert.equal(updates[1].init.headers.Authorization,'Bearer token2');
+ await adapter.pushAvailability(ctx,push);assert.equal(auth,2,'later updates reuse the refreshed token');
+});
+test('Agoda permanent HTTP 403 denial stops after one refresh without exposing response secrets',async()=>{
+ let auth=0,updates=0;
+ const adapter=new SupplyAdapter('agoda',()=>creds('agoda'),true,async(url)=>{
+  if(url.includes('exchange')){auth++;return Response.json({access_token:'private-token',expires_in:3600});}
+  updates++;return new Response('private account details DO_NOT_LOG',{status:403});
+ });
+ await assert.rejects(adapter.pushAvailability(ctx,push),error=>error.message==='agoda: supply HTTP 403');
+ assert.equal(auth,2);assert.equal(updates,2);
+});
+test('Booking.com HTTP 403 is not treated as an Agoda token-expiry response',async()=>{
+ let auth=0,updates=0;
+ const adapter=new SupplyAdapter('booking_com',()=>creds('booking_com'),true,async(url)=>{
+  if(url.includes('exchange')){auth++;return Response.json({jwt});}
+  updates++;return new Response('forbidden',{status:403});
+ });
+ await assert.rejects(adapter.pushAvailability(ctx,push),/supply HTTP 403/);
+ assert.equal(auth,1);assert.equal(updates,1);
+});

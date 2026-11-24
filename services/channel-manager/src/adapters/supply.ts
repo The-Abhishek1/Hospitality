@@ -75,7 +75,9 @@ export class SupplyAdapter implements ChannelAdapter {
     for (let attempt = 0; attempt < 2; attempt++) {
       const token = await this.accessToken(c, attempt > 0);
       const response = await this.request(url, {method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/xml',...(this.provider==='booking_com'?{'Accept-Version':'1.1'}:{})}, body});
-      if (response.status === 401 && attempt === 0) continue;
+      // Agoda reports expired supply tokens as HTTP 403. Refresh once only;
+      // repeated denial still fails, and other providers retain their own semantics.
+      if (attempt === 0 && (response.status === 401 || this.provider === 'agoda' && response.status === 403)) continue;
       if (response.status !== 200) throw new Error(`${this.provider}: supply HTTP ${response.status}`);
       const xml = parseXml(await response.text());
       if (xml.error || xml.errors || xml.result?.errors || xml.result?.error) throw new Error(`${this.provider}: supply request rejected`);

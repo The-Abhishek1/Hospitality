@@ -28,7 +28,7 @@ Copy `services/channel-manager/.env.example` to a private environment file or co
 
 Build/test: `npm ci && npm test` in `services/channel-manager`. Run a single persistent worker for sandbox certification. Do not start it against hosted data until mappings/credentials and migration deployment are checked.
 
-Agoda requests go only to `sandbox-supply.agoda.com/api/v2/ari`; documented OAuth v2 exchange uses `supply.agoda.com`. Booking.com uses the documented supply host with a test machine-account token. Endpoints cannot be overridden by hotel input. Tokens stay in memory, cached per provider/credential reference, refreshed once on 401. Calls have a 20-second timeout, do not follow redirects, and record generic errors instead of response bodies or credentials. HTTP 207 and semantic errors fail; a successful push means **accepted by the provider**, not reconciled downstream state. Availability updates do not reopen manually closed rooms.
+Agoda requests go only to `sandbox-supply.agoda.com/api/v2/ari`; documented OAuth v2 exchange uses `supply.agoda.com`. Booking.com uses the documented supply host with a test machine-account token. Endpoints cannot be overridden by hotel input. Tokens stay in memory, cached per provider/credential reference, refreshed once on 401 or Agoda’s documented expired-token HTTP 403. Calls have a 20-second timeout, do not follow redirects, and record generic errors instead of response bodies or credentials. HTTP 207 and semantic errors fail; a successful push means **accepted by the provider**, not reconciled downstream state. Availability updates do not reopen manually closed rooms.
 
 ## Reliability
 
@@ -84,3 +84,14 @@ Commands pin a case version, use a unique request ID and compare replay payloads
 Migration 72 fixes reservation references during tenant teardown by using SET NULL for provider/review links. Local concurrency tests clean their disposable hotel and authentication fixtures after completion.
 
 Validation: review pgTAP suite, frontend snapshot/link-eligibility tests, concurrency tests for replay/competing resolutions/worker-versus-staff, and web production build. No hosted deployment, provider calls or visual browser testing occurred in this step.
+
+
+## Connecting an existing Agoda hotel account
+
+A Partner Portal email identifies the hotel login; it is not a Supply API credential. First sign in to [Agoda Partner Portal](https://ycs.agoda.com), select the correct property and obtain its Agoda Property ID. Check the top-right menu for **API access**. Agoda documents client ID/secret management and outbound-IP whitelisting on that page: [OAuth authorization](https://developer.agoda.com/supply/docs/authentication-2025). If it is unavailable, ask Agoda support which connectivity-partner/API access is available for the account and property.
+
+Property authorization is a separate step. Agoda documents selecting an approved channel manager under Property → Property Settings → Optional Settings, or requesting property API access from its support team: [Connecting to a property](https://developer.agoda.com/supply/docs/connecting-to-a-property). An ordinary hotel login or a live hotel ID does not establish sandbox access or provider certification.
+
+Keep portal passwords, OTPs and client secrets out of chat, Git and hotel-facing forms. Use the worker's private `CHANNEL_CREDENTIALS_JSON` for authorized API credentials and save only the reference in the hotel's Channels setup. Verify API access and the assigned test hotel's room/rate catalog before attempting inventory or rate updates. This implementation deliberately retains its sandbox-only guard; do not label a real production hotel as a sandbox to bypass it. The first provider validation should retrieve authorized products before any outbound rate or availability test.
+
+Local transport regression now covers Agoda's HTTP 403 expiry response: one token refresh, the identical request body/property on retry, reuse of the replacement token, bounded failure on permanent denial, and unchanged Booking.com 403 behavior. These tests use simulated responses; they do not authenticate a real Agoda account.
