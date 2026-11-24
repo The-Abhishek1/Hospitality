@@ -1,0 +1,67 @@
+begin;
+select no_plan();
+insert into auth.users(id,email,email_confirmed_at)values('f1000000-0000-0000-0000-000000000001','owner@group111.test',now()),('f1000000-0000-0000-0000-000000000002','staff@group111.test',now());
+insert into public.tenants(id,name,slug)values('f2000000-0000-0000-0000-000000000001','Groups tenant','groups111');
+insert into public.properties(id,tenant_id,name,property_type,timezone,currency)values
+('f3000000-0000-0000-0000-000000000001','f2000000-0000-0000-0000-000000000001','Groups hotel','hotel','Asia/Kolkata','INR'),
+('f3000000-0000-0000-0000-000000000002','f2000000-0000-0000-0000-000000000001','Other hotel','hotel','UTC','INR');
+insert into public.tenant_memberships(tenant_id,user_id,role)values('f2000000-0000-0000-0000-000000000001','f1000000-0000-0000-0000-000000000001','owner'),('f2000000-0000-0000-0000-000000000001','f1000000-0000-0000-0000-000000000002','member');
+insert into public.accommodation_types(id,tenant_id,property_id,name,max_occupancy,base_rate)values('f4000000-0000-0000-0000-000000000001','f2000000-0000-0000-0000-000000000001','f3000000-0000-0000-0000-000000000001','Group standard',3,100);
+insert into public.accommodation_units(id,tenant_id,property_id,type_id,name,housekeeping_status)
+select('f5000000-0000-0000-0000-'||lpad(n::text,12,'0'))::uuid,'f2000000-0000-0000-0000-000000000001','f3000000-0000-0000-0000-000000000001','f4000000-0000-0000-0000-000000000001','G'||n,case when n=6 then'dirty'else'clean'end from generate_series(1,6)n;
+select set_config('test.day',((now()at time zone'Asia/Kolkata')::date)::text,true);
+select set_config('test.base','[{"type_id":"f4000000-0000-0000-0000-000000000001","adults":1,"children":0,"name":"Group Lead","phone":"","email":"","same_guest":false},{"type_id":"f4000000-0000-0000-0000-000000000001","adults":2,"children":1,"same_guest":true}]',true);
+create function pg_temp.group_items(p_in date,p_out date,p_base jsonb,p_mode text default 'reservation')returns jsonb language sql as $$
+ select jsonb_agg(x.item||(q.preview->'rows'->(x.n::integer-1))order by x.n)from(select public.frontdesk_group_quote('f3000000-0000-0000-0000-000000000001',p_in,p_out,p_base,p_mode)preview)q,jsonb_array_elements(p_base)with ordinality x(item,n)
+$$;
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"f1000000-0000-0000-0000-000000000001","role":"authenticated"}',true);
+select set_config('test.preview',public.frontdesk_group_quote('f3000000-0000-0000-0000-000000000001',current_setting('test.day')::date+10,current_setting('test.day')::date+12,current_setting('test.base')::jsonb)::text,true);
+select is((current_setting('test.preview')::jsonb->>'total')::numeric,400::numeric,'group quote totals each room for the full stay');
+select isnt(current_setting('test.preview')::jsonb#>>'{rows,0,unit_id}',current_setting('test.preview')::jsonb#>>'{rows,1,unit_id}','preview allocates distinct rooms');
+select is((select count(*)::integer from public.reservation_groups where property_id='f3000000-0000-0000-0000-000000000001'),0,'availability check creates no reservations or groups');
+select set_config('test.items',pg_temp.group_items(current_setting('test.day')::date+10,current_setting('test.day')::date+12,current_setting('test.base')::jsonb)::text,true);
+select set_config('test.group',public.frontdesk_group_create('f3000000-0000-0000-0000-000000000001','INR','f6000000-0000-0000-0000-000000000001','Family group','reservation',current_setting('test.day')::date+10,current_setting('test.day')::date+12,current_setting('test.items')::jsonb)::text,true);
+select is((select count(*)::integer from public.reservations where group_id=current_setting('test.group')::uuid),2,'group booking creates a normal reservation for each room');
+select is((select count(distinct guest_id)::integer from public.reservations where group_id=current_setting('test.group')::uuid),1,'same-guest option reuses the first guest profile');
+select is((select count(*)::integer from public.unit_holds h join public.reservations r on r.id=h.reservation_id where r.group_id=current_setting('test.group')::uuid and h.active),2,'every group room has a protected inventory hold');
+select is(public.frontdesk_group_create('f3000000-0000-0000-0000-000000000001','INR','f6000000-0000-0000-0000-000000000001','Family group','reservation',current_setting('test.day')::date+10,current_setting('test.day')::date+12,current_setting('test.items')::jsonb),current_setting('test.group')::uuid,'replaying group submission returns the same group');
+select is((select count(*)::integer from public.reservations where group_id=current_setting('test.group')::uuid),2,'replay never duplicates guest bookings');
+select throws_ok($$select public.frontdesk_group_create('f3000000-0000-0000-0000-000000000001','INR','f6000000-0000-0000-0000-000000000001','Changed group','reservation',current_setting('test.day')::date+10,current_setting('test.day')::date+12,current_setting('test.items')::jsonb)$$,'40001',null,'same request cannot be reused for different group details');
+reset role;
+select throws_ok($$update public.reservations set property_id='f3000000-0000-0000-0000-000000000002'where id=(select id from public.reservations where group_id=current_setting('test.group')::uuid limit 1)$$,'22023',null,'database guard prevents linking a group reservation to another hotel');
+set local role authenticated;
+select is(jsonb_array_length(public.frontdesk_group_detail('f3000000-0000-0000-0000-000000000001',current_setting('test.group')::uuid)->'rows'),2,'group detail lists its room bookings');
+select ok(not(public.frontdesk_group_detail('f3000000-0000-0000-0000-000000000001',current_setting('test.group')::uuid)->'group'?'request_hash'),'group read model excludes private idempotency metadata');
+select throws_ok($$select public.frontdesk_group_detail('f3000000-0000-0000-0000-000000000002',current_setting('test.group')::uuid)$$,'P0002',null,'group cannot be opened through another hotel');
+select throws_ok($$select public.frontdesk_group_quote('f3000000-0000-0000-0000-000000000001',current_setting('test.day')::date+10,current_setting('test.day')::date+12,jsonb_build_array(current_setting('test.base')::jsonb->0))$$,'22023',null,'group requires at least two rooms');
+select throws_ok($$select public.frontdesk_group_quote('f3000000-0000-0000-0000-000000000001',current_setting('test.day')::date+10,current_setting('test.day')::date+12,(select jsonb_agg(current_setting('test.base')::jsonb->0)from generate_series(1,51)))$$,'22023',null,'group input is bounded to fifty rooms');
+select throws_ok($$select public.frontdesk_group_quote('f3000000-0000-0000-0000-000000000001',current_setting('test.day')::date+10,current_setting('test.day')::date+12,current_setting('test.items')::jsonb)$$,'22023',null,'booked rooms cannot be reused by another group');
+select throws_ok($$select public.frontdesk_group_quote('f3000000-0000-0000-0000-000000000001',current_setting('test.day')::date,current_setting('test.day')::date+1,jsonb_set(jsonb_set(current_setting('test.base')::jsonb,'{0,unit_id}','"f5000000-0000-0000-0000-000000000001"'),'{1,unit_id}','"f5000000-0000-0000-0000-000000000001"'))$$,'22023',null,'explicit duplicate room assignment is rejected');
+select throws_ok($$select public.frontdesk_group_quote('f3000000-0000-0000-0000-000000000001',current_setting('test.day')::date+20,current_setting('test.day')::date+21,jsonb_set(current_setting('test.base')::jsonb,'{0,adults}','4'))$$,'22023',null,'group quote preserves each room occupancy limit');
+select set_config('test.rollback',jsonb_set(jsonb_set(current_setting('test.base')::jsonb,'{0,name}','"Rollback Lead"'),'{1}','{"type_id":"f4000000-0000-0000-0000-000000000001","adults":1,"children":0,"same_guest":false,"name":"X"}')::text,true);
+select set_config('test.rollbackitems',pg_temp.group_items(current_setting('test.day')::date+10,current_setting('test.day')::date+12,current_setting('test.rollback')::jsonb)::text,true);
+select throws_ok($$select public.frontdesk_group_create('f3000000-0000-0000-0000-000000000001','INR','f6000000-0000-0000-0000-000000000002','Rollback group','reservation',current_setting('test.day')::date+10,current_setting('test.day')::date+12,current_setting('test.rollbackitems')::jsonb)$$,'22023',null,'invalid later guest fails the whole group');
+select is((select count(*)::integer from public.reservation_groups where name='Rollback group'),0,'failed group leaves no partial group record');
+select is((select count(*)::integer from public.guests where tenant_id='f2000000-0000-0000-0000-000000000001'and full_name='Rollback Lead'),0,'failed group leaves no orphan lead guest');
+select is((select count(*)::integer from public.reservations where property_id='f3000000-0000-0000-0000-000000000001'),2,'failed group leaves no partial reservations');
+select throws_ok($$select public.frontdesk_group_create('f3000000-0000-0000-0000-000000000001','INR',gen_random_uuid(),'Changed rate','reservation',current_setting('test.day')::date+10,current_setting('test.day')::date+12,jsonb_set(current_setting('test.rollbackitems')::jsonb,'{0,quote}','1'))$$,'22023',null,'changed room price requires a new group quote');
+select throws_ok($$select public.frontdesk_group_create('f3000000-0000-0000-0000-000000000001','USD',gen_random_uuid(),'Changed currency','reservation',current_setting('test.day')::date+10,current_setting('test.day')::date+12,current_setting('test.rollbackitems')::jsonb)$$,'40001',null,'hotel currency cannot be overwritten');
+select set_config('test.walkitems',pg_temp.group_items(current_setting('test.day')::date,current_setting('test.day')::date+1,current_setting('test.base')::jsonb,'walk_in')::text,true);
+select set_config('test.walk',public.frontdesk_group_create('f3000000-0000-0000-0000-000000000001','INR',gen_random_uuid(),'Walk-in group','walk_in',current_setting('test.day')::date,current_setting('test.day')::date+1,current_setting('test.walkitems')::jsonb)::text,true);
+select is((select count(*)::integer from public.reservations where group_id=current_setting('test.walk')::uuid and status='checked_in'),2,'group walk-in books and checks in ready rooms');
+reset role;
+insert into public.whatsapp_journey_settings(property_id,enabled,required_documents)values('f3000000-0000-0000-0000-000000000001',true,1);
+set local role authenticated;
+select set_config('test.docitems',pg_temp.group_items(current_setting('test.day')::date,current_setting('test.day')::date+1,current_setting('test.base')::jsonb,'walk_in')::text,true);
+select set_config('test.docs',public.frontdesk_group_create('f3000000-0000-0000-0000-000000000001','INR',gen_random_uuid(),'Document gated group','walk_in',current_setting('test.day')::date,current_setting('test.day')::date+1,current_setting('test.docitems')::jsonb)::text,true);
+select is((select count(*)::integer from public.reservations where group_id=current_setting('test.docs')::uuid and status='confirmed'),2,'missing documents preserve reservations without bypassing admission');
+select ok((select bool_and(x->>'admission_error'like'%documents%')from public.reservation_groups g,jsonb_array_elements(g.initial_results)x where g.id=current_setting('test.docs')::uuid),'blocked group rooms retain their admission reason');
+select throws_ok($$select public.frontdesk_group_quote('f3000000-0000-0000-0000-000000000001',current_setting('test.day')::date+2,current_setting('test.day')::date+3,current_setting('test.base')::jsonb,'walk_in')$$,'22023',null,'walk-ins cannot use a future arrival');
+select set_config('request.jwt.claims','{"sub":"f1000000-0000-0000-0000-000000000002","role":"authenticated"}',true);
+select is((select count(*)::integer from public.reservation_groups where property_id='f3000000-0000-0000-0000-000000000001'),0,'unassigned teammate cannot read groups');
+select throws_ok($$select public.frontdesk_group_quote('f3000000-0000-0000-0000-000000000001',current_setting('test.day')::date,current_setting('test.day')::date+1,current_setting('test.base')::jsonb)$$,'42501',null,'group quote requires booking permission');
+select throws_ok($$select public.frontdesk_group_detail('f3000000-0000-0000-0000-000000000001',current_setting('test.group')::uuid)$$,'42501',null,'group detail requires reservation access');
+select ok(not has_function_privilege('anon','public.frontdesk_group_create(uuid,text,uuid,text,text,date,date,jsonb,text)','execute'),'anonymous group creation denied');
+select throws_ok($$select public.frontdesk_group_create('f3000000-0000-0000-0000-000000000001','INR',gen_random_uuid(),'Unauthorized group','reservation',current_setting('test.day')::date,current_setting('test.day')::date+1,current_setting('test.items')::jsonb)$$,'42501',null,'group creation requires booking permission');
+select *from finish();rollback;

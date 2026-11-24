@@ -9,7 +9,7 @@
     "build": "next build",
     "start": "next start",
     "test:auth": "node --test tests/auth.test.mjs",
-    "test:reservations": "node --test tests/reservations.test.mjs",
+    "test:reservations": "node --test tests/reservations.test.mjs tests/group-bookings.test.mjs",
     "test:inbox": "node --test tests/inbox.test.mjs",
     "test:billing": "node --test tests/billing.test.mjs",
     "test:service-desk": "node --test tests/service-desk.test.mjs",

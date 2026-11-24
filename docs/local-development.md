@@ -524,3 +524,23 @@ See [guest portal](guest-portal.md#advanced-stay-workspace) for link destination
 PWA privacy, Edge Function prerequisites and validation commands. Apply migrations
 62–67 and build both apps. Guest production artifacts use `.next-production`,
 separate from `.next-dev`, to keep local dev and production checks independent.
+
+## Group reservations and group walk-ins
+
+Reservations now offers **Group booking**, with **Group reservation** and **Group walk-in & check in** modes. The single-room booking page links to the same flow. Existing groups are available from Reservations → More → Group bookings.
+
+A group contains 2–50 normal room reservations sharing arrival/departure dates. Staff can mix room types, rate plans and guest counts. The first room holds the lead guest; other rooms can use that same profile, another new guest, or a returning guest from this hotel. Shared profile edits apply to all bookings using the profile. Use separate guest profiles and verified contact permissions for individual room messaging. Each room retains its own admission checks, documents, bill and event messages.
+
+Availability previews allocate distinct rooms, respecting explicitly selected room IDs in API requests. Final creation serializes allocation within the property, rechecks prices and room holds, and rolls back the entire group if a room cannot be booked. A stable creation request prevents duplicate groups; only a SHA-256 hash of the reviewed request is retained for comparison, rather than a second copy of contact details and permission evidence. Group walk-ins additionally attempt the existing check-in action for each saved room. Missing documents or other normal admission blockers leave that room confirmed, with its reason displayed; they never bypass the check-in gate.
+
+The group page provides bulk check-in/checkout using the existing version-checked batch action. Completed checkouts still require settlement and create cleaning work. Individual stays link back to their group. Apply migration `20261105000111_group_bookings.sql` before deploying these pages.
+
+Local verification:
+
+```bash
+npm run test:reservations --prefix apps/web
+PGOPTIONS='-c search_path=public,extensions' psql postgresql://postgres:postgres@127.0.0.1:54322/postgres -X -v ON_ERROR_STOP=1 -f supabase/tests/111_group_bookings.test.sql
+python3 supabase/tests/group-booking-concurrency.py
+```
+
+The database suite rolls back its fixtures. The concurrency script creates and removes an isolated local hotel; it cannot target hosted Supabase. Inspect pgTAP output for `not ok` as well as SQL errors. Browser QA uses local Supabase and synthetic rooms/guests, including a fifty-room reservation and partial group checkout. It does not send real guest messages.
