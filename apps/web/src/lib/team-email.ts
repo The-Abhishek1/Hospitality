@@ -7,15 +7,30 @@ export type InvitationEmailContext = {
 export type TeamEmailConfig = { key: string; from: string; origin: string };
 export type EmailResult = { status: 'sent' | 'failed' | 'unknown'; providerId?: string; error?: string };
 
-export function teamEmailConfig(env: Record<string, string | undefined> = process.env): TeamEmailConfig | null {
+// Direct reads let Next.js inline public build variables on Vercel. Reading the
+// entire process.env object can miss build-only public variables in a function.
+function emailEnvironment(): Record<string, string | undefined> {
+  return { NODE_ENV: process.env.NODE_ENV, RESEND_API_KEY: process.env.RESEND_API_KEY,
+    TEAM_EMAIL_FROM: process.env.TEAM_EMAIL_FROM, APP_URL: process.env.APP_URL,
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL };
+}
+export function teamEmailStatus(env: Record<string, string | undefined> = emailEnvironment()) {
+  const issues: string[] = [];
   const key = env.RESEND_API_KEY?.trim(), from = env.TEAM_EMAIL_FROM?.trim() || 'Xcloak Hospitality <admin@xcloak.tech>';
-  if (!key || !key.startsWith('re_') || /[\r\n]/.test(from) || !/^[^<>\s@]+@[^<>\s@]+\.[^<>\s@]+$/.test(from.match(/<([^<>]+)>$/)?.[1] ?? from)) return null;
+  if (!key || !key.startsWith('re_')) issues.push('RESEND_API_KEY');
+  if (/[\r\n]/.test(from) || !/^[^<>\s@]+@[^<>\s@]+\.[^<>\s@]+$/.test(from.match(/<([^<>]+)>$/)?.[1] ?? from)) issues.push('TEAM_EMAIL_FROM');
   try {
     const url = new URL(env.APP_URL ?? '');
-    if (url.username || url.password || (url.protocol !== 'https:' && !(env.NODE_ENV !== 'production' && url.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(url.hostname)))) return null;
-    if (!env.SUPABASE_SERVICE_ROLE_KEY || !env.NEXT_PUBLIC_SUPABASE_URL) return null;
-    return { key, from, origin: url.origin };
-  } catch { return null; }
+    if (url.username || url.password || (url.protocol !== 'https:' && !(env.NODE_ENV !== 'production' && url.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(url.hostname)))) issues.push('APP_URL');
+  } catch { issues.push('APP_URL'); }
+  if (!env.SUPABASE_SERVICE_ROLE_KEY) issues.push('SUPABASE_SERVICE_ROLE_KEY');
+  if (!env.NEXT_PUBLIC_SUPABASE_URL) issues.push('NEXT_PUBLIC_SUPABASE_URL');
+  return { configured: issues.length === 0, issues };
+}
+export function teamEmailConfig(env: Record<string, string | undefined> = emailEnvironment()): TeamEmailConfig | null {
+  if (!teamEmailStatus(env).configured) return null;
+  return { key: env.RESEND_API_KEY!.trim(), from: env.TEAM_EMAIL_FROM?.trim() || 'Xcloak Hospitality <admin@xcloak.tech>', origin: new URL(env.APP_URL!).origin };
 }
 
 const escapeHtml = (value: string) => value.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]!));

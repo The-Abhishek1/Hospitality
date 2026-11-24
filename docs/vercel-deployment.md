@@ -136,3 +136,5 @@ The recipient must use the invited address, confirm their email if requested, th
 Local testing uses a separate app and a mocked email provider. Never put the real Resend key into the local synthetic-fixture environment. Live email tests require a designated recipient; do not invite arbitrary hotel guests or team members to test delivery.
 
 References: [Resend sending API](https://resend.com/docs/api-reference/emails/send-email), [idempotency](https://resend.com/docs/dashboard/emails/idempotency-keys), [Supabase SMTP](https://resend.com/docs/send-with-supabase-smtp).
+
+Platform administrators can inspect `/api/admin/email-status` while signed in to diagnose missing or invalid invitation-email settings. The endpoint returns setting names only, never their values, and rejects hotel owners and unauthenticated requests. Public Supabase build variables are read directly so Next.js can inline them on Vercel; private email and backend credentials remain server-only runtime variables.

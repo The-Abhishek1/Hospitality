@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
 const source=readFileSync(new URL('../src/lib/team-email.ts',import.meta.url),'utf8').replace("import 'server-only';",''),code=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
-const {teamEmailConfig,invitationEmail,sendInvitationEmail}=await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
+const {teamEmailConfig,teamEmailStatus,invitationEmail,sendInvitationEmail}=await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
 const env={RESEND_API_KEY:'re_test_not_live',TEAM_EMAIL_FROM:'Hospitality <admin@example.test>',APP_URL:'https://hotel.example.test',NEXT_PUBLIC_SUPABASE_URL:'https://backend.example.test',SUPABASE_SERVICE_ROLE_KEY:'not-a-real-service-key',NODE_ENV:'production'},config=teamEmailConfig(env),context={email:'staff@example.test',business:'Hotel & team <script>alert(1)</script>',business_role:'member',expires_at:'2026-12-24T12:00:00Z',hotels:[{name:'Beach <hotel>',roles:['Front desk & reception']}]};
 test('email configuration requires private key, backend result credentials and trusted app origin',()=>{
  assert.equal(config.origin,'https://hotel.example.test');
@@ -25,4 +25,8 @@ test('definite provider rejections expose safe errors without raw provider conte
 });
 test('server errors, timeouts and ambiguous responses never claim delivery or retry automatically',async()=>{
  for(const fetcher of[async()=>new Response('{}',{status:503}),async()=>new Response('{}',{status:409}),async()=>{throw Error('timeout secret');},async()=>new Response('{}',{status:200}),async()=>new Response('invalid JSON',{status:200})]){let calls=0;const result=await sendInvitationEmail(context,'id',config,async(...args)=>{calls++;return fetcher(...args);});assert.deepEqual(result,{status:'unknown',error:'uncertain'});assert.equal(calls,1);}
+});
+
+test('platform email diagnostics report only setting names, never secret values',()=>{
+ assert.deepEqual(teamEmailStatus(env),{configured:true,issues:[]});const status=teamEmailStatus({...env,RESEND_API_KEY:undefined,APP_URL:'invalid',SUPABASE_SERVICE_ROLE_KEY:undefined});assert.deepEqual(status.issues,['RESEND_API_KEY','APP_URL','SUPABASE_SERVICE_ROLE_KEY']);assert.ok(!JSON.stringify(status).includes('re_test'));assert.ok(!JSON.stringify(status).includes(env.TEAM_EMAIL_FROM));
 });
