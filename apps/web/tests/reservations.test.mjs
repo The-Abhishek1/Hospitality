@@ -57,3 +57,11 @@ test('expired bookings offer room release while check-in needs a current booked 
  const ids=availableStayActions(expired,'2026-11-24').map(a=>a.id);assert.ok(!ids.includes('check_in'));assert.ok(ids.includes('no_show'));
  assert.ok(!availableStayActions(actionDetail('confirmed',{},'direct','2026-11-25'),'2026-11-24').some(a=>a.id==='check_in'));
 });
+
+test('reservations open on the calendar while explicit list and filtered work links keep their intent',()=>{
+ assert.equal(normalizeFilters({},'2026-11-24').mode,'calendar');
+ assert.equal(normalizeFilters({mode:'list'},'2026-11-24').mode,'list');
+ assert.equal(normalizeFilters({view:'all',status:'confirmed',to:'2026-11-23'},'2026-11-24').mode,'list');
+ assert.equal(normalizeFilters({q:'Guest'},'2026-11-24').mode,'list');
+ assert.equal(normalizeFilters({mode:'calendar',view:'all',q:'Guest'},'2026-11-24').mode,'calendar');
+});
