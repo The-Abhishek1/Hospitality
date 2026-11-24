@@ -137,4 +137,15 @@ select public.claim_online_payment()as retryjob\gset
 select public.apply_online_payment(:'uncertain',(:'retryjob'::jsonb->>'lease')::uuid,'{"link":null,"cancelled":true}');
 select is((select state from public.hotel_payment_requests where id=:'uncertain'),'cancel_pending','cancel request stays blocked until provider confirms uncertain creation');
 reset role;
+update public.hotel_payment_requests set next_check_at=now()+interval '1 hour'where id=:'uncertain';
+-- A separate stay allows an expired, never-started request to be tested without releasing the uncertain one.
+insert into public.reservations(id,tenant_id,property_id,guest_id,status,check_in,check_out,total_amount,currency)values('11400000-0000-4000-8000-000000000021',:'tenant',:'pid',:'guest','checked_in',current_date,current_date+1,500,'INR');
+set local role authenticated;
+select public.request_online_payment(:'pid','11400000-0000-4000-8000-000000000021',gen_random_uuid(),false)as elapsed\gset
+reset role;
+update public.hotel_payment_requests set expires_at=now()-interval '1 minute'where id=:'elapsed';
+set local role service_role;
+select is(public.claim_online_payment(),null::jsonb,'expired unstarted request never attempts provider creation');
+select is((select state from public.hotel_payment_requests where id=:'elapsed'),'expired','unstarted expired intent safely releases its open-link slot');
+reset role;
 select *from finish();rollback;
