@@ -116,6 +116,42 @@ Previously delivered emails retain the links they were generated with. See
 
 Supabase Auth SMTP sends account confirmations and password resets. Team invitations use the Resend API separately; configuring SMTP alone does not configure these application emails.
 
+### One email provider: Resend
+
+All current application emails use Resend. Supabase still verifies accounts and
+issues confirmation/recovery tokens; its custom SMTP connection delivers those
+emails through Resend. Signup, confirmation resend, password recovery and other
+Auth emails use this connection. Team invitations use Resend's HTTP API.
+Custom SMTP is supported on Supabase's Free plan; no Supabase plan upgrade is
+required for this setup. Resend's own sending quotas still apply.
+
+In **Supabase → Authentication → Email → SMTP Settings**, enable custom SMTP:
+
+| Setting | Value |
+| --- | --- |
+| Host | `smtp.resend.com` |
+| Port | `465` |
+| Username | `resend` |
+| Password | A private, valid Resend API key authorized for `xcloak.tech` |
+| Sender email | `admin@xcloak.tech` |
+| Sender name | `Hospitality` |
+
+Keep the Resend sender domain verified. When replacing a revoked key, update the
+SMTP password as well as the hotel app's `RESEND_API_KEY`; Vercel environment
+changes do not update Supabase SMTP credentials. Keep email confirmation enabled
+and retain the production Site URL and allowed `/auth/confirm` callbacks above.
+Do not implement account confirmation using an application-generated link or
+disable confirmation to work around an email delivery failure.
+
+For missing confirmations, check the exact address entered, the Auth user record
+and Resend's email delivery events. A successful signup response can deliberately
+hide whether an account already exists. Resend acceptance is separate from
+delivery and inbox placement. Failed Auth email requests emit only the operation,
+error code and HTTP status in the hotel app's logs, never passwords or email tokens.
+
+References: [Supabase custom SMTP](https://supabase.com/docs/guides/auth/auth-smtp),
+[Resend SMTP integration](https://resend.com/docs/send-with-supabase-smtp).
+
 Set these **server-only** variables on the hotel app's Vercel project, then redeploy:
 
 ```env

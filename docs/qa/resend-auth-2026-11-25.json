@@ -1,0 +1,21 @@
+{
+  "date": "2026-11-25",
+  "scope": "Hosted signup and Resend delivery; no production SMTP credentials changed",
+  "provider": "Resend",
+  "checks": [
+    "Hosted Supabase custom SMTP is enabled with smtp.resend.com:465 and admin@xcloak.tech",
+    "The current private app Resend key authenticates successfully over SMTP",
+    "The xcloak.tech sending domain is verified",
+    "A signup through the deployed hotel app created an unconfirmed synthetic account and requested confirmation",
+    "Resend reported the synthetic confirmation delivered; the temporary Auth account was removed",
+    "After the user retried their signup, Resend reported its confirmation delivered",
+    "The user account is email-confirmed and has successfully signed in"
+  ],
+  "changes": [
+    "Signup confirmation screen displays the submitted address and provides a way to use another email",
+    "Signup, confirmation resend and recovery distinguish email limits and provider failures",
+    "Failed Auth email requests log only operation, error code and status",
+    "Deployment documentation describes both Resend delivery paths and credential rotation"
+  ],
+  "limitation": "The initial reported signup could not be traced: no Auth account or Resend delivery record existed for the supplied address before retry. Password-reset delivery was not exercised in this check."
+}

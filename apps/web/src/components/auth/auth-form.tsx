@@ -25,6 +25,7 @@ export function AuthForm({ mode, next = '/dashboard', initial = {} }: { mode: Mo
     {(mode === 'login' || mode === 'signup') && <nav className="auth-tabs" aria-label="Account access"><Link href={`/login${suffix}`} aria-current={mode === 'login' ? 'page' : undefined}>Sign in</Link><Link href={`/signup${suffix}`} aria-current={mode === 'signup' ? 'page' : undefined}>Create account</Link></nav>}
     {state.error && <div className="auth-alert auth-alert-error" role="alert">{state.error}</div>}
     {state.message && <div className="auth-alert auth-alert-success" role="status"><strong>{mode === 'forgot' ? 'Check your inbox' : mode === 'signup' ? 'One more step' : 'You’re all set'}</strong>{state.message}</div>}
+    {mode === 'signup' && success && <p className="auth-footnote">Confirmation requested for <strong>{email}</strong>. Check your spam folder too. Wrong address? <a href={`/signup${suffix}`}>Use another email</a>.</p>}
     {!success && <form action={action} className="auth-form">
       <input type="hidden" name="next" value={next} />
       {mode === 'signup' && <div className="auth-field"><label htmlFor="full_name">Full name</label><input id="full_name" name="full_name" autoComplete="name" placeholder="e.g. Alex Morgan" minLength={2} maxLength={100} required value={name} onChange={e => setName(e.target.value)} /></div>}

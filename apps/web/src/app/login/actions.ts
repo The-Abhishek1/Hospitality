@@ -2,8 +2,13 @@
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { safeNext, validEmail, passwordChecks, type AuthState } from '@/lib/auth';
+import { safeNext, validEmail, passwordChecks, authEmailError, type AuthState } from '@/lib/auth';
 const value = (fd: FormData, key: string) => String(fd.get(key) ?? '');
+function emailFailure(intent: 'signup' | 'confirmation' | 'recovery', error: { code?: string; status?: number }): AuthState {
+  // Do not log addresses, passwords, token-bearing links or provider error bodies.
+  console.error('auth_email_request_failed', { intent, code: error.code ?? 'unknown', status: error.status });
+  return { error: authEmailError(error, intent) };
+}
 async function callbackUrl(next: string) {
   const origin = process.env.APP_URL ?? (await headers()).get('origin');
   if (!origin) throw new Error('Set APP_URL to the public web app URL.');
@@ -27,7 +32,7 @@ export async function signUp(_: AuthState, fd: FormData): Promise<AuthState> {
   if (password !== value(fd, 'confirm_password')) return { error: 'Your passwords don’t match.' };
   const next = safeNext(fd.get('next')), db = await createClient();
   const { data, error } = await db.auth.signUp({ email, password, options: { data: { full_name: name }, emailRedirectTo: await callbackUrl(next) } });
-  if (error) return { error: error.status === 429 ? 'Please wait a few minutes before requesting another email.' : 'We couldn’t create your account. Try again, or sign in if you already have an account.' };
+  if (error) return emailFailure('signup', error);
   if (!data.session) return { message: 'Check your inbox for a confirmation link. If you already have an account, sign in or reset your password.' };
   if (next === '/dashboard') {
     // Resolve first-time setup before the client follows the action redirect.
@@ -43,7 +48,7 @@ export async function requestReset(_: AuthState, fd: FormData): Promise<AuthStat
   if (!validEmail(email)) return { error: 'Enter a valid email address.' };
   const db = await createClient();
   const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: await callbackUrl('/reset-password') });
-  if (error) return { error: 'We couldn’t send the reset email right now. Wait a few minutes and try again.' };
+  if (error) return emailFailure('recovery', error);
   return { message: 'If an account exists for this email, you’ll receive a password reset link. Check your inbox and spam folder.' };
 }
 export async function resendConfirmation(_: AuthState, fd: FormData): Promise<AuthState> {
@@ -51,7 +56,7 @@ export async function resendConfirmation(_: AuthState, fd: FormData): Promise<Au
   if (!validEmail(email)) return { error: 'Enter your email address before requesting a confirmation link.' };
   const db = await createClient();
   const { error } = await db.auth.resend({ type: 'signup', email, options: { emailRedirectTo: await callbackUrl(safeNext(fd.get('next'))) } });
-  if (error) return { error: 'We couldn’t send another link right now. Wait a few minutes and try again.' };
+  if (error) return emailFailure('confirmation', error);
   return { message: 'If your account needs confirmation, a new link is on its way. Check your inbox and spam folder.' };
 }
 export async function resetPassword(_: AuthState, fd: FormData): Promise<AuthState> {
