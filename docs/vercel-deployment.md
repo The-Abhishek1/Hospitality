@@ -88,6 +88,14 @@ Sign in, select the hotel and check dashboard/Inbox navigation. Confirm the gues
 
 References: [Vercel monorepo settings](https://vercel.com/docs/monorepos/monorepo-faq), [Next.js file tracing](https://nextjs.org/docs/pages/api-reference/config/next-config-js/output), [Meta Embedded Signup](https://developers.facebook.com/documentation/business-messaging/whatsapp/embedded-signup/implementation).
 
+## Server location
+
+The hotel app's `apps/web/vercel.json` pins server functions to `hnd1` (Tokyo),
+matching the hosted Supabase project's `ap-northeast-1` database region. Keep
+these locations together if the database moves; repeated cross-region Auth and
+database requests add latency to setup and authenticated pages. Static assets
+continue to use Vercel's CDN.
+
 ## Hosted confirmation-link configuration
 
 The hosted Hospitality Auth URL settings are tracked separately in

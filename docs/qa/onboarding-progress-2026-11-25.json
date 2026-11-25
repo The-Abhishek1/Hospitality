@@ -1,0 +1,29 @@
+{
+  "date": "2026-11-25",
+  "changes": [
+    "Creation immediately displays a spinner, disabled submit button and live progress message",
+    "Submit state remains pending through the server action and redirect",
+    "Hotel server functions are configured in Tokyo alongside the hosted database"
+  ],
+  "browser_checks": {
+    "scope": "Actual onboarding form and submit component in a local action harness; no production hotel created",
+    "feedback_ms": 145,
+    "required_fields_prevent_submission": true,
+    "repeated_clicks_and_enter_send_one_request": true,
+    "pending_state_survives_delayed_response": true,
+    "action_redirect_completes": true,
+    "validation_error_reenables_button": true,
+    "mobile_width": 390,
+    "horizontal_overflow": false
+  },
+  "region_evidence": {
+    "supabase_region": "ap-northeast-1",
+    "function_region_before": "iad1",
+    "configured_function_region": "hnd1",
+    "warm_settings_load_before_ms": [2409, 2057]
+  },
+  "limitations": [
+    "The original 10–15 second creation delay was not reproduced by creating a live hotel",
+    "Local database regression tests could not run because the Docker daemon was stopped"
+  ]
+}
