@@ -56,6 +56,14 @@ select is((select status from public.reservations where id=:'rid'),'checked_out'
 select private.journey_button(:'cid',:'rid','food','Old food button')as old_button\gset
 select private.handle_whatsapp_journey(:'cid',(select id from public.messages where wa_message_id='poststay-comment'),(:'old_button'::jsonb)->>'id','https://guest.test');
 select is((select count(*)::int from public.orders where reservation_id=:'rid'),0,'old food actions cannot order after checkout');
+-- Previously verified booking contacts can ask for help without opting into automatic updates.
+insert into private.whatsapp_booking_contacts(reservation_id,property_id,guest_id,conversation_id,phone,evidence,actor_id)values(:'rid',:'pid',:'guest',:'cid','919111111111','Previously verified booking contact',:'owner');
+update public.whatsapp_guest_authorizations set status='revoked'where property_id=:'pid';
+update public.conversations set guest_id=null where id=:'cid';
+select private.restore_poststay_identity(:'cid');
+select is(private.poststay_reservation(:'cid'),:'rid'::uuid,'declining ongoing updates does not block guest-initiated help with verified booking proof');
+select is((select status from public.whatsapp_guest_authorizations where property_id=:'pid'),'revoked','post-stay help never re-enables automatic stay-update consent');
+update public.whatsapp_guest_authorizations set status='granted'where property_id=:'pid';
 -- New verified upcoming reservations take priority over past-stay help.
 insert into public.reservations(id,tenant_id,property_id,guest_id,status,check_in,check_out,total_amount,currency)values('11600000-0000-4000-8000-000000000001',:'tenant',:'pid',:'guest','confirmed',current_date+1,current_date+2,500,'INR');
 select is(private.poststay_reservation(:'cid'),null::uuid,'an upcoming stay suppresses the completed-stay context');
