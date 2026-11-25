@@ -10,7 +10,7 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{propertyId:
  if(req.headers.get('origin')!==(process.env.WHATSAPP_ONBOARDING_ORIGIN||req.nextUrl.origin))return response({error:'Open the configured hotel app address.'},403);
  const{propertyId:pid}=await params,db=await createClient(),{data:{user}}=await db.auth.getUser();if(!user)return response({error:'Sign in again.'},401);
  const {data,error}=await db.rpc('whatsapp_setup_context',{p_property:pid});if(error||data?.connection?.status!=='active')return response({error:'Connect this hotel’s WhatsApp number first. Hotel administrator access is required.'},403);
- let input:{action?:string;event?:string;name?:string;language?:string;body?:string}&TemplateExtras={};
+ let input:{action?:string;replacement_for?:string;event?:string;name?:string;language?:string;body?:string}&TemplateExtras={};
  try{const raw=await req.text();if(raw.length>20000)return response({error:'Template submission is too large.'},413);input=raw?JSON.parse(raw):{};if(!input||Array.isArray(input)||typeof input!=='object')throw Error();}catch{return response({error:'Check the template form and try again.'},400);}
  if(input.action&&!['sync','submit'].includes(input.action))return response({error:'Unknown template action.'},400);
  let payload:ReturnType<typeof richTemplatePayload>|undefined;
@@ -23,6 +23,7 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{propertyId:
   if(payload){
    const current=await meta(`${data.connection.waba_id}/message_templates?name=${encodeURIComponent(payload.name)}&fields=name,language,status`,token,'GET',undefined,'template');
    if(current.data?.some((t:{name:string;language:string})=>t.name===payload!.name&&t.language===payload!.language))return response({error:'A template with this name and language already exists in Meta. Check approval & sync to load it, or choose another name.'},409);
+   if(input.replacement_for){const registered=await backend().rpc('register_whatsapp_replacement',{p_property:pid,p_actor:user.id,p_old:input.replacement_for,p_name:payload.name,p_language:payload.language,p_body:input.body});if(registered.error)return response({error:'Choose a template from this hotel and a new version name.'},400);}
    if(input.header_kind==='image'){const handle=await uploadTemplateSample(pid,input.image_url!,token);payload.components[0].example={header_handle:[handle]};}
    // Only the explicit Submit to Meta form creates a provider template. Sync never creates one.
    const created=await meta(`${data.connection.waba_id}/message_templates`,token,'POST',{name:payload.name,language:payload.language,category:payload.category,...(payload.parameter_format?{parameter_format:payload.parameter_format}:{}),components:JSON.stringify(payload.components)},'template');accepted=true;

@@ -34,3 +34,6 @@ verify_jwt = true
 
 [functions.payments-worker]
 verify_jwt = false # Dedicated server-to-server X-Worker-Secret, same scheduling vault as WhatsApp.
+
+[functions.whatsapp-setup-worker]
+verify_jwt = false

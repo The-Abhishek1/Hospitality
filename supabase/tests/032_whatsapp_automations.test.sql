@@ -34,6 +34,9 @@ select is(public.dispatch_whatsapp_automations(50,'https://guest.test'),1,'permi
 select is(public.dispatch_whatsapp_automations(50,'https://guest.test'),0,'repeat dispatcher does not duplicate');
 select is((select count(*)::integer from public.guest_access_tokens where reservation_id='e5000000-0000-0000-0000-000000000001'),1,'secure portal link issued once');
 select ok((select body like 'Hi Asha from Hotel A. https://guest.test/s/%'from public.messages where automation_event_id is not null and property_id='e3000000-0000-0000-0000-000000000001'),'rendered snapshot contains guest data and secure stay link');
+reset role;
+update public.messages set next_attempt_at=now()+interval '1 day'where property_id<>'e3000000-0000-0000-0000-000000000001'and status='queued';
+set local role service_role;
 select is((select count(*)::integer from public.claim_outbound_messages_v3(10,false)),0,'old workers cannot strip automation parameters');
 select is((select count(*)::integer from public.claim_outbound_messages_v4(10,false,false)),0,'automation delivery flag is required');
 select is((select count(*)::integer from public.claim_outbound_messages_v4(10,false,true)),1,'new worker claims automation');
@@ -46,7 +49,7 @@ insert into public.whatsapp_automation_rules(property_id,tenant_id,event_key,ena
 select 'e3000000-0000-0000-0000-000000000001','e2000000-0000-0000-0000-000000000001',x->>'key',true,t.id,t.provider_fingerprint,'["guest_name","hotel_name","event_label"]'::jsonb from jsonb_array_elements(public.whatsapp_automation_catalog())x cross join public.message_templates t where t.id=current_setting('test.auto_template')::uuid and x->>'key'not in('checked_in','review_request')on conflict do nothing;
 insert into public.orders(id,tenant_id,property_id,kind,reservation_id,total)values('e7000000-0000-0000-0000-000000000001','e2000000-0000-0000-0000-000000000001','e3000000-0000-0000-0000-000000000001','room_service','e5000000-0000-0000-0000-000000000001',450);
 update public.orders set status='preparing'where id='e7000000-0000-0000-0000-000000000001';update public.orders set status='ready'where id='e7000000-0000-0000-0000-000000000001';update public.orders set status='served'where id='e7000000-0000-0000-0000-000000000001';
-select is((select count(*)::integer from public.whatsapp_automation_events where source_table='orders'and property_id='e3000000-0000-0000-0000-000000000001'),4,'all dining milestones captured');
+select is((select count(*)::integer from public.whatsapp_automation_events where source_table='orders'and property_id='e3000000-0000-0000-0000-000000000001'),5,'all dining milestones and the feedback event captured');
 insert into public.guest_requests(id,tenant_id,property_id,reservation_id,title,source)values('e8000000-0000-0000-0000-000000000001','e2000000-0000-0000-0000-000000000001','e3000000-0000-0000-0000-000000000001','e5000000-0000-0000-0000-000000000001','Fresh towels','portal');
 insert into public.tasks(id,tenant_id,property_id,title,guest_request_id,reservation_id)values('e9000000-0000-0000-0000-000000000001','e2000000-0000-0000-0000-000000000001','e3000000-0000-0000-0000-000000000001','Internal staff notes must never be shared','e8000000-0000-0000-0000-000000000001','e5000000-0000-0000-0000-000000000001');
 update public.tasks set status='done'where id='e9000000-0000-0000-0000-000000000001';update public.guest_requests set status='completed'where id='e8000000-0000-0000-0000-000000000001';

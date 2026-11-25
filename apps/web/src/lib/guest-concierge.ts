@@ -1,6 +1,6 @@
 export const conciergeActions={stay:'My stay',documents:'Upload documents',food:'Order food',services:'Request a service',checkin:'Request check-in',checkout:'Request checkout',location:'Hotel location',photos:'Hotel photos',review:'Leave a review',website:'Hotel website',reception:'Talk to reception'};
 export type ConciergeAction=keyof typeof conciergeActions;
-export type MenuService={id:string;label:string;enabled:boolean;action:ConciergeAction|'reply';template_id:string};
+export type MenuService={id:string;label:string;enabled:boolean;action:ConciergeAction|'reply';template_id:string;native_action?:string};
 export const guestPortalPages={stay:'Stay details',documents:'Document upload',food:'Food ordering',services:'Service request form',checkin:'Check-in request',checkout:'Checkout request'}as const;
 export function serviceResponseMode(action:MenuService['action']){return Object.hasOwn(guestPortalPages,action)?'portal':action==='reception'?'reception':'template';}
 export function serviceActionForResponse(mode:string,current:MenuService['action']):MenuService['action']{return mode==='reception'?'reception':mode==='portal'?(Object.hasOwn(guestPortalPages,current)?current:'stay'):'reply';}

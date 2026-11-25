@@ -8,6 +8,7 @@
     "db:race": "bash supabase/tests/concurrency.sh",
     "db:types": "supabase gen types typescript --local > packages/shared-types/database.ts",
     "seed": "node scripts/seed-demo.mjs",
-    "test:payments": "node packages/razorpay/razorpay.test.mjs"
+    "test:payments": "node packages/razorpay/razorpay.test.mjs",
+    "test:whatsapp-setup": "node packages/whatsapp-setup/defaults.test.mjs"
   }
 }

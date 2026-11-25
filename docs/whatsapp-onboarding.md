@@ -47,3 +47,21 @@ Health checks read Meta phone ownership and app subscription; they do not imply 
 5. Test a second hotel's administrator cannot read/manage the first hotel's setup. Avoid fake incoming events in the hosted database.
 
 Automated checks: `node --test packages/whatsapp-security/security.test.mjs`, notification-worker `npm test`, web `npm run build`, and local database `031_whatsapp_onboarding.test.sql`. Provider account approval and real browser signup require Meta account access; mocked checks cannot establish them.
+
+## Automatic hotel message setup
+
+After connecting a hotel's WhatsApp number, open **WhatsApp Automation → Overview**. Save the hotel's HTTPS location and Google review links, select 3–4 uploaded hotel photos, then choose **Prepare all default messages**. The hotel app rebuilds these into one welcome collage. Website is optional; its default menu service stays disabled until configured.
+
+A serverless setup queue submits a versioned pack of 25 event templates and 12 menu-service templates, four new templates per run. Names include the full property UUID, so hotels sharing a WABA cannot collide. Lookup precedes every creation, including retries after an uncertain provider response. Provider approval is never assumed. Each hotel sees progress and any rejected/unsupported/category-mismatched templates.
+
+Turn on **Default automation** when ready. Approved event templates activate automatically and the default grouped menu publishes when its menu templates are ready. Individual owner-edited rules and owner-edited menus are preserved. The master switch also blocks custom automatic messages and native guest replies; manual Inbox replies remain available. Switching off cancels queued automatic messages, and activation does not replay old hotel events. The separate marketing review reminder is assigned but stays off to avoid duplicating the checkout thank-you.
+
+Booking welcome contains the collage, directions and a reservation-specific document-upload link, and still requires prior booking-contact permission. Ongoing stay updates and marketing remain separate guest choices. Checkout thanks includes the configured review button; Meta must approve the submitted category. The explicit Hotel photos menu service may also show the collage on request; routine order, service and document messages do not attach hotel photos.
+
+Food feedback follows delivery by 20 minutes; service feedback follows completion by 5 minutes. Guests reply **RATE FOOD** or **RATE SERVICE**, choose the completed item and rate it in WhatsApp. An optional next text comment is attached to that rating for 15 minutes. One rating is accepted per completed order/request/stay; replayed or foreign-conversation buttons cannot submit another rating. See **WhatsApp Automation → Guest feedback** for ratings and links to the corresponding records.
+
+After checkout, Hi/Hello/Menu opens a post-stay menu with bill/receipt, stay feedback, an honest-review link, lost-item/support, new booking enquiries and reception. Verified active/upcoming stays take priority; ambiguous bookings go to staff. Secure bill links last 24 hours. Old operational actions do not reopen a stay, place orders or bypass check-in checks. Existing consent, STOP, human handoff, archived-property and reply-window guards still apply.
+
+Use **Customize template** to submit a newly named replacement. Keep the old template until review finishes. Compatible event and menu assignments switch after approval; incompatible replacements show a reason and retain old assignments. No Meta delete is required.
+
+Platform deployment: apply migrations 116–119, deploy `whatsapp-setup-worker` with JWT verification disabled, and set its shared `WHATSAPP_WORKER_SECRET`, `WHATSAPP_ENCRYPTION_KEY`, `WHATSAPP_APP_ID`, Graph version and any existing manual-token mapping consistently with the delivery worker. The existing Vault-backed WhatsApp worker configuration authenticates the setup cron. No separate server is needed. Existing hotels are not bulk-submitted until an administrator completes their setup; new WhatsApp connections automatically receive the local setup registry.

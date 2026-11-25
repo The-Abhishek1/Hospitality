@@ -73,7 +73,7 @@ select lives_ok(format('select public.record_whatsapp_booking_contact(%L,''f1044
 select lives_ok(format('select public.manage_guest_identity(%L,''f1043000-0000-0000-0000-000000000002'',''delete'','''',''Unused Test Guest'',''Remove unused test profile'')',:'pid'),'owner deletes a genuinely unused profile');
 reset role;
 select ok(not exists(select 1 from public.guests where id='f1043000-0000-0000-0000-000000000002'),'unused profile is removed');
-select is((select count(*)from private.guest_identity_audit where action='deleted_unused_profile'),1::bigint,'unused deletion is audited');
+select is((select count(*)from private.guest_identity_audit where action='deleted_unused_profile'and property_id=:'pid'),1::bigint,'unused deletion is audited');
 -- A conversation-only profile still has history after its number is released.
 insert into public.guests(id,tenant_id,full_name,phone)values('f1043000-0000-0000-0000-000000000005',:'tenant','Chat Only Guest','+15550001045');
 insert into public.conversations(tenant_id,property_id,connection_id,wa_contact_id,guest_id)values(:'tenant',:'pid','f1045000-0000-0000-0000-000000000001','15550001045','f1043000-0000-0000-0000-000000000005');

@@ -6,8 +6,8 @@ import {normalizeTemplate} from '../../../packages/whatsapp-security/templates.m
 const code=ts.transpileModule(readFileSync(new URL('../src/lib/automation-flow.ts',import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
 const {isMetaSampleTemplate,automationStarters,eventFields,createTemplatePayload,templateUsable,setupNext,previewAutomation,templateProviderError}=await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
 const input={event:'checked_in',name:'hotel_checked_in',language:'en_US',body:automationStarters.checked_in};
-test('all 23 event starters produce provider templates compatible with actual delivery transport',()=>{
- assert.equal(Object.keys(automationStarters).length,23);
+test('all 25 event starters produce provider templates compatible with actual delivery transport',()=>{
+ assert.equal(Object.keys(automationStarters).length,25);
  for(const[event,body]of Object.entries(automationStarters)){
   const payload=createTemplatePayload({...input,event,body});
   const normalized=normalizeTemplate({...payload,id:'test',status:'PENDING'});
