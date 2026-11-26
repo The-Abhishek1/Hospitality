@@ -16,6 +16,12 @@ Meta links:
 - https://developers.facebook.com/documentation/business-messaging/whatsapp/embedded-signup/onboarding-customers-as-a-tech-provider
 - https://developers.facebook.com/docs/development/release/tech-providers/
 
+Public app URLs for Meta **App settings → Basic**:
+- Privacy Policy URL: `https://xcloak-hospitality.vercel.app/privacy`
+- User data deletion: choose **Data deletion instructions URL** and enter `https://xcloak-hospitality.vercel.app/data-deletion`. This page is an email-based request process, not a signed-request callback endpoint.
+
+Both pages are accessible without a staff account. The guest deployment serves the same policy and instructions. The privacy contact is `admin@xcloak.tech`; requests need to be reviewed and handled by Xcloak and the responsible hotel. Publishing a policy does not automate record deletion or establish Meta approval.
+
 ## Server configuration
 
 Apply migration 77 before using the page. Configure these **server-only** values in the web application:

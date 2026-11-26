@@ -17,6 +17,6 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
       </div>
       <footer className="auth-story-footer"><span>Built for better stays.</span><span>HOTEL OPERATIONS, TOGETHER</span></footer>
     </aside>
-    <section className="auth-main"><Link href="/login" className="auth-mobile-brand">h<span>·</span> hospitality</Link><div className="auth-form-wrap">{children}</div><p className="auth-bottom-note">Your workspace. Your team. Every guest, taken care of.</p></section>
+    <section className="auth-main"><Link href="/login" className="auth-mobile-brand">h<span>·</span> hospitality</Link><div className="auth-form-wrap">{children}</div><p className="auth-bottom-note">Your workspace. Your team. Every guest, taken care of.<br/><Link href="/privacy">Privacy policy</Link><span aria-hidden="true"> · </span><Link href="/data-deletion">Data deletion</Link></p></section>
   </main>;
 }
