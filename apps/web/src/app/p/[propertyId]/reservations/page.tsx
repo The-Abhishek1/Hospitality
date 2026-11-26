@@ -40,7 +40,7 @@ export default async function ReservationsPage({params,searchParams}:{params:Pro
     </form>
     <div key={`${filterKey}-${s.page}`} className="reservation-results" role="region" aria-label="Reservation results" tabIndex={0}>
      {s.rows.length>0?<><div className="reservation-column-headings" aria-hidden="true"><span>Guest</span><span>Stay</span><span>Room</span><span>Status</span><span>Room total</span><span/></div><ul className="reservation-results-list">{s.rows.map(r=><li key={r.id}><Link className="reservation-result" href={`${base}/${r.id}`}>
-      <span className="reservation-result-guest"><strong>{r.full_name??'Guest'}</strong><small>{r.id.slice(0,8).toUpperCase()} · {sourceLabel(r.source)}</small>{isMissedArrival(r,s.day)&&<small className="reservation-missed-arrival">Arrival missed · review booking</small>}</span>
+      <span className="reservation-result-guest"><strong>{r.full_name??'Guest'}</strong><small>{r.id.slice(0,8).toUpperCase()} · {r.booking_origin==='whatsapp'?'WhatsApp':sourceLabel(r.source)}</small>{isMissedArrival(r,s.day)&&<small className="reservation-missed-arrival">Arrival missed · review booking</small>}</span>
       <span className="reservation-result-dates"><span>{shortDay(r.check_in,s.day)} – {shortDay(r.check_out,s.day)}</span><small>{stayNights(r.check_in,r.check_out)} night{stayNights(r.check_in,r.check_out)===1?'':'s'} · {r.adults+r.children} guest{r.adults+r.children===1?'':'s'}</small></span>
       <span className="reservation-result-room"><span>{r.room??'Unassigned'}</span><small>{r.type_name??'Room not assigned'}</small></span>
       <span className={`reservation-result-status res-status ${r.status}`}>{statusLabel(r.status)}</span>

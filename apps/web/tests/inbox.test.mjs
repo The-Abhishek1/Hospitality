@@ -9,3 +9,5 @@ test('history cursor and search filters survive navigation normalization',()=>{c
 test('queued, sent and confirmed delivery are distinct user-facing states',()=>{assert.equal(deliveryLabel('queued'),'Queued');assert.equal(deliveryLabel('sent'),'Sent');assert.equal(deliveryLabel('delivered'),'Delivered');assert.equal(deliveryLabel('read'),'Read');});
 
 test('chat list shows time for the hotel’s current day and dates for older chats',()=>{const now=new Date('2026-11-23T20:00:00Z');assert.match(inboxListTime('2026-11-23T19:00:00Z','Asia/Kolkata',now),/12:30/);assert.match(inboxListTime('2026-11-23T10:00:00Z','Asia/Kolkata',now),/Nov/);assert.match(inboxListTime('2025-11-23T10:00:00Z','Asia/Kolkata',now),/25/);});
+
+test('chat audiences are constrained and survive filter normalization',()=>{assert.equal(inboxFilters({audience:'enquiries'}).audience,'enquiries');assert.equal(inboxFilters({audience:'guests'}).audience,'guests');assert.equal(inboxFilters({audience:'invalid'}).audience,'all');});

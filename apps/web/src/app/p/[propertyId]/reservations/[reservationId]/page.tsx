@@ -20,7 +20,7 @@ export default async function ReservationDetail({params,searchParams}:{params:Pr
  const db=await createClient(),{data,error}=await db.rpc('reservation_detail',{p_property:pid,p_id:id});
  if(error?.code==='P0002')notFound();
  if(error||!data)return <section className="res-empty"><h1>Reservation details</h1><p>Couldn’t open this stay. Check your hotel access or refresh to try again.</p><Link href={`/p/${pid}/reservations`}>Back to reservations →</Link></section>;
- const detail=data as Detail,r=detail.stay,base=`/p/${pid}/reservations/${id}`,tab=tabs.includes(input.tab??'')?input.tab!:'overview',active=['confirmed','checked_in'].includes(r.status),nights=stayNights(r.check_in,r.check_out),source=r.source==='ota'?'Channel booking':r.source==='walk_in'?'Walk-in':'Direct booking';
+ const detail=data as Detail,r=detail.stay,base=`/p/${pid}/reservations/${id}`,tab=tabs.includes(input.tab??'')?input.tab!:'overview',active=['confirmed','checked_in'].includes(r.status),nights=stayNights(r.check_in,r.check_out),source=r.booking_origin==='whatsapp'?'WhatsApp booking':r.source==='ota'?'Channel booking':r.source==='walk_in'?'Walk-in':'Direct booking';
  const[{data:property},roomsResult,{data:stayInfo},{data:arrival},{data:journey},{data:welcome},{data:permissions}]=await Promise.all([
   db.from('properties').select('timezone').eq('id',pid).single(),
   tab==='overview'&&active&&detail.room&&detail.can_frontdesk?db.from('accommodation_units').select('id,name,housekeeping_status').eq('property_id',pid).eq('type_id',detail.room.type_id).eq('active',true).order('name'):Promise.resolve({data:[],error:null}),
