@@ -14,6 +14,8 @@ This option requires administrator access to both hotels and an existing secure 
 
 Old conversation history stays with the old hotel. Its queued sends and campaigns stop, its automatic rules turn off, and its stored credentials are removed. Guests, consent, old conversations and template assignments are not copied. Configure messaging for the new hotel and test a fresh incoming conversation. The Meta account and phone registration are not deleted or changed.
 
+The move section remains visible when there is no eligible source. It explains whether the connection list failed to load or this login has no qualifying connection. If the hotels use different logins, the old hotel's owner can invite the new login with the **Manager** role for that hotel. Platform administrator access is separate from hotel staff permissions.
+
 Alternatively, disconnect in the old hotel's settings and connect through Meta in the new hotel. A disabled historical connection no longer reserves the phone number. If the old hotel belongs to another owner, ask that owner to disconnect it; the new hotel cannot take it over.
 
 ## Signup with an existing email
