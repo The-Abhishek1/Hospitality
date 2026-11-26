@@ -14,7 +14,7 @@
     "test:billing": "node --test tests/billing.test.mjs",
     "test:service-desk": "node --test tests/service-desk.test.mjs",
     "test:tasks": "node --test tests/tasks.test.mjs",
-    "test:inventory": "node --test tests/inventory.test.mjs",
+    "test:inventory": "node --test tests/inventory.test.mjs tests/room-pricing.test.mjs",
     "test:orders": "node --test tests/orders.test.mjs",
     "test:team": "node --test tests/team.test.mjs tests/team-email.test.mjs",
     "test:settings": "node --test tests/property-settings.test.mjs",

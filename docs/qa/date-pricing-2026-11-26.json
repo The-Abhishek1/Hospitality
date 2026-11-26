@@ -1,0 +1,29 @@
+{
+  "checks": [
+    "Date pricing is reachable from room types and rates",
+    "Seven-night period saves 5500 per night",
+    "The following week can use a different nightly price",
+    "Weekend-only changes preserve weekday prices",
+    "Pricing editor and scrollable calendar fit desktop and mobile",
+    "Booking UI displays all fourteen nightly amounts and saves the correct total",
+    "Clicking a calendar night opens a one-night edit",
+    "Restoring base prices changes new quotes and preserves booked nightly prices"
+  ],
+  "browserErrors": 0,
+  "scope": "Local synthetic hotel only. No real guest messages, payments, or hotel price changes were made during QA.",
+  "date": "2026-11-26",
+  "database_assertions": 334,
+  "database_suites": 8,
+  "date_pricing_assertions": 47,
+  "node_assertions": 29,
+  "concurrency_checks": [
+    "8 identical price saves create one audited change",
+    "8 conflicting calendar saves allow one winner and reject stale versions",
+    "Concurrent booking and price change preserve a consistent agreed snapshot or reject a stale quote"
+  ],
+  "build": "Next.js production build passed",
+  "limitations": [
+    "Prices are per room type and night; OTA outbound price synchronization is separate.",
+    "Existing bookings retain their agreed prices. Pre-feature stays retain legacy agreed-total distribution."
+  ]
+}

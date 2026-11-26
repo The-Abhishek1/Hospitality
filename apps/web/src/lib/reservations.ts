@@ -12,7 +12,7 @@ export function normalizeFilters(input:Record<string,string|undefined>,today:str
 }
 export type RoomType={id:string;name:string;max_occupancy:number;base_rate:number};
 export type RatePlan={id:string;name:string;adjustment_percent:number};
-export type Quote={total:number;nights:number;rooms:{id:string;name:string;housekeeping_status:string}[]};
+export type Quote={total:number;nights:number;nightly?:{night:string;amount:number;custom:boolean;label:string}[];rooms:{id:string;name:string;housekeeping_status:string}[]};
 export type StayRow={id:string;version:number;full_name:string|null;phone:string|null;status:string;source:string;check_in:string;check_out:string;adults:number;children:number;total_amount:number;currency:string;room:string|null;type_name:string|null};
 export type CalendarRoom={id:string;name:string;type_id:string;type_name:string;housekeeping_status:string;current_stay?:string|null;holds:{id:string;during:string;kind:string;reservation_id:string|null;guest:string|null;status:string|null;reason:string|null}[]};
 export type ReservationWorkspace={day:string;start:string;total:number;page:number;rows:StayRow[];stats:{arrivals:number;departures:number;in_house:number;upcoming:number};can_write:boolean;can_frontdesk:boolean;room_total:number;room_page:number;calendar:CalendarRoom[];room_insights:{day:string;total:number;booked:number;in_house:number;empty:number;ready:number;blocked:number;dirty:number;cleaning:number;clean:number}};

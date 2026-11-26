@@ -1,0 +1,10 @@
+import{test}from'node:test';import assert from'node:assert/strict';import{readFileSync}from'node:fs';import ts from'typescript';
+const compile=s=>ts.transpileModule(s,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+const data=s=>`data:text/javascript;base64,${Buffer.from(s).toString('base64')}`;
+const reservations=data(compile(readFileSync(new URL('../src/lib/reservations.ts',import.meta.url),'utf8')));
+const source=readFileSync(new URL('../src/lib/room-pricing.ts',import.meta.url),'utf8').replace("'./reservations'",JSON.stringify(reservations));
+const{pricingDays,pricingStart,addPricingDays}=await import(data(compile(source)));
+test('a week includes seven selected overnight dates and not the following checkout day',()=>assert.deepEqual(pricingDays('2026-12-07','2026-12-13',127),['2026-12-07','2026-12-08','2026-12-09','2026-12-10','2026-12-11','2026-12-12','2026-12-13']));
+test('weekday and weekend selections use hotel calendar days across year boundaries',()=>{assert.equal(pricingDays('2026-12-28','2027-01-03',62).length,5);assert.deepEqual(pricingDays('2026-12-28','2027-01-03',65),['2027-01-02','2027-01-03']);});
+test('empty selections, reversed dates, invalid dates and excessive ranges do not become a bulk edit',()=>{for(const[from,to,mask]of[['2026-12-07','2026-12-13',0],['2026-12-07','2026-12-13',128],['2026-12-13','2026-12-07',127],['2026-02-30','2026-03-01',127],['2026-01-01','2027-01-02',127]])assert.deepEqual(pricingDays(from,to,mask),[]);assert.equal(pricingDays('2026-12-07','2026-12-07',65).length,0);});
+test('date navigation counts calendar nights across leap days without daylight-saving arithmetic',()=>{assert.equal(addPricingDays('2028-02-28',2),'2028-03-01');assert.equal(pricingDays('2028-02-28','2028-03-01',127).length,3);assert.equal(pricingStart('invalid'),undefined);assert.equal(pricingStart('2100-12-31'),undefined);});
