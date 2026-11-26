@@ -1,0 +1,46 @@
+{
+  "checks": [
+    "Billing directory loads for local owner",
+    "Directory fits desktop and mobile",
+    "Post booked room nights records 2000 once",
+    "Charges and discounts update the ledger",
+    "Manual cash receipt settles posted charges",
+    "Unfinished food order blocks invoicing",
+    "Served food posts exact price plus configured tax",
+    "CSV export contains exact ledger amounts",
+    "Final invoice preserves room, order and adjustment charges",
+    "Invoice prints without staff navigation",
+    "Post-invoice refund creates credit note and preserves original invoice",
+    "A settled guest can check out",
+    "Folio fits desktop and mobile"
+  ],
+  "browserErrors": 0,
+  "scope": "Local synthetic hotel only; no real payments or messages",
+  "date": "2026-11-26",
+  "database_checks": {
+    "orders_and_billing": 28,
+    "advanced_billing": 44,
+    "checkout_availability": 11,
+    "checkout_message_history": 6,
+    "online_payments": 51
+  },
+  "node_tests": {
+    "billing": 5,
+    "razorpay_transport": 24
+  },
+  "concurrency_checks": [
+    "8 identical requests create one payment",
+    "8 invoice requests create one invoice",
+    "Competing refunds respect remaining funds",
+    "Invoice and charge requests serialize"
+  ],
+  "fixes": [
+    "View invoice button uses white text on navy",
+    "Zero posted balances show remaining unposted room charges"
+  ],
+  "limitations": [
+    "Razorpay accepts Test Mode keys only; no real-money provider transaction was attempted",
+    "Manual receipts and refunds record money already handled outside the app",
+    "Accommodation tax is not calculated automatically; room-order charges include their configured tax"
+  ]
+}
