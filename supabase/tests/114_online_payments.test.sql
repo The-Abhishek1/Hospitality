@@ -148,4 +148,8 @@ set local role service_role;
 select is(public.claim_online_payment(),null::jsonb,'expired unstarted request never attempts provider creation');
 select is((select state from public.hotel_payment_requests where id=:'elapsed'),'expired','unstarted expired intent safely releases its open-link slot');
 reset role;
+set local role service_role;
+select throws_ok(format('select public.payment_connection_commit(%L,%L,%L,''rzp_live_…5678'',''v1.synthetic'',false)',:'pid',:'owner',gen_random_uuid()),'22023','This hotel has recorded payments in the other mode. Use a separate hotel for Test Mode so synthetic and real receipts stay separate.','recorded test receipts cannot be relabelled as live payments');
+select lives_ok(format('select public.payment_connection_commit(%L,%L,%L,''rzp_live_…5678'',''v1.synthetic'',false)','e3000000-0000-0000-0000-000000000002','e1000000-0000-0000-0000-000000000002',gen_random_uuid()),'a hotel without payment history can connect its verified live merchant');
+reset role;
 select *from finish();rollback;
