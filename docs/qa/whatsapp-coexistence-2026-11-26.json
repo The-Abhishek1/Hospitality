@@ -1,0 +1,35 @@
+{
+  "date": "2026-11-26",
+  "scope": "WhatsApp Business app Coexistence implementation; local database and simulated Meta callbacks",
+  "checks": {
+    "coexistence_database_assertions": 58,
+    "existing_cloud_onboarding_assertions": 19,
+    "existing_inbox_assertions": 46,
+    "existing_consent_assertions": 45,
+    "existing_guest_journey_assertions": 62,
+    "coexistence_normalizer_and_sync_tests": 10,
+    "onboarding_api_tests": 7,
+    "webhook_tests": 6,
+    "worker_tests": 7,
+    "credential_origin_security_tests": 2,
+    "production_build": "passed",
+    "mobile_browser_width": 390,
+    "mobile_horizontal_overflow": false,
+    "browser_errors": 0
+  },
+  "browser_scenarios": [
+    "Existing Business app connection requires the international number and hides the new-number PIN",
+    "Launch includes the Coexistence feature and session-info version 3",
+    "Untrusted postMessage origins cannot complete setup",
+    "WABA-only completion works and duplicate callbacks submit once",
+    "Standard Cloud API setup still uses its original launch and PIN flow",
+    "Contact and history progress, pending batches and unmatched contacts are visible"
+  ],
+  "meta_read_only_check": "The active whatsapp_business_account subscription contains messages, account_update, history, smb_app_state_sync and smb_message_echoes",
+  "limitations": [
+    "No real phone number was onboarded or deregistered during this validation",
+    "The user's screenshot still shows App Review incomplete; code and subscriptions do not establish Meta Coexistence eligibility",
+    "History media uses captions and placeholders; automatic media downloading is not implemented",
+    "Phone-less identities remain private support records and cannot activate guest actions or consent"
+  ]
+}

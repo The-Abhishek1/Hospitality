@@ -1,13 +1,13 @@
 # Hotel WhatsApp onboarding
 
-The `/p/[propertyId]/whatsapp` page uses Meta Embedded Signup v4 for the Cloud API flow. Existing test/manual Inbox connections remain supported by the worker. Coexistence, migration from another provider, historical chat synchronization and automatic template synchronization are not implemented by this flow. Do not disconnect/delete a hotel's mobile account to force eligibility.
+The `/p/[propertyId]/whatsapp` page uses Meta Embedded Signup v4 for Cloud API numbers and existing WhatsApp Business app numbers through Coexistence. Existing test/manual Inbox connections remain supported. Coexistence includes contact and permitted chat-history imports; migration from another provider is a separate flow. Do not disconnect/delete a hotel's mobile account to force eligibility.
 
 ## Meta setup by the platform owner
 
 1. Open Hospitality in Meta Developers. Complete **Become a Tech Provider**, including the access-verification tasks Meta displays. Business verification is separate from Tech Provider approval and App Review.
 2. In **Facebook Login for Business → Configurations**, create a **WhatsApp Embedded Signup** configuration and select **Cloud API**. Use the configuration's selected permissions; obtain Advanced Access for `whatsapp_business_management` and `whatsapp_business_messaging`, and any additional permissions you choose. Copy the configuration ID.
 3. Host the application at an HTTPS origin. Add that origin/domain and exact onboarding page URL to the appropriate allowed-domain and OAuth redirect settings. Enable the JavaScript SDK and the OAuth/HTTPS settings specified by Meta. Plain localhost HTTP cannot complete signup.
-4. Configure the app's WhatsApp webhook with the existing Supabase function URL and matching verification token. Subscribe `messages` and `account_update`. The current webhook processes message/status events; account-update onboarding metadata is not persisted. Completion uses verified API asset discovery instead.
+4. Configure the app's WhatsApp webhook with the existing Supabase function URL and matching verification token. Subscribe `messages`, `account_update`, `history`, `smb_app_state_sync` and `smb_message_echoes`. The webhook handles messages, statuses, Coexistence imports and signed account-removal events. Completion uses verified API asset discovery.
 5. In App Review, provide actual reviewer instructions, an accessible review account, privacy policy and data-deletion information, and a video demonstrating hotel authorization, receiving/replying and disconnection. Do not claim approval from a successful developer-role test. Only publish after reviewing the production requirements shown by Meta.
 
 Meta links:
@@ -34,7 +34,7 @@ Configure the **same encryption key** on the notification worker and set its `WH
 
 Credentials are AES-256-GCM encrypted with the hotel reference as authenticated data. Ciphertext lives in a private database table, accessible through a service-role-only retrieval RPC for active connections/tenants. The browser uses a short-lived one-attempt session bound to the signed-in hotel administrator. The backend verifies the number belongs to the account using the exchanged token, registers new connections using the user's PIN, subscribes the app, then commits credentials atomically. External Meta operations cannot be rolled back if the final database commit fails; retry onboarding and retain the number's existing PIN. PINs are not stored. Tokens are not cached by the worker.
 
-The standard Cloud API flow is supported; cancellation/failure does not activate a new connection. Existing sender IDs cannot be replaced, including through legacy manual RPCs. To test another sender, create a separate test property. A phone ID can belong to only one property. Disconnect disables local inbound/queue handling and removes the stored token; it retains history and does not revoke Meta-level partner access. Owners can remove that access in Meta Business Settings. A message already in transit cannot be recalled. Reconnect authorizes the original sender again.
+Both standard Cloud API setup and WhatsApp Business app Coexistence are supported. Cancellation/failure does not activate a new connection. Existing sender IDs cannot be replaced, including through legacy manual RPCs. To test another sender, create a separate test property. A phone ID can belong to only one property. Disconnect disables local inbound/queue handling and removes the stored token; it retains history and does not revoke Meta-level partner access. Owners can remove that access in Meta Business Settings. A message already in transit cannot be recalled. Reconnect authorizes the original sender again.
 
 Health checks read Meta phone ownership and app subscription; they do not imply delivery, template approval, unrestricted account status, or billing readiness. Campaigns remain explicitly disabled unless separately enabled after review. New hotels require their own approved templates; the configuration does not copy another hotel's templates or authorize marketing consent.
 
@@ -47,6 +47,76 @@ Health checks read Meta phone ownership and app subscription; they do not imply 
 5. Test a second hotel's administrator cannot read/manage the first hotel's setup. Avoid fake incoming events in the hosted database.
 
 Automated checks: `node --test packages/whatsapp-security/security.test.mjs`, notification-worker `npm test`, web `npm run build`, and local database `031_whatsapp_onboarding.test.sql`. Provider account approval and real browser signup require Meta account access; mocked checks cannot establish them.
+
+## Existing WhatsApp Business app numbers (Coexistence)
+
+Apply migrations 122–123 and deploy `whatsapp-webhook` and `whatsapp-coexistence-worker`
+before deploying the hotel UI. The new worker uses the existing shared
+`WHATSAPP_WORKER_SECRET`, `WHATSAPP_ENCRYPTION_KEY` and Graph URL. The migration
+reuses the existing Vault-backed scheduler; it does not introduce another server,
+copy plaintext credentials or change the encryption key.
+
+In Meta, keep `messages` and `account_update` subscribed and also subscribe to
+`history`, `smb_app_state_sync` and `smb_message_echoes` on the app's
+`whatsapp_business_account` webhook subscription. Business verification alone
+does not grant Coexistence: complete Tech Provider onboarding, App Review /
+Advanced Access and any Access Verification requested by Meta. The error saying
+the partner app is not set up to connect Business app numbers is a Meta-side
+eligibility/setup failure. Selecting a launch feature cannot grant that access.
+
+Hotel flow:
+
+1. Open **WhatsApp Connection → Keep using WhatsApp Business app**.
+2. Enter the existing number with its country code. The app binds this number and
+   connection type to the server-side setup session before opening Meta.
+3. Continue with Meta. The launch uses the v4 login configuration with
+   `featureType: whatsapp_business_app_onboarding` and session-info version 3.
+4. Complete verification inside the WhatsApp Business app and choose whether to
+   share past chats. No deletion, deregistration or new two-step PIN is requested
+   by Hospitality for this path.
+5. The backend accepts `FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING`, including its
+   WABA-only variant. It discovers the exact authorized number, verifies
+   `is_on_biz_app=true` and `platform_type=CLOUD_API`, subscribes the app, and saves
+   the encrypted connection. It never calls `/register` for this path.
+6. Keep the phone app open. Contacts and permitted history are requested promptly
+   through the single-use SMB App Data API, within Meta's 24-hour start window.
+   The status card shows request outcomes, progress, imported counts and errors.
+
+New phone-app messages appear as **Phone app** in Inbox; imported conversations
+are labeled **Imported history**. Old chats start resolved, accessible with the
+Inbox's All/Resolved filter. Recent phone-app replies switch the conversation to
+human handling and cancel queued automatic replies. Resume automation explicitly
+using Inbox's conversation controls. An echo of an already recorded provider ID
+does not create a duplicate or silently change an API message's source.
+
+History and contacts are imported in durable, resumable batches of up to 200
+records. Retries deduplicate by connection and provider message ID. No imported
+message runs Hi/menu commands, binds a guest identity, grants consent or opens a
+Cloud API customer-service window. Fresh guest messages still use the existing
+consent and verified-identity flows. Contact imports do not create hotel guest
+records or campaign audiences. Phone-less identities are retained privately for
+support rather than guessed or sent to another guest. Photos and other media are
+represented by their captions/placeholders; automatic media downloading is not
+implemented. Late history media details, edits and deletions update their original
+messages without replaying guest actions.
+
+Single-use requests with a timeout or uncertain response are **not** resent
+automatically. A received completion webhook can resolve an uncertain result.
+Only definite request rejections can be retried explicitly while the window is
+open; failed local import batches can be retried safely. Declining history sharing
+is recorded as a normal choice. Local reconnect does not request the same import again. Verified re-onboarding after a signed Meta offboarding event starts a new import cycle while preserving recorded messages.
+Signed account-removal/offboarding events disable the affected account's local
+connections and remove stored credentials; older pre-connection events cannot
+disable a newer connection.
+
+Validate with `122_whatsapp_coexistence.test.sql`,
+`packages/whatsapp-security/coexistence.test.mjs`,
+`apps/web/tests/coexistence-onboarding.test.mjs` and
+`apps/web/tests/coexistence-webhook.test.mjs`. Real-number onboarding and message
+mirroring still require Meta's approval and an eligible WhatsApp Business app
+account. Do not claim that a simulated completion establishes either.
+
+Reference: [Meta's Coexistence implementation guide](https://developers.facebook.com/documentation/business-messaging/whatsapp/embedded-signup/onboarding-business-app-users/).
 
 ## Automatic hotel message setup
 

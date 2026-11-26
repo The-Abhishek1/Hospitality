@@ -39,14 +39,38 @@ Deno.serve(async (req) => {
 
   try {
     const body = JSON.parse(raw);
+    if (body.object !== 'whatsapp_business_account') return new Response('ok', {status:200});
     for (const entry of body.entry ?? []) {
       for (const change of entry.changes ?? []) {
         const v = change.value ?? {};
+        if (change.field === 'account_update' && ['PARTNER_REMOVED', 'ACCOUNT_OFFBOARDED'].includes(v.event)) {
+          const at=Number(entry.time);
+          const { error } = await db.rpc('whatsapp_coexistence_account_update', { p_waba: v.waba_info?.waba_id ?? entry.id, p_event: v.event, ...(Number.isFinite(at)&&at>0?{p_at:new Date(at*1000).toISOString()}: {}) });
+          if (error) throw error;
+          continue;
+        }
         const phoneNumberId: string | undefined = v.metadata?.phone_number_id;
         if (!phoneNumberId) continue;
+        if (['history', 'smb_app_state_sync', 'smb_message_echoes'].includes(change.field)) {
+          const { error } = await db.rpc('enqueue_whatsapp_coexistence', { p_phone: phoneNumberId, p_waba: entry.id, p_field: change.field, p_payload: v });
+          if (error) throw error;
+          const wake = await db.rpc('wake_whatsapp_coexistence');
+          if (wake.error) throw wake.error;
+          continue;
+        }
         const names = new Map<string, string>((v.contacts ?? []).map((c: any) => [c.wa_id, c.profile?.name]));
 
         for (const m of v.messages ?? []) {
+          // This includes late media chunks, edits and revokes. They must not open
+          // a new service window or replay an old guest command.
+          const routed=await db.rpc('route_whatsapp_coexistence_message',{p_phone:phoneNumberId,p_waba:entry.id,p_payload:m});
+          if(routed.error)throw routed.error;
+          if (routed.data) {
+            const wake=await db.rpc('wake_whatsapp_coexistence');if(wake.error)throw wake.error;
+            continue;
+          }
+          if (['edit','revoke'].includes(m.type)) continue;
+          if (!m.from || !m.id || !Number.isFinite(Number(m.timestamp))) continue;
           const text = m.type === "text" ? m.text?.body ?? "" : `[${m.type}]`;
           const { error } = await db.rpc("ingest_whatsapp_inbound", {
             p_phone_number_id: phoneNumberId, p_event_key: `msg:${m.id}`, p_wa_contact_id: m.from,
@@ -66,7 +90,7 @@ Deno.serve(async (req) => {
     }
     return new Response("ok", { status: 200 });
   } catch (e) {
-    console.error("webhook processing failed", e);
+    console.error("webhook processing failed"); // Never log guest payloads, tokens or raw provider errors.
     return new Response("error", { status: 500 }); // Meta retries; the database dedupes, so retries are safe
   }
 });

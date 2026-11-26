@@ -37,3 +37,6 @@ verify_jwt = false # Dedicated server-to-server X-Worker-Secret, same scheduling
 
 [functions.whatsapp-setup-worker]
 verify_jwt = false
+
+[functions.whatsapp-coexistence-worker]
+verify_jwt = false # Dedicated X-Worker-Secret; same secure scheduler as delivery.

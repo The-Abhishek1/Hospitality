@@ -31,5 +31,20 @@ export async function verifySender(token:string,waba:string,phone:string){
  }
  throw new SetupError('The selected number does not belong to the authorized WhatsApp account.');
 }
+export const businessNumber = (value: string) => value.replace(/[\s()+.-]/g, '');
+export async function coexistenceSender(token:string,waba:string,expected:string,phone?:string){
+ let path=`${waba}/phone_numbers?fields=id,display_phone_number,verified_name,code_verification_status&limit=100`;
+ const matches:{id:string;display_phone_number:string;verified_name:string;code_verification_status:string}[]=[];
+ for(let page=0;page<20;page++){
+  const d=await meta(path,token);
+  matches.push(...(d.data??[]).filter((p:{id:string;display_phone_number:string})=>businessNumber(p.display_phone_number??'')===expected&&(!phone||p.id===phone)));
+  if(!d.paging?.next||!d.paging?.cursors?.after)break;
+  path=`${waba}/phone_numbers?fields=id,display_phone_number,verified_name,code_verification_status&limit=100&after=${encodeURIComponent(d.paging.cursors.after)}`;
+ }
+ if(matches.length!==1)throw new SetupError('Meta did not share the business number you entered. Start again, select that number and finish the connection in the WhatsApp Business app.');
+ const sender=matches[0],state=await meta(`${sender.id}?fields=id,is_on_biz_app,platform_type`,token);
+ if(state.id!==sender.id||state.is_on_biz_app!==true||state.platform_type!=='CLOUD_API')throw new SetupError('Meta has not enabled both WhatsApp Business app and Cloud API access for this number. Finish Coexistence onboarding first.');
+ return sender;
+}
 export function seal(token:string,pid:string){return encryptToken(token,`managed:${pid}`,process.env.WHATSAPP_ENCRYPTION_KEY);}
 export async function savedToken(reference:string){const {data,error}=await backend().rpc('whatsapp_delivery_credential',{p_reference:reference});if(error||!data)throw new SetupError('Reconnect this number to authorize secure credential storage.');return decryptToken(data,reference,process.env.WHATSAPP_ENCRYPTION_KEY);}
