@@ -29,7 +29,8 @@
     "test:automations": "node --test tests/whatsapp-readiness.test.mjs tests/automation-flow.test.mjs tests/automation-template-api.test.mjs tests/booking-welcome.test.mjs",
     "test:concierge": "node --test tests/guest-concierge.test.mjs tests/grouped-menu.test.mjs tests/template-media.test.mjs",
     "test:hotel-information": "node --test tests/hotel-message-resources.test.mjs",
-    "test:operations": "node --test tests/operational-flows.test.mjs"
+    "test:operations": "node --test tests/operational-flows.test.mjs",
+    "test:menu-import": "node --test tests/menu-import.test.mjs tests/menu-import-api.test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",
@@ -37,6 +38,7 @@
     "next": "^15.0.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "read-excel-file": "9.3.20",
     "sharp": "0.35.5"
   },
   "devDependencies": {

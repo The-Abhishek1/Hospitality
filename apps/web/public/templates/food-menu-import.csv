@@ -1,0 +1,5 @@
+﻿name,category,price,tax_percent,food_type,served_in,size,description,dietary_notes,prep_minutes,available
+Paneer tikka,Starters,180,5,veg,both,Half,Grilled paneer with spices,Contains dairy,15,FALSE
+Paneer tikka,Starters,320,5,veg,both,Full,Grilled paneer with spices,Contains dairy,15,FALSE
+Chicken biryani,Main course,280,5,non_veg,restaurant,,Rice with chicken and spices,,25,FALSE
+Fresh lime soda,Drinks,100,5,vegan,both,,"Lime, soda and mint",,5,FALSE
