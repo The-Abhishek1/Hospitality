@@ -1,5 +1,5 @@
 /* Cache public shell assets only. Never retain stay tokens, HTML, APIs or documents. */
-const CACHE='hospitality-guest-shell-v1';
+const CACHE='hospitality-guest-shell-v2';
 const PUBLIC_FILES=['/offline.html','/icons/stay-192.png','/icons/stay-512.png','/icons/stay-180.png'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(PUBLIC_FILES)));self.skipWaiting();});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('hospitality-guest-shell-')&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim()));});
