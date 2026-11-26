@@ -1,0 +1,33 @@
+{
+  "checks": [
+    "Existing email shows a clear signup error instead of an email-sent banner",
+    "Duplicate signup leaves the original password and sign-in working",
+    "Select all spans both pages and marks twenty-four inspected rooms clean",
+    "Two selected rooms assign two housekeeping tasks to the chosen teammate",
+    "Bulk completion reports unfinished checklists without marking rooms clean",
+    "Bulk room controls fit desktop and mobile",
+    "New hotel offers its authorized source number and requires transfer confirmation"
+  ],
+  "browserErrors": 0,
+  "scope": "Local synthetic hotels only; no actual WhatsApp transfer, guest message or external email sent",
+  "date": "2026-11-26",
+  "database_assertions": 241,
+  "database_suites": 8,
+  "unit_tests": 26,
+  "concurrency_checks": [
+    "Eight identical bulk requests produce one audit per room",
+    "Four competing housekeeping assignments create one task per room and report stale selections",
+    "Two competing number transfers produce exactly one active destination"
+  ],
+  "console_check": "No browser warnings after separating filter and room-table keys",
+  "live_welcome_health": {
+    "Lincoln wildlife resorts": "Welcome ready; scheduled worker enabled with a recent successful run",
+    "Whatsapp Test Hotel": "Welcome off; left unchanged"
+  },
+  "limitations": [
+    "No real hotel number was moved during QA; provider verification is mocked in API tests and database transfer behavior is tested locally",
+    "No new WhatsApp message or external email was sent during these tests",
+    "Booking welcome requires prior contact permission, an approved assigned template, and an active sender"
+  ],
+  "build": "Next.js production build passed"
+}

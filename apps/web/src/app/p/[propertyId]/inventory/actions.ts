@@ -31,3 +31,15 @@ export async function roomCleaning(_:InventoryState,fd:FormData):Promise<Invento
  revalidatePath(`/p/${pid}/inventory`,'layout');revalidatePath(`/p/${pid}/tasks`,'layout');revalidatePath(`/p/${pid}/reservations`,'layout');revalidatePath('/dashboard');
  return{};
 }
+
+export type BulkRoomState={error?:string;updated?:number;rows?:{id:string;name?:string;success:boolean;error?:string}[]};
+export async function selectRooms(pid:string,filters:Record<string,string|number>):Promise<{error?:string;rows?:{id:string;version:number;name?:string}[]}>{
+ if(!validId(pid))return{error:'Refresh room management.'};const db=await createClient(),{data,error}=await db.rpc('inventory_room_selection',{p_property:pid,p_filters:filters});return error?{error:friendly(error)}:{rows:data};
+}
+export async function bulkRooms(_:BulkRoomState,fd:FormData):Promise<BulkRoomState>{
+ const pid=field(fd,'pid'),request=field(fd,'request'),operation=field(fd,'operation'),assignee=field(fd,'assignee');let items;
+ try{if(field(fd,'items').length>50000)throw Error();items=JSON.parse(field(fd,'items'));}catch{return{error:'Refresh and select the rooms again.'};}
+ if(!validId(pid)||!validId(request)||!Array.isArray(items)||items.length<1||items.length>200||!['clean','start','assign'].includes(operation)||(operation==='assign'&&!validId(assignee))||fd.get('confirm')!=='on')return{error:'Select rooms, choose an action and confirm.'};
+ const db=await createClient(),{data,error}=await db.rpc('inventory_bulk_rooms',{p_property:pid,p_request:request,p_items:items,p_action:operation,p_assignee:assignee||null});if(error)return{error:friendly(error)};
+ for(const path of['inventory','tasks','reservations'])revalidatePath(`/p/${pid}/${path}`,'layout');revalidatePath('/dashboard');return data;
+}

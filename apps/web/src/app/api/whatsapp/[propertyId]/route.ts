@@ -19,6 +19,15 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{propertyId:
    const {error}=await db.rpc('whatsapp_setup_disconnect',{p_property:pid});if(error)throw new SetupError('Could not disconnect. Refresh and try again.');
    return reply({success:'Disconnected from Hospitality. History is retained. You can also remove Hospitality access in Meta Business Settings.'});
   }
+  if(b.action==='transfer'){
+   if(b.confirm!==true||typeof b.source!=='string'||!/^[0-9a-f-]{36}$/i.test(b.source))throw new SetupError('Choose the old hotel and confirm the move.');
+   const{data:source,error}=await db.rpc('whatsapp_transfer_context',{p_property:pid,p_source:b.source});
+   if(error)throw new SetupError(error.code==='42501'?'Administrator access to both hotels is required.':error.message);
+   const token=await savedToken(`managed:${b.source}`);await verifyAuthorization(token);await verifySender(token,source.waba,source.phone);
+   const moved=await backend().rpc('whatsapp_transfer_commit',{p_property:pid,p_source:b.source,p_actor:user.id,p_connection:source.id,p_ciphertext:seal(token,pid)});
+   if(moved.error)throw new SetupError(['22023','40001','42501'].includes(moved.error.code)?moved.error.message:'Could not move this number. Refresh and try again.');
+   return reply({success:'Number moved. The old hotel is disconnected and its history remains there. Set up templates and automation for this hotel, then test a fresh incoming message.'});
+  }
   if(b.action==='retry_import'){
    if(!['events','history','smb_app_state_sync'].includes(b.kind))throw new SetupError('Choose the failed import to retry.');
    const {error}=await db.rpc('retry_whatsapp_coexistence',{p_property:pid,p_kind:b.kind});if(error)throw new SetupError(error.code==='22023'?error.message:'Could not retry the import.');
@@ -54,7 +63,7 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{propertyId:
   }
   await meta(`${b.waba}/subscribed_apps`,token,'POST');
   const {error}=await admin.rpc('whatsapp_setup_commit',{p_session:b.session,p_actor:user.id,p_phone:sender.id,p_waba:b.waba,p_display:sender.display_phone_number,p_ciphertext:seal(token,pid)});
-  if(error)throw new SetupError(error.code==='23505'?'This number is connected to another hotel.':'Could not save the connection. Start again; if Meta registered the number already, keep its existing PIN.');
+  if(error)throw new SetupError(error.code==='23505'?'This number is active in another hotel. Use Move a number from another hotel if you administer both, or ask its owner to disconnect first.':'Could not save the connection. Start again; if Meta registered the number already, keep its existing PIN.');
   if(coexistence){await admin.rpc('wake_whatsapp_coexistence');return reply({success:'Connected alongside the WhatsApp Business app. Keep the phone app open while contacts and permitted history synchronize. Send a fresh guest message to test automation.'});}
   return reply({success:'Connected. Send a message from another phone, then open the hotel Inbox to verify delivery.'});
  }catch(e){return reply({error:e instanceof SetupError?e.message:'Connection check failed. Check Meta account settings and try again. No automatic retry was made.'},400);}

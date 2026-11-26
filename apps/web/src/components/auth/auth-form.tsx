@@ -35,8 +35,9 @@ export function AuthForm({ mode, next = '/dashboard', initial = {} }: { mode: Mo
       <Submit mode={mode} pending={pending} />
     </form>}
     {mode === 'login' && <p className="auth-footnote">Invited by your hotel? Sign in or create an account with the email on your invitation.</p>}
+    {mode==='signup'&&state.error?.includes('account already exists')&&<p className="auth-footnote"><Link href={`/login${suffix}`}>Sign in</Link> · <Link href="/forgot-password">Reset your password</Link></p>}
     {mode === 'signup' && !success && <p className="auth-footnote">Joining an existing hotel? Use the email your hotel invited. Your team access is applied after you verify your email.</p>}
-    {((mode === 'signup' && success) || (mode === 'login' && state.error)) && <form action={resendAction} className="auth-resend">
+    {((mode === 'signup' && (success || state.error?.includes('account already exists'))) || (mode === 'login' && state.error)) && <form action={resendAction} className="auth-resend">
       <input type="hidden" name="email" value={email} /><input type="hidden" name="next" value={next} />
       <button type="submit" disabled={resending || !email}>{resending ? 'Sending confirmation…' : 'Resend confirmation email'}</button>
       {resendState.error && <p role="alert">{resendState.error}</p>}

@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { safeNext, validEmail, passwordChecks, authEmailError, type AuthState } from '@/lib/auth';
+import {signupAccount,duplicateSignup,duplicateSignupMessage}from'@/lib/signup-account';
 const value = (fd: FormData, key: string) => String(fd.get(key) ?? '');
 function emailFailure(intent: 'signup' | 'confirmation' | 'recovery', error: { code?: string; status?: number }): AuthState {
   // Do not log addresses, passwords, token-bearing links or provider error bodies.
@@ -30,10 +31,16 @@ export async function signUp(_: AuthState, fd: FormData): Promise<AuthState> {
   if (!validEmail(email)) return { error: 'Enter a valid email address.' };
   if (password.length > 128 || passwordChecks(password).some(c => !c.valid)) return { error: 'Use a password that meets all three requirements below.' };
   if (password !== value(fd, 'confirm_password')) return { error: 'Your passwords don’t match.' };
+  const address=(await headers()).get('x-forwarded-for')?.split(',')[0]?.trim()||'local';
+  const account=await signupAccount(email,address);
+  if(account==='exists'||account==='pending')return{error:duplicateSignupMessage};
+  if(account==='limited')return{error:'Too many signup attempts. Wait a few minutes before trying again.'};
+  if(account==='unavailable')return{error:'Account creation is temporarily unavailable. Please try again shortly.'};
   const next = safeNext(fd.get('next')), db = await createClient();
   const { data, error } = await db.auth.signUp({ email, password, options: { data: { full_name: name }, emailRedirectTo: await callbackUrl(next) } });
+  if(duplicateSignup(data.user,error))return{error:duplicateSignupMessage};
   if (error) return emailFailure('signup', error);
-  if (!data.session) return { message: 'Check your inbox for a confirmation link. If you already have an account, sign in or reset your password.' };
+  if (!data.session) return { message: 'Check your inbox for your account confirmation link. Check your spam folder too.' };
   if (next === '/dashboard') {
     // Resolve first-time setup before the client follows the action redirect.
     // An invited teammate should enter their assigned workspace instead.
