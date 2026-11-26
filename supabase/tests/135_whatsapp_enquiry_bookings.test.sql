@@ -158,5 +158,15 @@ select public.apply_online_payment(:'expired_intent',(select lease from public.h
 select is((select status from public.reservations where id=:'expired_rid'),'cancelled','late payment cannot silently rebook a released room');
 select ok((select last_error like 'Payment received after%'from public.hotel_payment_requests where id=:'expired_intent'),'late capture is recorded for staff refund/rebooking review');
 select is((select count(*)::integer from public.payments where online_request_id=:'expired_intent'),1,'late captured money remains accounted for');
+select pg_temp.quote('919000001361',((now()at time zone 'Asia/Kolkata')::date+40)::text,((now()at time zone 'Asia/Kolkata')::date+42)::text,'Deadline Race Guest')as race_cid \gset
+select pg_temp.incoming('919000001361',pg_temp.pick(:'race_cid','enquiry_confirm'));
+select reservation_id as race_rid,payment_request_id as race_intent from private.whatsapp_booking_sessions where conversation_id=:'race_cid' \gset
+update public.reservations set deposit_expires_at=now()-interval '1 second'where id=:'race_rid';
+update public.hotel_payment_requests set lease=gen_random_uuid()where id=:'race_intent';
+select public.apply_online_payment(:'race_intent',(select lease from public.hotel_payment_requests where id=:'race_intent'),jsonb_build_object('link',jsonb_build_object('id','plink_Race146','reference_id',replace(:'race_intent','-',''),'amount',(select amount from public.hotel_payment_requests where id=:'race_intent'),'currency','INR','status','paid','order_id','order_Race146','short_url','https://rzp.io/race146','notes',jsonb_build_object('property_id',:'pid','reservation_id',:'race_rid')),'payment',jsonb_build_object('id','pay_Race146','status','captured','captured',true,'amount',(select amount from public.hotel_payment_requests where id=:'race_intent'),'currency','INR','order_id','order_Race146','method','upi')));
+select is((select status from public.reservations where id=:'race_rid'),'cancelled','late capture before the expiry job also cancels the provisional booking');
+select is((select count(*)::integer from public.unit_holds where reservation_id=:'race_rid'and active),0,'the payment finalizer releases the room without waiting for cron');
+select is((select count(*)::integer from public.payments where online_request_id=:'race_intent'),1,'racing late payment remains accounted for once');
+select is((select count(*)::integer from public.whatsapp_automation_events where reservation_id=:'race_rid'and event_key='booking_confirmed'),0,'late capture cannot emit a false booking confirmation');
 select *from finish();
 rollback;
