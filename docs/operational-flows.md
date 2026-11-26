@@ -61,3 +61,11 @@ There is one **WhatsApp** sidebar entry at `/p/:property/whatsapp`. Old `/automa
 **Templates**, **Guest menu** and **Event messages** are optional customization sections in the same workspace. Template replacements retain the old approved message until the replacement is approved and its assignments are switched. Connection controls, document/check-in settings and guest consent remain available without competing hotel-level activation switches.
 
 The setup status distinguishes preparation, provider approval, sending-service health and explicit Off. Custom assignments are counted separately from approved default messages. A permission-checked exception list shows open chats paused for reception and the count of blocked event messages. Turning the hotel switch on never silently resumes those chats or changes guest permissions. Local browser QA uses synthetic provider approval snapshots and no Meta credentials to verify preparation, all default assignments, menu activation, legacy links and mobile layout.
+
+### Stay matching and document-upload return
+
+WhatsApp matches a verified guest’s checked-in stay first, then a current confirmed stay, then the earliest upcoming arrival. A confirmed booking’s checkout date is exclusive; an older unarrived booking ending today does not hide a current booking. A genuine tie produces expiring, conversation-bound booking choices with pagination. Unknown or ambiguous greetings do not silently enable human handling. Explicit reception requests still pause replies; guest identity, number, permissions, sender and booking versions are rechecked.
+
+A received-photo notification remains eligible when image validation changes the file from uploaded to image_ready. Existing permission, template, handoff and source checks still apply; invalid files cannot receive a successful review receipt. Document state changes wake the existing delivery worker. After the last required successful upload, the secure helper page returns to the validated hotel WhatsApp number and offers a manual fallback button. Invalid/failed uploads and incomplete multi-document requirements stay on the helper page. No private token or identity-file content is put into the WhatsApp return URL.
+
+Validation: `133_whatsapp_stay_matching.test.sql`, existing guest-journey/photo/post-stay suites and `npm run test:guest-tasks`.
