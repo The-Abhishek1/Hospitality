@@ -1,3 +1,4 @@
+import {displayDateTime} from '@/lib/date-format';
 import Link from 'next/link';
 import {randomUUID} from 'node:crypto';
 import {notFound} from 'next/navigation';
@@ -30,6 +31,6 @@ export default async function ReviewCase({params}:{params:Promise<{propertyId:st
  {linkable&&<article><h3>Link a reservation already recorded</h3><p>Choose the verified matching booking. The server also checks held room type and existing channel links. Financial amounts stay unchanged.</p>{candidates?.length?<ReviewForm key={`link-${c.version}`} {...formProps} request={randomUUID()} action="link" candidates={candidates.map((r:any)=>({id:r.id,label:`${Array.isArray(r.guest)?r.guest[0]?.full_name:r.guest?.full_name} · ${r.channel_ref||r.id.slice(0,8)} · ${r.total_amount} ${s.currency}`}))}/>:<p>No matching reservations are available. Check the provider details and record the hotel booking correctly first.</p>}</article>}
  <article><h3>Resolve with manual handling</h3><p>Use after you have handled the booking in the provider and hotel systems. Record group reservations, settlement decisions, or inventory resolution in the notes. Later provider changes reopen the case.</p><ReviewForm key={`manual-${c.version}`} {...formProps} request={randomUUID()} action="resolve_manual"/></article>
  </div>}
- <h3>Review history</h3>{actions?.length?<ol className="channel-review-history">{actions.map(a=><li key={a.id}><strong>{a.action.replaceAll('_',' ')}</strong><time>{new Date(a.created_at).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})} IST</time><small>By {Array.isArray(a.actor)?a.actor[0]?.full_name||'Hotel staff':(a.actor as {full_name?:string}|null)?.full_name||'Hotel staff'}</small><p>{a.reason}</p></li>)}</ol>:<p>No staff review actions recorded yet.</p>}
+ <h3>Review history</h3>{actions?.length?<ol className="channel-review-history">{actions.map(a=><li key={a.id}><strong>{a.action.replaceAll('_',' ')}</strong><time>{displayDateTime(a.created_at,'Asia/Kolkata')} IST</time><small>By {Array.isArray(a.actor)?a.actor[0]?.full_name||'Hotel staff':(a.actor as {full_name?:string}|null)?.full_name||'Hotel staff'}</small><p>{a.reason}</p></li>)}</ol>:<p>No staff review actions recorded yet.</p>}
  </section></div>;
 }

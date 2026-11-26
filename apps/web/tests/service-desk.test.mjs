@@ -1,11 +1,12 @@
+import {withDateHelpers} from './date-imports.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import ts from 'typescript';
 const source=readFileSync(new URL('../src/lib/service-desk.ts',import.meta.url),'utf8');
-const code=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+const code=ts.transpileModule(withDateHelpers(source),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
 const {serviceFilters,validTarget,deadlineState,serviceTime}=await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
 test('request filters bound pages and search and reject unknown views',()=>{const f=serviceFilters({page:'999999999999999',q:'x'.repeat(200),view:'unknown',priority:'invalid',source:'unknown',sort:'unknown'});assert.equal(f.page,100000);assert.equal(f.q.length,100);assert.equal(f.view,'active');assert.equal(f.priority,'');assert.equal(f.source,'');assert.equal(f.sort,'priority');assert.equal(serviceFilters({page:'1.5'}).page,1);});
 test('targets accept only whole minutes within one week',()=>{for(const s of ['','1','10080',' 30 '])assert.equal(validTarget(s),true,s);for(const s of ['0','-1','10081','1e2','1.5','Infinity','NaN'])assert.equal(validTarget(s),false,s);});
 test('response target distinguishes active overdue work from resolved work',()=>{const due='2026-11-16T10:00:00Z',now='2026-11-16T11:00:00Z';assert.deepEqual(deadlineState(due,'new',null,now),{label:'Overdue by 1h',kind:'overdue'});assert.equal(deadlineState(due,'completed','2026-11-16T09:00:00Z',now).kind,'met');assert.equal(deadlineState(due,'completed',now,now).kind,'late');assert.equal(deadlineState(due,'cancelled',null,now).kind,'none');assert.equal(deadlineState(null,'new',null,now).kind,'none');assert.equal(deadlineState('invalid','new',null,now).kind,'none');});
-test('hotel timezone controls displayed deadlines',()=>{assert.match(serviceTime('2026-11-16T20:00:00Z','Asia/Kolkata'),/Nov 17, 2026/);});
+test('hotel timezone controls displayed deadlines',()=>{assert.match(serviceTime('2026-11-16T20:00:00Z','Asia/Kolkata'),/17-11-2026/);});

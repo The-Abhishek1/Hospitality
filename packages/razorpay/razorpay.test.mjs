@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {client,validTestKeys,paymentUrl,reference} from './index.mjs';
+import {client,validKeys,validTestKeys,paymentUrl,reference} from './index.mjs';
 import {readFileSync} from 'node:fs';
 const key='rzp_test_Synthetic123',secret='syntheticSecretOnly',id='11400000-0000-4000-8000-000000000003';
 const job={id,property_id:'hotel-A',reservation_id:'reservation-A',amount:123400,expires_at:new Date(Date.now()+1800000).toISOString(),operation:'create',creation_started:true};
 const link={id:'plink_Test123',reference_id:reference(id),amount:123400,currency:'INR',notes:{property_id:'hotel-A',reservation_id:'reservation-A'},short_url:'https://rzp.io/i/test123',accept_partial:false,status:'created',order_id:'order_Test123'};
 function transport(responses){const calls=[];return{calls,fetch:async(url,options)=>{calls.push({url,options});const r=responses.shift();if(r instanceof Error)throw r;assert.ok(r,'unexpected provider call');return new Response(JSON.stringify(r.body??r),{status:r.httpStatus??200});}};}
-test('live keys are rejected before any request',()=>{assert.equal(validTestKeys('rzp_live_Synthetic123',secret),false);assert.throws(()=>client('rzp_live_Synthetic123',secret),/Test Mode/);assert.equal(validTestKeys(key,'bad secret'),false);});
+test('merchant modes are explicit and malformed keys never reach the provider',()=>{assert.equal(validTestKeys('rzp_live_Synthetic123',secret),false);assert.equal(validKeys('rzp_live_Synthetic123',secret),true);assert.throws(()=>client('rzp_wrong_Synthetic123',secret));assert.equal(validTestKeys(key,'bad secret'),false);});
 test('payment links require fixed HTTPS provider hosts',()=>{for(const s of ['http://rzp.io/i/a','https://rzp.io.evil.test/i/a','https://user@rzp.io/i/a','https://rzp.io/','javascript:alert(1)'])assert.equal(paymentUrl(s),false);assert.equal(paymentUrl(link.short_url),true);});
 test('verify uses only a read-only provider request',async()=>{const t=transport([{payment_links:[]}]);await client(key,secret,t.fetch).verify();assert.equal(t.calls[0].url,'https://api.razorpay.com/v1/payment_links?count=1');assert.equal(t.calls[0].options.method,'GET');assert.equal(t.calls[0].options.redirect,'error');});
 test('lookup precedes creation with one stable reference and no provider SMS/email',async()=>{const t=transport([{payment_links:[]},link]);assert.equal((await client(key,secret,t.fetch).process(job)).link.id,link.id);assert.match(t.calls[0].url,/reference_id=11400000000040008000000000000003$/);const body=JSON.parse(t.calls[1].options.body);assert.equal(body.reference_id,link.reference_id);assert.equal(body.accept_partial,false);assert.deepEqual(body.notify,{sms:false,email:false});assert.equal(body.amount,123400);assert.deepEqual(body.notes,link.notes);});

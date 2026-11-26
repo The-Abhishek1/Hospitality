@@ -1,3 +1,5 @@
+import {displayDateTime} from '@/lib/date-format';
+import {DateInput} from '@/components/date-input';
 import Link from "next/link";
 import { DistributionCatalog } from "@/components/channels/distribution-catalog";
 import { createClient } from "@/lib/supabase/server";
@@ -82,7 +84,7 @@ export default async function ChannelsPage({
         const product=products?.find(p=>p.connection_id===c.id),poll=polls?.find(p=>p.connection_id===c.id);
         const snapshot=product?.snapshot as {currency:string;occupancyModel:string;rooms:{id:string;name:string;minRate:string;maxRate:string}[];rates:{id:string;name:string;master:string;rateType:string;taxIncluded:boolean}[]}|undefined;
         return <section key={c.id} className="agoda-operations"><span className="sr-eyebrow">Agoda · sandbox development</span><h2>Products, rates & reservation retrieval</h2>
-          <div className="agoda-health"><p><strong>Product discovery</strong><span>{product?`Updated ${new Date(product.fetched_at).toLocaleString()}`:'Awaiting approved sandbox access and worker connection'}</span></p><p><strong>Reservation polling</strong><span>{poll?.last_success_at?`Last retrieved ${new Date(poll.last_success_at).toLocaleString()}`:'No successful retrieval yet'}</span>{poll&&<small>Checkpoint: {new Date(poll.cursor_at).toLocaleString()} · {poll.attempts} consecutive failures</small>}</p></div>
+          <div className="agoda-health"><p><strong>Product discovery</strong><span>{product?`Updated ${displayDateTime(product.fetched_at,property?.timezone??'UTC')}`:'Awaiting approved sandbox access and worker connection'}</span></p><p><strong>Reservation polling</strong><span>{poll?.last_success_at?`Last retrieved ${displayDateTime(poll.last_success_at,property?.timezone??'UTC')}`:'No successful retrieval yet'}</span>{poll&&<small>Checkpoint: {displayDateTime(poll.cursor_at,property?.timezone??'UTC')} · {poll.attempts} consecutive failures</small>}</p></div>
           {poll?.last_error&&<p role="alert" className="channel-notice">Reservation retrieval needs attention: {poll.last_error}</p>}
           {snapshot?<><p>Provider currency: <b>{snapshot.currency}</b> · Occupancy model: {snapshot.occupancyModel}. Verify the correct NET/SELL and tax basis for every rate before publishing.</p>
           <div className="sr-table-scroll"><table className="sr-table"><thead><tr><th>Agoda room ID</th><th>Room</th><th>Provider price limits</th></tr></thead><tbody>{snapshot.rooms.map(r=><tr key={r.id}><td>{r.id}</td><td>{r.name}</td><td>{r.minRate}–{r.maxRate} {snapshot.currency}</td></tr>)}</tbody></table></div>
@@ -93,7 +95,7 @@ export default async function ChannelsPage({
           <form action={saveRates} className="agoda-rate-form"><h3>Set nightly prices & restrictions</h3><input type="hidden" name="pid" value={pid}/><input type="hidden" name="connection" value={c.id}/>
           <label>Mapped room type<select name="type" required>{types?.filter(t=>maps?.some(m=>m.connection_id===c.id&&m.type_id===t.id)).map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
           <label>Mapped rate plan<select name="rate" required>{rates?.filter(r=>rateMaps?.some(m=>m.connection_id===c.id&&m.rate_plan_id===r.id)).map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></label>
-          <label>First night<input name="from" type="date" min={today} required/></label><label>End date (exclusive)<input name="to" type="date" min={today} required/></label>
+          <label>First night<DateInput name="from" min={today} required/></label><label>End date (exclusive)<DateInput name="to" min={today} required/></label>
           <label>Nightly amount ({property?.currency})<input name="amount" type="number" min="0.01" max="999999999" step="0.01" required/></label>
           {([['closed','Stop sell'],['cta','Closed to arrival'],['ctd','Closed to departure']] as const).map(([key,label])=><label key={key}>{label}<select name={key}><option value="">Leave provider setting unchanged</option><option value="true">Yes</option><option value="false">No</option></select></label>)}
           <label>Minimum nights (optional)<input name="min" type="number" min="1" max="99"/></label><label>Maximum nights (0 removes limit)<input name="max" type="number" min="0" max="99"/></label>

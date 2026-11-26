@@ -1,9 +1,10 @@
+import {withDateHelpers} from './date-imports.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import ts from 'typescript';
 const source=readFileSync(new URL('../src/lib/reservations.ts',import.meta.url),'utf8');
-const {outputText}=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}});
+const {outputText}=ts.transpileModule(withDateHelpers(source),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}});
 const {validDay,stayNights,normalizeFilters,validId,availableStayActions,isMissedArrival}=await import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`);
 test('calendar dates reject impossible dates instead of silently normalizing them',()=>{
  for(const d of ['2027-02-29','2028-02-30','2027-04-31','not-a-date','2027-1-01','2027-01-01T12:00:00Z'])assert.equal(validDay(d),false,d);

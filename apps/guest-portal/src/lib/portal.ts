@@ -1,3 +1,4 @@
+import {displayDay,displayDateTime} from './date-format';
 export const views=['stay','arrival','documents','food','services','bill','guide']as const;export type View=typeof views[number];
 export const validToken=(value:unknown):value is string=>typeof value==='string'&&/^[a-f0-9]{64}$/.test(value);
 export const validId=(value:unknown):value is string=>typeof value==='string'&&/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(value);
@@ -7,8 +8,8 @@ export function minor(value:string|number){const text=String(value);if(!/^-?\d+(
 export function decimal(value:bigint){const positive=value<0n?-value:value;return`${value<0n?'-':''}${positive/100n}.${String(positive%100n).padStart(2,'0')}`;}
 export function money(value:string,currency:string){const n=minor(value),positive=n<0n?-n:n,whole=positive/100n,signed=n<0n?(whole===0n?-0:-whole):whole;return new Intl.NumberFormat('en-IN',{style:'currency',currency,minimumFractionDigits:2,maximumFractionDigits:2}).formatToParts(signed).map(p=>p.type==='fraction'?String(positive%100n).padStart(2,'0'):p.value).join('');}
 export function cartTotal(items:{price:string;tax_rate_percent:string;quantity:number}[]){let subtotal=0n,tax=0n;for(const i of items){if(!Number.isInteger(i.quantity)||i.quantity<1||i.quantity>50)throw Error('Invalid quantity');const base=minor(i.price)*BigInt(i.quantity);subtotal+=base;tax+=(base*minor(i.tax_rate_percent)+5000n)/10000n;}return{subtotal:decimal(subtotal),tax:decimal(tax),total:decimal(subtotal+tax)};}
-export const day=(value:string)=>new Intl.DateTimeFormat('en',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(value+'T12:00:00Z'));
-export const time=(value:string,tz:string)=>new Intl.DateTimeFormat('en',{dateStyle:'medium',timeStyle:'short',timeZone:tz}).format(new Date(value));
+export const day=displayDay;
+export const time=displayDateTime;
 export const stayLabel=(status:string)=>({confirmed:'Upcoming stay',checked_in:'Checked in',checked_out:'Stay completed',cancelled:'Booking cancelled',no_show:'Arrival missed'}[status]??status.replaceAll('_',' '));
 export const requestLabel=(s:string)=>({new:'Received',in_progress:'Being taken care of',completed:'Completed',cancelled:'Cancelled'}[s]??s);
 export const orderLabel=(s:string)=>({placed:'Order received',preparing:'Preparing',ready:'Ready for delivery',served:'Delivered',cancelled:'Cancelled'}[s]??s);

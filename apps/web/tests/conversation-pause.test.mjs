@@ -1,5 +1,6 @@
+import {withDateHelpers} from './date-imports.mjs';
 import{test}from'node:test';import assert from'node:assert/strict';import{readFileSync}from'node:fs';import vm from'node:vm';import ts from'typescript';import*as React from'react';import{renderToStaticMarkup}from'react-dom/server';import*as jsx from'react/jsx-runtime';
-const source=ts.transpileModule(readFileSync(new URL('../src/components/inbox/controls.tsx',import.meta.url),'utf8'),{fileName:'controls.tsx',compilerOptions:{jsx:ts.JsxEmit.ReactJSX,module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,out={};
+const source=ts.transpileModule(withDateHelpers(readFileSync(new URL('../src/components/inbox/controls.tsx',import.meta.url),'utf8')),{fileName:'controls.tsx',compilerOptions:{jsx:ts.JsxEmit.ReactJSX,module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,out={};
 vm.runInNewContext(source,{exports:out,require:n=>n==='react'?React:n==='react/jsx-runtime'?jsx:n==='next/navigation'?{useRouter:()=>({refresh(){}})}:{conversationAction:async()=>({})},Intl});
 const render=extra=>renderToStaticMarkup(React.createElement(out.ConversationPauseNotice,{pid:'hotel',tz:'Asia/Kolkata',c:{id:'conversation',version:2,human_handoff:true,...extra}}));
 test('paused chat explains that event messages and guest-menu replies stop',()=>{const html=render({});assert.match(html,/including the booking welcome/);assert.match(html,/Allow automation/);assert.match(html,/<button[^>]*value="human_off"[^>]*name="action"/);assert.match(html,/earlier pause was not recorded/);});

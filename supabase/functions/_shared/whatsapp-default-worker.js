@@ -22,7 +22,7 @@ export async function prepareHotelTemplates(job,io){
   let payload,result;
   try{
    if(image&&!handle&&!current)handle=await io.uploadImage(job.welcome_image_url);
-   payload=starterTemplate(slot,{property_id:job.property_id,links:job.links,imageHandle:handle??'existing-sample'});
+   payload=starterTemplate({...slot,version:saved.template_version??Number(saved.name?.match(/_v(\d+)$/)?.[1]??1)},{property_id:job.property_id,links:job.links,imageHandle:handle??'existing-sample'});
    if(!current){result=await io.create(payload);if(!result?.id)throw Error('Unconfirmed creation');}
   }catch(error){
    // Only provider-safe messages reach owners. Raw network/credential errors stay private.

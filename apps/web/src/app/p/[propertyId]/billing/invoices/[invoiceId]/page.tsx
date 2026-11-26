@@ -1,3 +1,5 @@
+
+import {displayDateTime} from '@/lib/date-format';
 import Link from 'next/link';
 import {notFound} from 'next/navigation';
 import {createClient} from '@/lib/supabase/server';
@@ -13,7 +15,7 @@ export default async function InvoicePage({params,searchParams}:{params:Promise<
  const d=data as InvoiceData,s=d.snapshot,c=credit?d.credits.find(c=>c.id===credit):undefined;if(credit&&!c)notFound();
  const issued=c?.issued_at??d.issued_at;
  return <div className="billing-workspace bill-document-workspace"><div className="bill-document-toolbar"><Link href={`/p/${pid}/billing/${d.reservation_id}`}>← Back to guest folio</Link><PrintDocument/></div>
- <article className="invoice-document"><header><div className="invoice-brand"><span>h·</span><div><h2>{s.property.name}</h2><p>{[s.property.address,s.property.city,s.property.country_code].filter(Boolean).join(', ')}</p><p>{[s.property.email,s.property.phone].filter(Boolean).join(' · ')}</p></div></div><div className="invoice-number"><span>{c?'CREDIT NOTE':'INVOICE'}</span><h1>{c?.number??d.number}</h1><p>{new Intl.DateTimeFormat('en',{dateStyle:'long',timeZone:s.property.timezone??'UTC'}).format(new Date(issued))}</p></div></header>
+ <article className="invoice-document"><header><div className="invoice-brand"><span>h·</span><div><h2>{s.property.name}</h2><p>{[s.property.address,s.property.city,s.property.country_code].filter(Boolean).join(', ')}</p><p>{[s.property.email,s.property.phone].filter(Boolean).join(' · ')}</p></div></div><div className="invoice-number"><span>{c?'CREDIT NOTE':'INVOICE'}</span><h1>{c?.number??d.number}</h1><p>{displayDateTime(new Date(issued),s.property.timezone??'UTC').split(' · ')[0]}</p></div></header>
  <div className="invoice-parties"><div><span>ISSUED TO</span><strong>{s.guest.name}</strong><p>{s.guest.email}</p><p>{s.guest.phone}</p></div><div><span>STAY DETAILS</span><strong>{dayLabel(s.stay.check_in)} → {dayLabel(s.stay.check_out)}</strong><p>Booking {s.stay.id.slice(0,8).toUpperCase()}</p>{c&&<p>Against invoice {d.number}</p>}</div></div>
  {s.legacy_snapshot&&<p className="invoice-legacy">Legacy invoice: an original identity snapshot was not captured. Hotel and guest details shown reflect the current records.</p>}
  <div className="invoice-table-wrap"><table><thead><tr><th>Description</th><th>{c?'Reference':'Business date'}</th><th>Amount ({s.currency})</th></tr></thead><tbody>{c?<tr><td>{c.reason}</td><td>{d.number}</td><td>{money(c.amount,s.currency)}</td></tr>:s.items.map((item,i)=><tr key={i}><td>{item.description}<small>{item.kind==='room'?'Accommodation':item.kind==='order'?'Recorded room order':'Adjustment'}</small></td><td>{dayLabel(item.date)}</td><td>{money(item.amount,s.currency)}</td></tr>)}</tbody></table></div>

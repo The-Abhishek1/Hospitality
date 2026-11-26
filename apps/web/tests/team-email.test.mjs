@@ -1,8 +1,9 @@
+import {withDateHelpers} from './date-imports.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
-const source=readFileSync(new URL('../src/lib/team-email.ts',import.meta.url),'utf8').replace("import 'server-only';",''),code=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+const source=readFileSync(new URL('../src/lib/team-email.ts',import.meta.url),'utf8').replace("import 'server-only';",''),code=ts.transpileModule(withDateHelpers(source),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
 const {teamEmailConfig,teamEmailStatus,invitationEmail,sendInvitationEmail}=await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
 const env={RESEND_API_KEY:'re_test_not_live',TEAM_EMAIL_FROM:'Hospitality <admin@example.test>',APP_URL:'https://hotel.example.test',NEXT_PUBLIC_SUPABASE_URL:'https://backend.example.test',SUPABASE_SERVICE_ROLE_KEY:'not-a-real-service-key',NODE_ENV:'production'},config=teamEmailConfig(env),context={email:'staff@example.test',business:'Hotel & team <script>alert(1)</script>',business_role:'member',expires_at:'2026-12-24T12:00:00Z',hotels:[{name:'Beach <hotel>',roles:['Front desk & reception']}]};
 test('email configuration requires private key, backend result credentials and trusted app origin',()=>{

@@ -1,5 +1,6 @@
+import {withDateHelpers} from './date-imports.mjs';
 import {test} from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import ts from 'typescript';
-const compile=s=>ts.transpileModule(s,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;const data=s=>`data:text/javascript;base64,${Buffer.from(s).toString('base64')}`;
+const compile=s=>ts.transpileModule(withDateHelpers(s),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;const data=s=>`data:text/javascript;base64,${Buffer.from(s).toString('base64')}`;
 const reservations=data(compile(readFileSync(new URL('../src/lib/reservations.ts',import.meta.url),'utf8')));
 const source=readFileSync(new URL('../src/lib/billing.ts',import.meta.url),'utf8').replace("'./reservations'",JSON.stringify(reservations));
 const {parseAmount,csvText,csvMoney,billingFilters,validAuditDay}=await import(data(compile(source)));

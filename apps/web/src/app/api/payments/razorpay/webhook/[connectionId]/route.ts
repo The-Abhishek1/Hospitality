@@ -22,6 +22,7 @@ export async function POST(req:Request,{params}:{params:Promise<{connectionId:st
   const value=(s:unknown)=>typeof s==='string'&&s.length<=100?s:null;
   const notified=await db.rpc('notify_payment_webhook',{p_connection:id,p_event:eventId,p_hash:hash,p_reference:value(link?.reference_id),p_link:value(link?.id),p_order:value(payment?.order_id??link?.order_id),p_payment:value(payment?.id??refund?.payment_id)});
   if(notified.error)return reply(notified.error.code==='22023'?409:503,'Payment reconciliation could not be queued.');
+  if(event.event==='payment.failed'){const problem=await db.rpc('record_booking_payment_problem',{p_connection:id,p_event:eventId,p_order:value(payment?.order_id??link?.order_id),p_link:value(link?.id),p_payment:value(payment?.id)});if(problem.error)return reply(503,'Payment update could not be queued.');}
   return reply(200,'Payment check queued.');
  }catch{return reply(503,'Webhook processing unavailable. Retry later.');}
 }

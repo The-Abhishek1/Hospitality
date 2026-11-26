@@ -4,7 +4,7 @@ import {createClient} from '@/lib/supabase/server';
 import {backend} from '@/lib/whatsapp-onboarding';
 import {validId} from '@/lib/reservations';
 import {encryptToken,decryptToken} from '../../../../../../../../packages/whatsapp-security/index.mjs';
-import {client,validTestKeys} from '../../../../../../../../packages/razorpay/index.mjs';
+import {client,validKeys} from '../../../../../../../../packages/razorpay/index.mjs';
 export const runtime='nodejs';export const maxDuration=60;
 const result=(body:object,status=200)=>NextResponse.json(body,{status,headers:{'Cache-Control':'private, no-store'}});
 export async function POST(req:NextRequest,{params}:{params:Promise<{propertyId:string}>}){
@@ -22,12 +22,12 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{propertyId:
    const credentials=JSON.parse(decryptToken(data.ciphertext,'razorpay:'+input.connection,master));return result({webhookSecret:credentials.webhookSecret});
   }
   if(input.action!=='connect')return result({error:'Choose a valid connection action.'},400);
-  if(input.testHotel!==true)return result({error:'Confirm this is a dedicated test hotel. Test payments do not collect money.'},400);
-  const keyId=String(input.keyId??'').trim(),keySecret=String(input.keySecret??'').trim();if(!validTestKeys(keyId,keySecret))return result({error:'Enter this hotel’s Razorpay Test Mode Key ID and Key Secret. Live keys are not enabled.'},400);
+  if(String(input.keyId??'').startsWith('rzp_test_')&&input.testHotel!==true)return result({error:'Confirm this is a dedicated test hotel. Test payments do not collect money.'},400);
+  const keyId=String(input.keyId??'').trim(),keySecret=String(input.keySecret??'').trim();if(!['test','live'].includes(input.mode)||!keyId.startsWith(`rzp_${input.mode}_`)||input.mode==='live'&&input.liveConfirmed!==true)return result({error:'Choose the matching account mode and confirm Live Mode before connecting real payments.'},400);if(!validKeys(keyId,keySecret))return result({error:'Enter this hotel’s Razorpay Key ID and Key Secret.'},400);
   await client(keyId,keySecret).verify();
   const id=randomUUID(),ciphertext=encryptToken(JSON.stringify({keyId,keySecret,webhookSecret:randomBytes(32).toString('hex')}),'razorpay:'+id,master);
-  const saved=await backend().rpc('payment_connection_commit',{p_property:pid,p_actor:user.id,p_connection:id,p_key_hint:'rzp_test_…'+keyId.slice(-4),p_ciphertext:ciphertext,p_test_hotel:true});
+  const saved=await backend().rpc('payment_connection_commit',{p_property:pid,p_actor:user.id,p_connection:id,p_key_hint:(keyId.startsWith('rzp_live_')?'rzp_live_…':'rzp_test_…')+keyId.slice(-4),p_ciphertext:ciphertext,p_test_hotel:input.testHotel===true});
   if(saved.error)return result({error:['22023','42501'].includes(saved.error.code)?saved.error.message:'Connection could not be saved.'},400);
-  return result({success:'Test Mode account connected. Configure its webhook, then enable online checkout.'});
- }catch(error){return result({error:error instanceof Error&&error.name==='PaymentError'?error.message:'Could not complete payment setup. Verify your Test Mode keys and try again.'},400);}
+  return result({success:'Account connected. Configure its webhook, then enable online payments.'});
+ }catch(error){return result({error:error instanceof Error&&error.name==='PaymentError'?error.message:'Could not complete payment setup. Verify the account mode and keys, then try again.'},400);}
 }

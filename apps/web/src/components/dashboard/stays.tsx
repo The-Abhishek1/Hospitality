@@ -1,10 +1,12 @@
 "use client";
+import {displayDateTime} from '@/lib/date-format';
+
 import Link from 'next/link';
 import { useRef, useState } from 'react';
 export type Stay = { id: string; full_name: string | null; room: string | null; status: string; check_in: string; check_out: string; source: string };
 const tabs = [{id:'arrivals',label:'Arrivals',view:'arrivals'}, {id:'departures',label:'Departures',view:'departures'}, {id:'inhouse',label:'In house',view:'in_house'}] as const;
 type Tab = typeof tabs[number]['id'];
-const stayDate = (day:string) => new Intl.DateTimeFormat('en',{day:'numeric',month:'short',timeZone:'UTC'}).format(new Date(`${day}T12:00:00Z`));
+const stayDate = (day:string) => displayDateTime(new Date(`${day}T12:00:00Z`),'UTC').split(' · ')[0];
 
 export function TodayStays({ stays, day, property, canRead, totals }: { stays: Stay[]; day: string; property: string; canRead: boolean; totals: Record<Tab,number> }) {
   const [tab,setTab] = useState<Tab>('arrivals');

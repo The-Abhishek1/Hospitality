@@ -1,5 +1,6 @@
+import {withDateHelpers} from './date-imports.mjs';
 import {test}from 'node:test';import assert from 'node:assert/strict';import{readFileSync}from'node:fs';import ts from'typescript';
-const code=ts.transpileModule(readFileSync(new URL('../src/lib/campaigns.ts',import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+const code=ts.transpileModule(withDateHelpers(readFileSync(new URL('../src/lib/campaigns.ts',import.meta.url),'utf8')),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
 const{campaignFilters,campaignPage,campaignTime}=await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
 test('audience filters default to past guests and bound untrusted query values',()=>{
  assert.equal(campaignFilters(null).status,'checked_out');assert.equal(campaignFilters({status:'cancelled',source:'malformed'}).source,'all');assert.equal(campaignFilters({q:' x '.repeat(100)}).q.length,100);

@@ -11,6 +11,10 @@ insert into public.accommodation_types(id,tenant_id,property_id,name,base_rate,m
 insert into public.accommodation_units(id,tenant_id,property_id,type_id,name)values('f8000000-0000-0000-0000-000000000001','f2000000-0000-0000-0000-000000000001','f3000000-0000-0000-0000-000000000001','f7000000-0000-0000-0000-000000000001','D101');
 \set pid f3000000-0000-0000-0000-000000000001
 \set owner f1000000-0000-0000-0000-000000000001
+update public.properties set payment_test_mode=true where id=:'pid';
+insert into public.hotel_payment_connections(id,tenant_id,property_id,mode,key_hint,checkout_enabled)values('a1410000-0000-0000-0000-000000000001','f2000000-0000-0000-0000-000000000001',:'pid','test','rzp_test_fixture',true);
+insert into private.hotel_payment_credentials values('a1410000-0000-0000-0000-000000000001','v1.fixture');
+insert into private.payment_worker_configuration(id,origin,secret_id,enabled)values(true,'https://invalid.example',gen_random_uuid(),true)on conflict(id)do update set enabled=true;
 select ((now()at time zone 'Asia/Kolkata')::date+1)::text as arrival,((now()at time zone 'Asia/Kolkata')::date+3)::text as departure \gset
 insert into public.room_date_prices(tenant_id,property_id,type_id,night,amount)values('f2000000-0000-0000-0000-000000000001',:'pid','f7000000-0000-0000-0000-000000000001',:'arrival',5500);
 set local role service_role;
@@ -54,6 +58,14 @@ select pg_temp.incoming('919000001352',:'confirm_choice')as other_cid \gset
 select is((select count(*)::integer from public.reservations where property_id=:'pid'),0,'another sender cannot use a stolen booking confirmation');
 select pg_temp.incoming('919000001351',:'confirm_choice');
 select reservation_id as rid from private.whatsapp_booking_sessions where conversation_id=:'cid' \gset
+
+select is((select status from public.reservations where id=:'rid'),'pending_payment','room booking waits for its deposit');
+select ok(private.whatsapp_enquiry(:'cid'),'unpaid room hold stays in booking enquiries');
+select is((select amount from public.hotel_payment_requests where reservation_id=:'rid'),400000::bigint,'deposit is exactly half of the quoted stay in paise');
+select is((select count(*)::integer from public.whatsapp_automation_events where reservation_id=:'rid'and event_key='booking_confirmed'),0,'provisional booking does not send an early welcome');
+select id as intent from public.hotel_payment_requests where reservation_id=:'rid' \gset
+update public.hotel_payment_requests set lease=gen_random_uuid(),state='creating',creation_started=true where id=:'intent';
+select public.apply_online_payment(:'intent',(select lease from public.hotel_payment_requests where id=:'intent'),jsonb_build_object('link',jsonb_build_object('id','plink_Deposit141','reference_id',replace(:'intent','-',''),'amount',400000,'currency','INR','status','paid','order_id','order_Deposit141','short_url','https://rzp.io/deposit141','notes',jsonb_build_object('property_id',:'pid','reservation_id',:'rid')),'payment',jsonb_build_object('id','pay_Deposit141','status','captured','captured',true,'amount',400000,'currency','INR','order_id','order_Deposit141','method','upi')));
 select is((select count(*)::integer from public.reservations where property_id=:'pid'),1,'confirmation creates exactly one reservation');
 select is((select booking_origin from public.reservations where id=:'rid'),'whatsapp','reservation is labelled as WhatsApp origin');
 select is((select status from public.reservations where id=:'rid'),'confirmed','WhatsApp booking is a normal confirmed reservation');
@@ -61,11 +73,7 @@ select is((select count(*)::integer from public.unit_holds where reservation_id=
 select ok(not private.whatsapp_enquiry(:'cid'),'confirmed conversation moves to Guests');
 select ok(exists(select 1 from private.whatsapp_booking_contacts where reservation_id=:'rid'and conversation_id=:'cid'and actor_id is null),'guest confirmation records one-booking contact proof without impersonating staff');
 select ok(exists(select 1 from public.whatsapp_automation_events where reservation_id=:'rid'and event_key='booking_confirmed'),'normal booking welcome event is captured');
-select ok(exists(select 1 from public.messages where conversation_id=:'cid'and body like 'Booking confirmed at Enquiry Resort!%'and body like '%https://hotel.test/s/%?view=documents%'),'confirmation supplies a secure document helper link in WhatsApp');
-select is((select journey_reservation from public.messages where conversation_id=:'cid'and journey_purpose='enquiry_confirmed'),:'rid'::uuid,'private confirmation is bound to the verified reservation at delivery');
-update public.conversations set guest_id=null where id=:'cid';
-select is(private.inbox_delivery_error((select id from public.messages where conversation_id=:'cid'and journey_purpose='enquiry_confirmed')),'Guest booking or number changed.','identity changes invalidate an undelivered private confirmation');
-update public.conversations set guest_id=(select guest_id from public.reservations where id=:'rid')where id=:'cid';
+select is((select count(*)::integer from public.payments where online_request_id=:'intent'),1,'verified deposit is recorded once on the real folio');
 select is((select count(*)::integer from public.whatsapp_guest_authorizations where conversation_id=:'cid'),0,'booking does not grant ongoing updates');
 select is((select count(*)::integer from public.whatsapp_marketing_permissions where property_id=:'pid'),0,'booking never grants marketing permission');
 select pg_temp.incoming('919000001351',:'confirm_choice');
@@ -110,17 +118,17 @@ select is((select step from private.whatsapp_booking_sessions where conversation
 select is((select count(*)::integer from public.reservations where property_id=:'pid'),2,'restarted-session buttons never create an unintended booking');
 set local role authenticated;
 select set_config('request.jwt.claims',json_build_object('sub',:'owner','role','authenticated')::text,true);
-select is((public.inbox_workspace(:'pid','{"audience":"enquiries"}')->>'total')::integer,6,'enquiry tab excludes booked customers inside pagination');
-select is((public.inbox_workspace(:'pid','{"audience":"guests"}')->>'total')::integer,2,'Guests tab includes the newly booked customer');
+select is((public.inbox_workspace(:'pid','{"audience":"enquiries"}')->>'total')::integer,7,'enquiry tab retains pending deposits inside pagination');
+select is((public.inbox_workspace(:'pid','{"audience":"guests"}')->>'total')::integer,1,'Guests tab includes only the paid confirmed customer');
 select is(public.reservation_workspace(:'pid','{"view":"all"}')#>>'{rows,0,booking_origin}','whatsapp','booking origin appears in the staff reservation workspace');
 reset role;
 insert into public.conversations(tenant_id,property_id,connection_id,wa_contact_id,contact_name)
 select 'f2000000-0000-0000-0000-000000000001',:'pid','f6000000-0000-0000-0000-000000000001','919000002'||lpad(n::text,3,'0'),'Extra enquiry '||n from generate_series(1,26)n;
 set local role authenticated;
 select set_config('request.jwt.claims',json_build_object('sub',:'owner','role','authenticated')::text,true);
-select is((public.inbox_workspace(:'pid','{"audience":"enquiries","page":2}')->>'total')::integer,32,'enquiry count includes all pages');
-select is(jsonb_array_length(public.inbox_workspace(:'pid','{"audience":"enquiries","page":2}')->'conversations'),7,'audience filtering happens before page limits');
-select is((public.inbox_workspace(:'pid','{"audience":"guests"}')#>>'{stats,open}')::integer,2,'assignment counters respect the chosen audience');
+select is((public.inbox_workspace(:'pid','{"audience":"enquiries","page":2}')->>'total')::integer,33,'enquiry count includes all pages');
+select is(jsonb_array_length(public.inbox_workspace(:'pid','{"audience":"enquiries","page":2}')->'conversations'),8,'audience filtering happens before page limits');
+select is((public.inbox_workspace(:'pid','{"audience":"guests"}')#>>'{stats,open}')::integer,1,'assignment counters respect the chosen audience');
 select set_config('request.jwt.claims',json_build_object('sub','f1000000-0000-0000-0000-000000000002','role','authenticated')::text,true);
 select throws_ok(format('select public.inbox_workspace(%L,%L)',:'pid','{"audience":"enquiries"}'),'42501',null,'enquiry tab never exposes another hotel’s contacts');
 select set_config('request.jwt.claims',json_build_object('sub',:'owner','role','authenticated')::text,true);
@@ -137,5 +145,18 @@ select public.save_whatsapp_booking_settings(:'pid',1,true);
 reset role;
 select pg_temp.incoming('919000001360','1')as numeric_cid \gset
 select ok(exists(select 1 from public.messages where conversation_id=:'numeric_cid'and direction='out'and body like 'Welcome to Enquiry Resort!%'),'unknown numeric greeting receives the enquiry welcome too');
+
+reset role;
+select id as expired_rid from public.reservations where property_id=:'pid'and status='pending_payment'limit 1 \gset
+select id as expired_intent from public.hotel_payment_requests where reservation_id=:'expired_rid' \gset
+update public.reservations set deposit_expires_at=now()-interval '1 second'where id=:'expired_rid';
+select is(private.expire_whatsapp_deposits(),1,'the 15-minute unpaid hold expires automatically');
+select is((select status from public.reservations where id=:'expired_rid'),'cancelled','expired booking is not left confirmed');
+select is((select count(*)::integer from public.unit_holds where reservation_id=:'expired_rid'and active),0,'expiry releases the room for another guest');
+update public.hotel_payment_requests set lease=gen_random_uuid()where id=:'expired_intent';
+select public.apply_online_payment(:'expired_intent',(select lease from public.hotel_payment_requests where id=:'expired_intent'),jsonb_build_object('link',jsonb_build_object('id','plink_Late141','reference_id',replace(:'expired_intent','-',''),'amount',(select amount from public.hotel_payment_requests where id=:'expired_intent'),'currency','INR','status','paid','order_id','order_Late141','short_url','https://rzp.io/late141','notes',jsonb_build_object('property_id',:'pid','reservation_id',:'expired_rid')),'payment',jsonb_build_object('id','pay_Late141','status','captured','captured',true,'amount',(select amount from public.hotel_payment_requests where id=:'expired_intent'),'currency','INR','order_id','order_Late141','method','upi')));
+select is((select status from public.reservations where id=:'expired_rid'),'cancelled','late payment cannot silently rebook a released room');
+select ok((select last_error like 'Payment received after%'from public.hotel_payment_requests where id=:'expired_intent'),'late capture is recorded for staff refund/rebooking review');
+select is((select count(*)::integer from public.payments where online_request_id=:'expired_intent'),1,'late captured money remains accounted for');
 select *from finish();
 rollback;

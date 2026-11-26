@@ -1,3 +1,4 @@
+import {displayDateTime} from '@/lib/date-format';
 import Link from 'next/link';
 import {createClient} from '@/lib/supabase/server';
 import {reviewPage} from '@/lib/channel-review';
@@ -10,7 +11,7 @@ export default async function ReviewQueue({params,searchParams}:{params:Promise<
  const base=`/p/${pid}/channels/review`;
  return <div className="service-workspace"><Link href={`/p/${pid}/channels`}>← Channels</Link><section className="channel-review-panel"><span className="sr-eyebrow">Reservation exceptions</span><h2>Import review</h2><p>Investigate failed Agoda snapshots, retry corrected imports, or record a verified manual resolution.</p>
  <nav className="channel-review-tabs" aria-label="Review status"><Link aria-current={status==='open'?'page':undefined} href={base}>Open cases</Link><Link aria-current={status==='resolved'?'page':undefined} href={`${base}?status=resolved`}>Resolved cases</Link></nav>
- {error?<p role="alert">The review queue could not be loaded. Refresh or ask your hotel administrator for channel management access.</p>:<><div className="sr-table-scroll"><table className="sr-table"><thead><tr><th>Agoda booking</th><th>Handling</th><th>Updated</th><th>Review</th></tr></thead><tbody>{data?.map(c=><tr key={c.id}><td>{c.external_reservation_id}</td><td>{c.management_mode==='manual'?'Manual handling':'Automatic import'}</td><td>{new Date(c.updated_at).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})} IST</td><td><Link href={`${base}/${c.id}`}>Review case →</Link></td></tr>)}</tbody></table></div>{!data?.length&&<p className="sr-empty">No {status} cases.</p>}
+ {error?<p role="alert">The review queue could not be loaded. Refresh or ask your hotel administrator for channel management access.</p>:<><div className="sr-table-scroll"><table className="sr-table"><thead><tr><th>Agoda booking</th><th>Handling</th><th>Updated</th><th>Review</th></tr></thead><tbody>{data?.map(c=><tr key={c.id}><td>{c.external_reservation_id}</td><td>{c.management_mode==='manual'?'Manual handling':'Automatic import'}</td><td>{displayDateTime(c.updated_at,'Asia/Kolkata')} IST</td><td><Link href={`${base}/${c.id}`}>Review case →</Link></td></tr>)}</tbody></table></div>{!data?.length&&<p className="sr-empty">No {status} cases.</p>}
  <div className="sr-pagination"><span>{count??0} {status} cases · Page {page}</span><div>{page>1&&<Link href={`${base}?status=${status}&page=${page-1}`}>← Previous</Link>}{page*20<(count??0)&&<Link href={`${base}?status=${status}&page=${page+1}`}>Next →</Link>}</div></div></>}
  </section></div>;
 }

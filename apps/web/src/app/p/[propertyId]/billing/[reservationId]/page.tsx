@@ -1,3 +1,5 @@
+
+import {displayDateTime} from '@/lib/date-format';
 import {OnlinePaymentPanel} from '@/components/payments/payment-panel';
 import type {PaymentWorkspace} from '@/lib/online-payments';
 import '@/components/payments/payments.css';
@@ -18,7 +20,7 @@ export default async function FolioPage({params,searchParams}:{params:Promise<{p
  if(error?.code==='P0002')notFound();if(error||!data)return <section className="bill-empty"><h2>Couldn’t open this folio</h2><p>Check your hotel access or refresh to try again.</p><Link href={`/p/${pid}/billing`}>Back to billing</Link></section>;
  const{data:online}=await db.rpc('payment_workspace',{p_property:pid,p_reservation:id});
  const d=data as BillingDetail,s=d.summary,r=d.stay,base=`/p/${pid}/billing`,tz=property?.timezone??'Asia/Kolkata';
- const time=(v:string)=>new Intl.DateTimeFormat('en',{dateStyle:'medium',timeStyle:'short',timeZone:tz}).format(new Date(v));
+ const time=(v:string)=>displayDateTime(new Date(v),tz);
  const labels:Record<string,string>={payment:'Payment recorded.',charge:'Charge added.',credit:'Credit recorded.',refund:'Refund recorded. Any related credit note is listed below.',post_rooms:'Booked room charges posted.'};
  const kindLabel=(k:string)=>({room:'Room night',order:'Room order',adjustment:'Adjustment',payment:'Payment',refund:'Refund',credit_note:'Credit note'}[k]??k);
  return <div className="billing-workspace"><div className="bill-subheading"><div><Link href={base}>← All folios</Link><h2>{d.guest.name}</h2><p>Booking {id.slice(0,8).toUpperCase()} · {dayLabel(r.check_in)} → {dayLabel(r.check_out)} · {s.room??'Room unassigned'}</p></div><div className="bill-heading-links"><span className={`bill-status ${s.folio_status==='closed'?'closed':''}`}>{s.folio_status==='closed'?'Invoice issued':statusLabel(r.status)}</span>{d.can_reservations&&<Link href={`/p/${pid}/reservations/${id}`}>View reservation ↗</Link>}{s.invoice_id&&<Link className="dash-button" href={`${base}/invoices/${s.invoice_id}`}>View invoice ↗</Link>}</div></div>

@@ -85,3 +85,16 @@ input[type="checkbox"], input[type="radio"], input[type="range"] { accent-color:
 @media (max-width: 1050px) { .auth-story { padding-left: 28px; padding-right: 28px; } .auth-main { padding-left: 32px; padding-right: 32px; } .auth-pill { display: none; } .auth-brand-light { display: none; } .auth-story-footer > span:last-child { display: none; } }
 @media (max-width: 760px) { .auth-shell { grid-template-columns: 1fr; } .auth-story { display: none; } .auth-main { padding: 26px 24px; min-height: 100svh; } .auth-mobile-brand { display: block; width: 100%; font-family: Georgia, serif; font-size: 23px; color: var(--ui-ink); font-weight: 600; } .auth-title { font-size: 34px; } .auth-form-wrap { padding: 42px 0 24px; } }
 @media (prefers-reduced-motion: reduce) { .auth-shell * { transition: none; animation: none; } }
+
+.date-input { display:flex; align-items:center; position:relative; min-width:0; width:100%; gap:4px; }
+.date-input > input[type=text] { min-width:0; width:100%; }
+.date-picker-button { border:1px solid #cbd5e1; border-radius:7px; background:#f8fafc; padding:11px; cursor:pointer; }
+.date-native-picker { position:absolute; bottom:0; left:0; width:1px!important; height:1px; opacity:0; pointer-events:none; }
+.checklist-editor { grid-column:1/-1; min-width:0; }
+.checklist-editor-tools { display:flex; flex-wrap:wrap; gap:10px; margin:12px 0; }
+.checklist-editor-tools > input,.checklist-editor-tools > select { flex:1; min-width:160px; }
+.checklist-editor li { display:flex; gap:8px; margin:8px 0; }
+.checklist-editor li input { flex:1; min-width:0; }
+.checklist-editor > button { margin:8px 8px 0 0; }
+
+.task-check-category{border:1px solid #dbe3eb;border-radius:10px;margin:12px 0;padding:14px}.task-check-category summary{cursor:pointer;display:flex;justify-content:space-between;gap:10px}.task-check-category summary span{color:#63798d;font-size:14px}

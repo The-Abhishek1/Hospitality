@@ -1,5 +1,6 @@
+import {withDateHelpers} from './date-imports.mjs';
 import{test}from'node:test';import assert from'node:assert/strict';import{readFileSync}from'node:fs';import vm from'node:vm';import ts from'typescript';
-const load=(file,require=()=>{throw Error('Unexpected import');})=>{const exports={};vm.runInNewContext(ts.transpileModule(readFileSync(new URL(file,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports,require,URL});return exports;};
+const load=(file,require=()=>{throw Error('Unexpected import');})=>{const exports={};vm.runInNewContext(ts.transpileModule(withDateHelpers(readFileSync(new URL(file,import.meta.url),'utf8')),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports,require,URL});return exports;};
 const menu=load('../src/lib/guest-concierge.ts'),flow=load('../src/lib/automation-flow.ts'),rich=load('../src/lib/rich-templates.ts',()=>flow);
 const template={id:'approved',name:'pool',supported:true,status:'APPROVED',checked_at:new Date().toISOString(),parameters:[],definition:{components:[{type:'BODY'}]}};
 test('legacy options become editable categories with stable service IDs',()=>{const one=menu.groupedCategories(menu.defaultConcierge),two=menu.groupedCategories(menu.defaultConcierge);assert.equal(one.length,4);assert.equal(one[0].label,'My stay');assert.equal(one.flatMap(c=>c.services).length,11);assert.equal(JSON.stringify(one),JSON.stringify(two));});

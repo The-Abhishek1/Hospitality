@@ -1,3 +1,6 @@
+
+import {displayDateTime} from '@/lib/date-format';
+import {DateInput} from '@/components/date-input';
 import Link from 'next/link';
 import {createClient} from '@/lib/supabase/server';
 import {addDays,parseRange,todayIn} from '@/lib/dates';
@@ -8,7 +11,7 @@ export const metadata={title:'Reservations · Hospitality'};
 const views=[{id:'upcoming',label:'Active stays',title:'Active stays'},{id:'arrivals',label:'Arrivals',title:'Arrivals today'},{id:'departures',label:'Departures',title:'Departures today'},{id:'in_house',label:'In house',title:'In-house guests'},{id:'all',label:'All bookings',title:'All bookings'}];
 const sourceLabels:Record<string,string>={direct:'Direct',walk_in:'Walk-in',ota:'Channel'};
 const sourceLabel=(value:string)=>sourceLabels[value]??value;
-const shortDay=(day:string,reference?:string)=>new Intl.DateTimeFormat('en',{day:'numeric',month:'short',...(reference&&day.slice(0,4)!==reference.slice(0,4)?{year:'numeric' as const}:{}),timeZone:'UTC'}).format(new Date(`${day}T12:00:00Z`));
+const shortDay=(day:string,reference?:string)=>displayDateTime(new Date(`${day}T12:00:00Z`),'UTC').split(' · ')[0];
 export default async function ReservationsPage({params,searchParams}:{params:Promise<{propertyId:string}>;searchParams:Promise<Record<string,string|undefined>>}){
  const{propertyId:pid}=await params,input=await searchParams,db=await createClient();
  const[{data:prop},{data:permissions}]=await Promise.all([db.from('properties').select('timezone,currency').eq('id',pid).single(),db.rpc('workspace_permissions',{p_property:pid})]);
@@ -32,7 +35,7 @@ export default async function ReservationsPage({params,searchParams}:{params:Pro
      <details className="reservation-extra-filters"><summary>Filters{activeFilters.length>0&&<span>{activeFilters.length}</span>}</summary><div>
       <label>Status<select name="status" defaultValue={f.status}><option value="">All statuses</option>{['confirmed','checked_in','checked_out','cancelled','no_show'].map(value=><option value={value} key={value}>{statusLabel(value)}</option>)}</select></label>
       <label>Booking source<select name="source" defaultValue={f.source}><option value="">All sources</option><option value="direct">Direct</option><option value="walk_in">Walk-in</option><option value="ota">Channel</option></select></label>
-      <label>Stay overlaps from<input name="from" type="date" defaultValue={f.from}/></label><label>Through<input name="to" type="date" defaultValue={f.to}/></label>
+      <label>Stay overlaps from<DateInput name="from" defaultValue={f.from}/></label><label>Through<DateInput name="to" defaultValue={f.to}/></label>
       <div className="reservation-filter-actions"><button className="dash-button" type="submit">Apply filters</button><Link href={href({status:'',source:'',from:'',to:'',page:1})}>Clear filters</Link></div>
      </div></details>
      {activeFilters.length>0&&<div className="reservation-applied-filters" aria-label="Applied filters">{activeFilters.map(filter=><Link key={filter.key} aria-label={`Remove ${filter.label}`} href={href({[filter.key]:'',page:1})}>{filter.label} <span aria-hidden="true">×</span></Link>)}</div>}

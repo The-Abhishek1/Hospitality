@@ -1,9 +1,10 @@
+import {withDateHelpers} from './date-imports.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import ts from 'typescript';
-const compile=file=>ts.transpileModule(readFileSync(new URL(file,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+const compile=file=>ts.transpileModule(withDateHelpers(readFileSync(new URL(file,import.meta.url),'utf8')),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
 const flow={};vm.runInNewContext(compile('../src/lib/automation-flow.ts'),{exports:flow});
 const rich={};vm.runInNewContext(compile('../src/lib/rich-templates.ts'),{exports:rich,require:()=>flow,URL});
 const routeCode=compile('../src/app/api/whatsapp/[propertyId]/templates/route.ts');

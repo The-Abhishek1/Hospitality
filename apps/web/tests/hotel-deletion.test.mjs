@@ -1,6 +1,7 @@
+import {withDateHelpers} from './date-imports.mjs';
 import{test}from'node:test';import assert from'node:assert/strict';import{readFileSync}from'node:fs';import vm from'node:vm';import ts from'typescript';
 const pid='f1292000-0000-0000-0000-000000000001',job='f1298000-0000-0000-0000-000000000001';
-const compile=p=>ts.transpileModule(readFileSync(new URL(p,import.meta.url),'utf8'),{fileName:p,compilerOptions:{jsx:ts.JsxEmit.ReactJSX,module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+const compile=p=>ts.transpileModule(withDateHelpers(readFileSync(new URL(p,import.meta.url),'utf8')),{fileName:p,compilerOptions:{jsx:ts.JsxEmit.ReactJSX,module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
 function harness(options={}){
  const out={},calls=[];
  const rpc=async(name,args)=>{calls.push({name,args});return{data:name==='platform_hotel_deletion_begin'?job:options.done?{state:'complete'}:{state:'files',remaining:2,files:[{bucket:'guest-documents',path:'trusted-path'},{bucket:'hotel-whatsapp-photos',path:'trusted-photo'}]}};};

@@ -1,10 +1,11 @@
+import {displayDay,displayDateTime} from '@/lib/date-format';
 export const requestPriorities=['low','normal','high','urgent'] as const;
 export const requestStatus=(s:string)=>({new:'New',in_progress:'In progress',completed:'Completed',cancelled:'Cancelled'}[s]??s.replaceAll('_',' '));
 export const priorityLabel=(p:string)=>p.charAt(0).toUpperCase()+p.slice(1);
 export const sourceLabel=(s:string)=>({staff:'Staff',portal:'Guest portal',whatsapp:'WhatsApp',qr:'QR'}[s]??s);
 export function serviceFilters(p:Record<string,string|undefined>){return{q:(p.q??'').trim().slice(0,100),view:['active','overdue','mine','desk','unassigned','completed','cancelled','all'].includes(p.view??'')?p.view!:'active',priority:requestPriorities.includes(p.priority as typeof requestPriorities[number])?p.priority!:'',source:['staff','portal','whatsapp','qr'].includes(p.source??'')?p.source!:'',sort:['priority','deadline','newest'].includes(p.sort??'')?p.sort!:'priority',page:p.page&&/^\d+$/.test(p.page)?Math.min(100000,Math.max(1,Number(p.page))):1};}
 export const validTarget=(s:string)=>s.trim()===''||/^\d{1,5}$/.test(s.trim())&&Number(s)>=1&&Number(s)<=10080;
-export const serviceTime=(s:string,tz:string)=>new Intl.DateTimeFormat('en',{dateStyle:'medium',timeStyle:'short',timeZone:tz}).format(new Date(s));
+export const serviceTime=(value:string,tz:string)=>displayDateTime(value,tz);
 function duration(minutes:number){const m=Math.max(1,Math.ceil(minutes));return m<60?`${m}m`:m<1440?`${Math.floor(m/60)}h${m%60?` ${m%60}m`:''}`:`${Math.floor(m/1440)}d${Math.floor(m%1440/60)?` ${Math.floor(m%1440/60)}h`:''}`;}
 export function deadlineState(due:string|null,status:string,completed:string|null,now:string){
  if(status==='cancelled')return{label:'Cancelled',kind:'none'};

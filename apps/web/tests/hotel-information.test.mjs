@@ -1,5 +1,6 @@
+import {withDateHelpers} from './date-imports.mjs';
 import{test}from'node:test';import assert from'node:assert/strict';import{readFileSync}from'node:fs';import vm from'node:vm';import ts from'typescript';
-const compile=file=>ts.transpileModule(readFileSync(new URL(file,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+const compile=file=>ts.transpileModule(withDateHelpers(readFileSync(new URL(file,import.meta.url),'utf8')),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
 const concierge={},resources={},validation={};vm.runInNewContext(compile('../src/lib/guest-concierge.ts'),{exports:concierge,URL});vm.runInNewContext(compile('../src/lib/hotel-message-resources.ts'),{exports:resources});vm.runInNewContext(compile('../src/lib/hotel-information-validation.ts'),{exports:validation,require:name=>({'./guest-concierge':concierge,'./hotel-message-resources':resources})[name]});
 const links={maps_url:'https://maps.app.goo.gl/hotel',review_url:'https://g.page/r/hotel/review',website_url:'http://www.hotel.test/'};
 test('HTTP website and missing reason report separate field errors without blaming valid Maps links',()=>{const errors=validation.hotelInformationErrors(links,'');assert.equal(Object.keys(errors).sort().join(','),'reason,website_url');assert.match(errors.website_url,/http:\/\//);assert.match(errors.reason,/change reason/);assert.equal(links.website_url,'http://www.hotel.test/','does not silently change the owner’s URL');});

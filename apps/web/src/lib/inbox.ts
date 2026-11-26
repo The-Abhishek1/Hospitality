@@ -1,3 +1,4 @@
+import {displayDay,displayDateTime} from '@/lib/date-format';
 import {validId} from './reservations';
 export type InboxFilters={q:string;status:string;assignment:string;handoff:string;page:number;c:string;before:string;setup:string;audience:string};
 export function inboxFilters(p:Record<string,string|undefined>):InboxFilters{return{audience:['enquiries','guests'].includes(p.audience??'')?p.audience!:'all',q:(p.q??'').trim().slice(0,100),status:['open','closed','all'].includes(p.status??'')?p.status!:'open',assignment:['all','mine','unassigned'].includes(p.assignment??'')?p.assignment!:'all',handoff:p.handoff==='human'?'human':'',page:p.page&&/^\d+$/.test(p.page)?Math.max(1,Math.min(100000,Number(p.page))):1,c:validId(p.c)?p.c:'',before:validId(p.before)?p.before:'',setup:p.setup==='1'?'1':''};}
@@ -5,9 +6,9 @@ export const deliveryLabel=(status:string)=>({received:'Received',queued:'Queued
 export const inboxTime=(value:string,tz:string)=>new Intl.DateTimeFormat('en',{hour:'numeric',minute:'2-digit',timeZone:tz}).format(new Date(value));
 export function inboxListTime(value:string,tz:string,now=new Date()){
  const date=new Date(value),day=new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:tz}),year=new Intl.DateTimeFormat('en',{year:'numeric',timeZone:tz});
- return day.format(date)===day.format(now)?inboxTime(value,tz):new Intl.DateTimeFormat('en',{day:'numeric',month:'short',...(year.format(date)!==year.format(now)?{year:'2-digit' as const}:{}),timeZone:tz}).format(date);
+ return day.format(date)===day.format(now)?inboxTime(value,tz):displayDateTime(date,tz).split(' · ')[0];
 }
-export const inboxDate=(value:string,tz:string)=>new Intl.DateTimeFormat('en',{day:'numeric',month:'short',year:'numeric',timeZone:tz}).format(new Date(value));
+export const inboxDate=(value:string,tz:string)=>displayDateTime(value,tz).split(' · ')[0];
 export type Conversation={audience?:'enquiries'|'guests';id:string;version:number;wa_contact_id:string;contact_name:string|null;status:string;assigned_to:string|null;assignee_name:string|null;human_handoff:boolean;handoff_changed_at?:string|null;handoff_actor_name?:string|null;handoff_origin?:'staff'|'automation'|null;last_message_at:string;last_inbound_at:string|null;preview?:string;unread?:number;opted_out?:boolean;window_open?:boolean;window_ends_at?:string|null;consent?:string|null};
 export type InboxMessage={whatsapp_source?:string;outbound_payload?:Parameters<typeof import('../components/inbox/rich-message').RichMessage>[0]['payload'];id:string;direction:string;type:string;body:string|null;status:string;error:string|null;attempts:number;delivery_uncertain:boolean;wa_message_id:string|null;created_at:string;next_attempt_at:string;template_name:string|null;template_language:string|null};
 export type InboxTemplate={id:string;name:string;language:string;body:string;supported:boolean;image_url?:string};

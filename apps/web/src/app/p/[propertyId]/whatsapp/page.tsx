@@ -1,3 +1,5 @@
+
+import {displayDateTime} from '@/lib/date-format';
 import {EnquiryBookings} from '@/components/whatsapp/enquiry-bookings';
 import{GuestFeedback}from'@/components/automations/guest-feedback';
 import{DefaultSetup,type DefaultWorkspace}from'@/components/automations/default-setup';
@@ -40,7 +42,7 @@ export default async function Automations({params,searchParams}:{params:Promise<
  const welcomeRule=rules.find(r=>r.event_key==='booking_confirmed'),eventCatalog=catalog,eventEnabled=enabled;
  const selectedEvent=Boolean(q.event&&catalog.some(e=>e.key===q.event));
  const settingsTab=tab==='journey'||tab==='permissions'||tab==='feedback';
- const utcTime=(value:string)=>new Intl.DateTimeFormat('en-GB',{dateStyle:'medium',timeStyle:'short',timeZone:'UTC'}).format(new Date(value));
+ const utcTime=(value:string)=>displayDateTime(new Date(value),'UTC');
  return <div className="auto-workspace auto-simple wa-workspace wa-guided">
   <header className="wa-heading"><div><h1>WhatsApp</h1><p>Connect once. We prepare the messages and link them to your hotel’s services and events.</p></div><Link className="dash-button dash-secondary" href={`/p/${pid}/inbox`}>Open Inbox →</Link></header>
   <nav className="wa-sections" aria-label="WhatsApp sections">{[['setup','Setup'],['templates','Templates'],['menu','Guest menu'],['rules','Event messages'],['history','Activity']].map(([key,label])=><Link key={key} href={`${base}?tab=${key}`} aria-current={(tab==='welcome'?key==='rules':tab===key)?'page':undefined}>{label}</Link>)}<details className="wa-more"><summary>More</summary><div><Link href={`${base}?tab=journey`}>Document & check-in settings</Link><Link href={`${base}?tab=permissions`}>Guest consent</Link><Link href={`${base}?tab=feedback`}>Guest feedback</Link></div></details></nav>

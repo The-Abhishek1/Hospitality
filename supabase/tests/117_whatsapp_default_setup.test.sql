@@ -24,7 +24,7 @@ insert into public.hotel_message_photos(id,property_id,name,url,mime_type)values
 insert into public.whatsapp_guest_settings(property_id,tenant_id,data)values(:'pid',:'tenant','{"maps_url":"https://maps.example/hotel-a","review_url":"https://review.example/hotel-a","website_url":"https://hotel.example"}');
 create temporary table default_fixture(payload jsonb);
 \copy default_fixture from 'supabase/tests/fixtures/whatsapp-default-templates.json'
-select is((select count(*)::int from public.whatsapp_default_templates where property_id=:'pid'),37,'new WhatsApp connection creates the full per-hotel starter registry');
+select is((select count(*)::int from public.whatsapp_default_templates where property_id=:'pid'),42,'new WhatsApp connection creates the full per-hotel starter registry');
 set local role authenticated;
 select set_config('request.jwt.claims',json_build_object('sub',:'owner','role','authenticated')::text,true);
 select throws_ok(format('select public.claim_whatsapp_default_setup()'),'42501',null,'hotel browser cannot claim provider setup jobs');
@@ -42,7 +42,7 @@ select public.record_whatsapp_default_template(:'pid',(:'job'::jsonb->>'lease'):
 select public.record_whatsapp_default_template(:'pid',(:'job'::jsonb->>'lease')::uuid,'menu_photos',(select t->>'provider_id'from fixture_copy cross join lateral jsonb_array_elements(payload)t where t->>'name'like'%menu_photos_v1'),'https://photos.test/collage.jpg',null);
 select public.sync_whatsapp_provider_templates('e6000000-0000-0000-0000-000000000001','12345678002',(select payload from fixture_copy));
 reset role;
-select is((select count(*)::int from public.whatsapp_automation_rules where property_id=:'pid'),25,'all event templates are assigned without manual event-by-event setup');
+select is((select count(*)::int from public.whatsapp_automation_rules where property_id=:'pid'),0,'pending templates do not create owner-paused event rules');
 select is((select count(*)::int from public.whatsapp_automation_rules where property_id=:'pid'and enabled),0,'pending templates do not activate');
 select is((select jsonb_array_length(data->'categories')from public.whatsapp_guest_menu where property_id=:'pid'),4,'default services are organized into four categories');
 select is((select sum(jsonb_array_length(x->'services'))::int from public.whatsapp_guest_menu m cross join lateral jsonb_array_elements(data->'categories')x where property_id=:'pid'),12,'all twelve menu services receive assignments');
@@ -52,7 +52,7 @@ select public.toggle_whatsapp_defaults(:'pid',2,true);
 reset role;set local role service_role;
 select public.sync_whatsapp_provider_templates('e6000000-0000-0000-0000-000000000001','12345678002',(select jsonb_agg(x||'{"provider_status":"APPROVED"}'::jsonb)from fixture_copy cross join lateral jsonb_array_elements(payload)x));
 reset role;
-select is((select count(*)::int from public.whatsapp_automation_rules where property_id=:'pid'and enabled),24,'approved event templates activate automatically after the master switch is on');
+select is((select count(*)::int from public.whatsapp_automation_rules where property_id=:'pid'and enabled),29,'approved event templates activate automatically after the master switch is on');
 select ok(not(select enabled from public.whatsapp_automation_rules where property_id=:'pid'and event_key='review_request'),'separate review reminder stays off to prevent duplicate checkout requests');
 select ok((select enabled from public.whatsapp_guest_menu where property_id=:'pid'),'menu publishes automatically when its assigned templates are ready');
 select is((select delay_minutes from public.whatsapp_automation_rules where property_id=:'pid'and event_key='arrival_reminder'),180,'arrival reminder is set three hours before hotel check-in');
