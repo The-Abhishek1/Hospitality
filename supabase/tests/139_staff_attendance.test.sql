@@ -31,4 +31,10 @@ select is((public.staff_workspace(:'pid',current_date)->>'days')::integer,extrac
 select throws_ok(format('select public.staff_manage(%L,gen_random_uuid(),''import'',%L)',:'pid',jsonb_build_object('rows',jsonb_build_array(jsonb_build_object('code','ROLLBACK','full_name','Should Roll Back','joined_on',current_date),jsonb_build_object('code','INVALID','full_name','X','joined_on',current_date)))::text),'22023',null,'invalid staff import is rejected atomically');
 select is((public.staff_workspace(:'pid',current_date,'ROLLBACK')->>'total')::integer,0,'earlier import rows are rolled back after an invalid row');
 select throws_ok(format('select public.staff_manage(%L,gen_random_uuid(),''salary'',%L)',:'pid',jsonb_build_object('ids',jsonb_build_array(gen_random_uuid()),'month',date_trunc('month',current_date)::date,'amount',100)::text),'22023',null,'salary updates cannot target unknown or foreign staff');
+reset role;
+update public.properties set timezone='Etc/GMT+12'where id=:'pid';
+set local timezone='Etc/GMT-14';
+set local role authenticated;
+select throws_ok(format('select public.staff_manage(%L,gen_random_uuid(),''attendance'',%L)',:'pid',jsonb_build_object('ids',jsonb_build_array(:'staffid'),'day',(now()at time zone 'Etc/GMT+12')::date+1,'status','present','replace',true)::text),'22023',null,'a database timezone cannot allow attendance for the hotel’s tomorrow');
+select lives_ok(format('select public.staff_manage(%L,gen_random_uuid(),''attendance'',%L)',:'pid',jsonb_build_object('ids',jsonb_build_array(:'staffid'),'day',(now()at time zone 'Etc/GMT+12')::date,'status','present','replace',true)::text),'attendance accepts the hotel’s actual business day');
 select *from finish();rollback;
