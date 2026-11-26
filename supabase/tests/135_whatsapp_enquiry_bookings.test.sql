@@ -62,6 +62,10 @@ select ok(not private.whatsapp_enquiry(:'cid'),'confirmed conversation moves to 
 select ok(exists(select 1 from private.whatsapp_booking_contacts where reservation_id=:'rid'and conversation_id=:'cid'and actor_id is null),'guest confirmation records one-booking contact proof without impersonating staff');
 select ok(exists(select 1 from public.whatsapp_automation_events where reservation_id=:'rid'and event_key='booking_confirmed'),'normal booking welcome event is captured');
 select ok(exists(select 1 from public.messages where conversation_id=:'cid'and body like 'Booking confirmed at Enquiry Resort!%'and body like '%https://hotel.test/s/%?view=documents%'),'confirmation supplies a secure document helper link in WhatsApp');
+select is((select journey_reservation from public.messages where conversation_id=:'cid'and journey_purpose='enquiry_confirmed'),:'rid'::uuid,'private confirmation is bound to the verified reservation at delivery');
+update public.conversations set guest_id=null where id=:'cid';
+select is(private.inbox_delivery_error((select id from public.messages where conversation_id=:'cid'and journey_purpose='enquiry_confirmed')),'Guest booking or number changed.','identity changes invalidate an undelivered private confirmation');
+update public.conversations set guest_id=(select guest_id from public.reservations where id=:'rid')where id=:'cid';
 select is((select count(*)::integer from public.whatsapp_guest_authorizations where conversation_id=:'cid'),0,'booking does not grant ongoing updates');
 select is((select count(*)::integer from public.whatsapp_marketing_permissions where property_id=:'pid'),0,'booking never grants marketing permission');
 select pg_temp.incoming('919000001351',:'confirm_choice');
