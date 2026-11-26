@@ -27,6 +27,7 @@ select ok((select service_supported and not automation_supported from public.mes
 set local role service_role;
 select set_config('test.group_conv',public.ingest_whatsapp_inbound('12345678001','msg:group-hi','919111111111','Asha','group-hi','text','Hi','{}')::text,true);
 select is(public.dispatch_whatsapp_guest_replies(50,'https://guest.test'),1,'Hi sends grouped root menu');
+select is((select body from public.messages where conversation_id=current_setting('test.group_conv')::uuid and direction='out'),'Welcome to Hotel A. How can we help with your stay?','grouped menu greeting includes this hotel name');
 select is((select jsonb_array_length(outbound_payload#>'{interactive,action,sections,0,rows}')from public.messages where conversation_id=current_setting('test.group_conv')::uuid and direction='out'),1,'main menu contains category instead of fifteen options');
 select public.ingest_whatsapp_inbound('12345678001','msg:group-hi-second','919111111111','Asha','group-hi-second','text','Hello','{}');
 select public.ingest_whatsapp_inbound('12345678001','msg:group-hi-third','919111111111','Asha','group-hi-third','text','Menu','{}');

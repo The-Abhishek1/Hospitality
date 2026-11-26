@@ -22,6 +22,7 @@ select ok(not private.whatsapp_public_link('https://user:secret@example.com/phot
 set local role service_role;
 select set_config('test.guest_conv',public.ingest_whatsapp_inbound('12345678001','msg:concierge-hi','919111111111','Asha','concierge-hi','text','Hi','{}')::text,true);
 select is(public.dispatch_whatsapp_guest_replies(50,'https://guest.test'),1,'Hi queues one live guest menu');
+select is((select body from public.messages where guest_menu_action='menu'and conversation_id=current_setting('test.guest_conv')::uuid),'Welcome to Hotel A. How can we help with your stay?','flat menu greeting includes this hotel name');
 select is(public.dispatch_whatsapp_guest_replies(50,'https://guest.test'),0,'dispatcher is idempotent');
 select is(public.ingest_whatsapp_inbound('12345678001','msg:concierge-hi','919111111111','Asha','concierge-hi','text','Hi','{}'),null::uuid,'provider replay is ignored');
 select is((select outbound_payload#>>'{interactive,type}'from public.messages where guest_menu_action='menu'and conversation_id=current_setting('test.guest_conv')::uuid),'list','menu uses real interactive list payload');
