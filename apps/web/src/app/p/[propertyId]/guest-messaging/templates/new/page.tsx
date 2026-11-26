@@ -1,2 +1,2 @@
 import {redirect} from 'next/navigation';
-export default async function LegacyTemplate({params}:{params:Promise<{propertyId:string}>}){const{propertyId}=await params;redirect(`/p/${propertyId}/automations?tab=templates&create=1`);}
+export default async function LegacyTemplate({params}:{params:Promise<{propertyId:string}>}){const{propertyId}=await params;redirect(`/p/${propertyId}/whatsapp?tab=templates&create=1`);}

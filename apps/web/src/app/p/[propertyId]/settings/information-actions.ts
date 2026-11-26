@@ -7,6 +7,6 @@ export async function saveHotelInformation(_:HotelInformationState,fd:FormData):
  const fieldErrors=hotelInformationErrors(links,reason);if(Object.keys(fieldErrors).length)return{error:'Check the highlighted fields below.',fieldErrors,values:{...links,reason}};
  const db=await createClient(),{data,error}=await db.rpc('save_hotel_message_links',{p_property:pid,p_version:version,p_links:links,p_reason:reason});
  if(error)return{error:['22023','40001','42501'].includes(error.code)?error.message:'Could not save hotel information. Try again.'};
- revalidatePath(`/p/${pid}/settings`);revalidatePath(`/p/${pid}/automations`);
+ revalidatePath(`/p/${pid}/settings`);revalidatePath(`/p/${pid}/whatsapp`);revalidatePath(`/p/${pid}/whatsapp`);
  return{success:'Hotel links saved. Existing template buttons retain their saved URLs.',version:data};
 }

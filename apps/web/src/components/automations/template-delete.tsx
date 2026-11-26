@@ -40,8 +40,8 @@ export function TemplateDelete({ pid, template, name }: { pid: string; template:
         <dl className="auto-delete-details"><div><dt>Template</dt><dd>{context.name}</dd></div><div><dt>Language</dt><dd>{context.language}</dd></div><div><dt>Meta status</dt><dd>{context.status}</dd></div></dl>
         <p className="auto-help">Meta prevents reuse of a deleted approved template’s name for 30 days. To replace its wording, use a new name such as {context.name}_v2.</p>
         {!!context.blockers.length && <div className="auto-notice error"><strong>Before deleting</strong><ul>{context.blockers.map(reason => <li key={reason}>{reason}</li>)}</ul></div>}
-        {!!context.usage.events.length && <div className="auto-delete-links">{context.usage.events.map(event => <Link key={event} href={`/p/${pid}/automations?tab=rules&event=${event}`}>Review {event.replaceAll('_', ' ')} →</Link>)}</div>}
-        {context.usage.services > 0 && <Link href={`/p/${pid}/automations?tab=menu`}>Review {context.usage.services} active menu service(s) →</Link>}
+        {!!context.usage.events.length && <div className="auto-delete-links">{context.usage.events.map(event => <Link key={event} href={`/p/${pid}/whatsapp?tab=rules&event=${event}`}>Review {event.replaceAll('_', ' ')} →</Link>)}</div>}
+        {context.usage.services > 0 && <Link href={`/p/${pid}/whatsapp?tab=menu`}>Review {context.usage.services} active menu service(s) →</Link>}
         {context.usage.campaigns > 0 && <Link href={`/p/${pid}/campaigns`}>Review active campaigns →</Link>}
         {context.usage.messages > 0 && <Link href={`/p/${pid}/inbox`}>Review message deliveries →</Link>}
         {context.deleted && <p role="status">This template is already deleted. Refresh the library.</p>}

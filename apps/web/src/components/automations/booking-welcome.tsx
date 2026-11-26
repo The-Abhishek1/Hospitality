@@ -10,7 +10,7 @@ export function BookingWelcome({pid,rule,templates,serviceTemplates,connected,wo
  const[state,action,pending]=useActionState(saveBookingWelcome,{}),[tid,setTid]=useState(selectedTemplate??rule?.template_id??'');
  const template=templates.find(t=>t.id===tid),keys=template?welcomeKeys(template,tid===rule?.template_id?rule.parameter_keys:undefined):null;
  const service=serviceTemplates.find(t=>t.id===tid),photo=service?.image_url,needsPhoto=service?.definition?.components.some(c=>c.type==='HEADER'&&c.format==='IMAGE')&&!photo,changed=tid!==(rule?.template_id??'');
- const ready=connected&&Boolean(keys)&&!needsPhoto,on=Boolean(rule?.enabled),base=`/p/${pid}/automations`;
+ const ready=connected&&Boolean(keys)&&!needsPhoto,on=Boolean(rule?.enabled),base=`/p/${pid}/whatsapp`;
  return <section className="auto-panel auto-welcome"><div className="auto-heading"><div><h2>Booking welcome</h2><p>Send hotel and stay details with a personal document-upload link.</p></div><span className={`auto-status ${on?'ready':''}`}>{on?'On':'Off'}</span></div>
  <form action={action}><input type="hidden" name="pid" value={pid}/><input type="hidden" name="version" value={rule?.version??0}/><input type="hidden" name="keys" value={JSON.stringify(keys??[])}/>
  <div className="auto-welcome-toggle"><div><strong>Send booking welcome automatically</strong><small>{on?'New eligible bookings receive the selected message.':'Booking welcomes are paused.'}</small></div><button className="auto-switch" type="submit" name="intent" value={on?'off':'on'} role="switch" aria-checked={on} aria-label="Automatic booking welcome" disabled={pending||(!on&&(!ready||changed))}><span/>{on?'On':'Off'}</button></div>

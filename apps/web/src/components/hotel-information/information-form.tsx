@@ -13,10 +13,10 @@ const linkHelp = {
   website_url: 'Use your website’s HTTPS address. If HTTPS is unavailable, leave this optional field blank.',
 };
 
-export function HotelInformationForm({ pid, resources }: { pid: string; resources: HotelResources }) {
+export function HotelInformationForm({ pid, resources, compact=false }: { pid: string; resources: HotelResources; compact?:boolean }) {
   const [state, action, pending] = useActionState(saveHotelInformation, {} as HotelInformationState);
   const [links, setLinks] = useState(resources.links);
-  const [reason, setReason] = useState('');
+  const [reason, setReason] = useState(compact?'Updated hotel links during WhatsApp setup':'');
   const [issues, setIssues] = useState<HotelInformationErrors>({});
   const form = useRef<HTMLFormElement>(null);
   const errorFor = (key: keyof HotelInformationErrors) => issues[key] ??
@@ -26,9 +26,9 @@ export function HotelInformationForm({ pid, resources }: { pid: string; resource
   }
 
   return <div className="hotel-information">
-    <section className="sr-panel">
-      <h2>Hotel links</h2>
-      <p>Save your hotel’s public destinations once. Choose them when adding template buttons, or use the saved review link through {'{{review_url}}'}.</p>
+    <section className={compact?"wa-hotel-links":"sr-panel"}>
+      {compact?<h3>Hotel links</h3>:<h2>Hotel links</h2>}
+      <p>{compact?"Add your hotel’s location and review links for the default messages. Website is optional.":<>Save your hotel’s public destinations once. Choose them when adding template buttons, or use the saved review link through {'{{review_url}}'}.</>}</p>
       <form ref={form} action={action} noValidate onSubmit={event => {
         const errors = hotelInformationErrors(links, reason);
         setIssues(errors);
@@ -45,7 +45,7 @@ export function HotelInformationForm({ pid, resources }: { pid: string; resource
             {hotelLinkChoices.map(item => {
               const error = errorFor(item.key);
               return <label key={item.key} htmlFor={`hotel-${item.key}`}>
-                <span>{item.label} <span className="hotel-information-optional">(optional)</span></span>
+                <span>{item.label} <span className="hotel-information-optional">{compact&&item.key!=='website_url'?'(needed for defaults)':'(optional)'}</span></span>
                 <input id={`hotel-${item.key}`} name={item.key} type="url" maxLength={2000}
                   value={links[item.key]} onChange={event => {
                     setLinks(current => ({ ...current, [item.key]: event.target.value }));
@@ -58,7 +58,7 @@ export function HotelInformationForm({ pid, resources }: { pid: string; resource
             })}
           </div>
           <small>Template buttons copy the selected URL into the draft. Changing these settings later does not rewrite existing templates or send a message.</small>
-          <label htmlFor="hotel-change-reason">
+          {compact?<input type="hidden" name="reason" value={reason}/>:<label htmlFor="hotel-change-reason">
             <span>Change reason <span className="hotel-information-required">(required)</span></span>
             <input id="hotel-change-reason" name="reason" required minLength={3} maxLength={500}
               value={reason} onChange={event => { setReason(event.target.value); clearIssue('reason'); }}
@@ -66,17 +66,17 @@ export function HotelInformationForm({ pid, resources }: { pid: string; resource
               aria-invalid={Boolean(errorFor('reason'))} aria-describedby={`hotel-reason-help${errorFor('reason') ? ' hotel-reason-error' : ''}`}/>
             <small id="hotel-reason-help">A short note recorded in your hotel’s settings history.</small>
             {errorFor('reason') && <small id="hotel-reason-error" className="hotel-information-field-error" role="alert">{errorFor('reason')}</small>}
-          </label>
+          </label>}
         </fieldset>
         {state.error && !state.fieldErrors && <p className="hotel-information-notice error" role="alert">{state.error}</p>}
         {state.success && <p className="hotel-information-notice" role="status">{state.success}</p>}
         <button className="dash-button" disabled={pending}>{pending ? 'Saving…' : 'Save hotel links'}</button>
       </form>
     </section>
-    <section className="sr-panel"><HotelPhotoLibrary pid={pid} initialPhotos={resources.photos} manage/></section>
+    {!compact&&<><section className="sr-panel"><HotelPhotoLibrary pid={pid} initialPhotos={resources.photos} manage/></section>
     <div className="settings-template-actions">
-      <Link href={`/p/${pid}/automations?tab=templates`}>Create or manage WhatsApp templates →</Link>
-      <Link href={`/p/${pid}/automations?tab=menu`}>Configure guest menu →</Link>
-    </div>
+      <Link href={`/p/${pid}/whatsapp?tab=templates`}>Create or manage WhatsApp templates →</Link>
+      <Link href={`/p/${pid}/whatsapp?tab=menu`}>Configure guest menu →</Link>
+    </div></>}
   </div>;
 }
