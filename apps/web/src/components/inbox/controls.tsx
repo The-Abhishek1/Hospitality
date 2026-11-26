@@ -23,6 +23,12 @@ export function ThreadBehavior({children,pid,cid,lastInbound,lastMessage,history
  },[pid,cid,lastInbound,lastMessage,history,router]);
  return <><div className="ib-message-feed" ref={feed} role="region" tabIndex={0} aria-label="Message history">{children}</div>{newer&&<button className="ib-new-messages" onClick={()=>{const el=feed.current;if(el){atBottom.current=true;el.scrollTop=el.scrollHeight;setNewer(false);}}}>New messages ↓</button>}{readError&&<p className="ib-feedback error" role="status">{readError}</p>}</>;
 }
+export function ConversationPauseNotice({pid,c,tz}:{pid:string;c:Conversation;tz:string}){
+ const[state,action,pending]=useActionState(conversationAction,{} as InboxState);
+ if(!c.human_handoff)return null;
+ const origin=c.handoff_origin==='staff'?`Paused by ${c.handoff_actor_name||'a staff member'}`:c.handoff_origin==='automation'?'Paused by an automated handoff':'The person or action that set this earlier pause was not recorded';
+ return <aside className="ib-automation-paused" aria-label="Conversation automation paused"><div><strong>Automatic messages are paused for this chat</strong><p>Human handling pauses guest-menu replies and automatic event messages, including the booking welcome.</p><small>{origin}{c.handoff_changed_at&&` · ${new Intl.DateTimeFormat('en',{dateStyle:'medium',timeStyle:'short',timeZone:tz}).format(new Date(c.handoff_changed_at))}`}</small><p>Turning on hotel automation keeps this conversation in human handling until you resume it here.</p></div><form action={action}><input type="hidden" name="pid" value={pid}/><input type="hidden" name="cid" value={c.id}/><input type="hidden" name="version" value={c.version}/><button className="dash-button" name="action" value="human_off" disabled={pending}>{pending?'Resuming…':'Allow automation'}</button>{state.error&&<p role="alert">{state.error}</p>}</form></aside>;
+}
 export function ConversationControls({pid,c,canAssign,assignees,userId}:{pid:string;c:Conversation;canAssign:boolean;assignees:InboxData['assignees'];userId:string}){
  const [state,action,pending]=useActionState(conversationAction,{} as InboxState);
  return <form action={action} className="ib-conversation-controls"><input type="hidden" name="pid" value={pid}/><input type="hidden" name="cid" value={c.id}/><input type="hidden" name="version" value={c.version}/><div className="ib-control-buttons">
