@@ -8,7 +8,7 @@ export async function managePlatform(_:PlatformState,fd:FormData):Promise<Platfo
  const keys=action==='plan'?['plan','confirmation']:action==='status'?['status','confirmation']:['name','property_type','timezone','currency','city','country_code',...(action==='onboard'?['business_name','slug','owner_email','plan']:[])];for(const key of keys)details[key]=value(key);
  if(action==='onboard'||action==='add_hotel'){details.country_code=details.country_code.toUpperCase();if(!Intl.supportedValuesOf('currency').includes(details.currency))return{error:'Choose a supported hotel currency.'};}
  const db=await createClient(),{data,error}=await db.rpc('platform_manage',{p_tenant:action==='onboard'?null:tenant,p_version:action==='onboard'?null:Number(version),p_request:request,p_action:action,p_details:details});
- if(error)return{error:error.code==='23505'?'That business slug is already in use. Choose a different slug.':['22023','53400','40001','P0002','42501'].includes(error.code)?error.message:'The change could not be saved. Refresh and try again.'};
+ if(error)return{error:error.code==='23505'?'That business slug is already in use. Choose a different slug.':['22023','53400','40001','P0002','42501','55000'].includes(error.code)?error.message:'The change could not be saved. Refresh and try again.'};
  revalidatePath('/admin','layout');revalidatePath('/dashboard');revalidatePath('/properties');
  redirect(`/admin/businesses/${data.tenant_id}?notice=${action}`);
 }

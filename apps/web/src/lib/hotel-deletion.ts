@@ -1,6 +1,6 @@
 export type HotelDeletionPreview = {
   id: string; tenant: string; name: string; version?: number;
-  state: 'review' | 'files' | 'complete'; job?: string;
+  state: 'review' | 'files' | 'hotels' | 'complete'; job?: string;
   counts: Record<string, number>; files_remaining: number; blockers?: string[];
 };
 export function deletionGroups(counts: Record<string, number>) {
