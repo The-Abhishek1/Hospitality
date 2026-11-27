@@ -45,6 +45,27 @@ create function pg_temp.group_quote(p_phone text,p_offset integer)returns uuid l
  perform pg_temp.incoming(p_phone,pg_temp.pick_room(c,'f7000000-0000-0000-0000-000000000002'));perform pg_temp.incoming(p_phone,'1');return c;
 end $$;
 create function pg_temp.snapshot(p_request uuid,p_tag text,p_status text default'paid',p_refunds jsonb default'[]')returns jsonb language sql as $$select jsonb_build_object('link',jsonb_build_object('id','plink_'||p_tag,'reference_id',replace(j.id::text,'-',''),'amount',j.amount,'currency','INR','status',p_status,'order_id','order_'||p_tag,'short_url','https://rzp.io/'||p_tag,'notes',jsonb_build_object('property_id',j.property_id,'reservation_id',j.reservation_id)),'payment',jsonb_build_object('id','pay_'||p_tag,'status','captured','captured',true,'amount',j.amount,'currency','INR','order_id','order_'||p_tag,'method','upi'),'refunds',p_refunds)from public.hotel_payment_requests j where j.id=p_request$$;
+-- Exercise the real inbound dispatcher with the new plain-number answer, not just its regex.
+select pg_temp.incoming('919000001500','BOOK')as numeric_cid \gset
+select pg_temp.incoming('919000001500',to_char((now()at time zone'Asia/Kolkata')::date+1,'DD-MM-YYYY')||' to '||to_char((now()at time zone'Asia/Kolkata')::date+3,'DD-MM-YYYY'));
+select is((select step from private.whatsapp_booking_sessions where conversation_id=:'numeric_cid'),'members','combined dates lead to the total-members question');
+select pg_temp.incoming('919000001500','4');
+select is((select members from private.whatsapp_booking_sessions where conversation_id=:'numeric_cid'),4,'plain 4 is stored as four members without requiring 4,0');
+select is((select step from private.whatsapp_booking_sessions where conversation_id=:'numeric_cid'),'room_count','numeric member reply advances through the real dispatcher');
+select ok(exists(select 1 from public.messages where conversation_id=:'numeric_cid'and body like'How many rooms would you like to book?%'),'guest receives the room-count question after replying 4');
+select pg_temp.incoming('919000001500','2');
+select pg_temp.incoming('919000001500','Numeric Answer Guest');
+select pg_temp.incoming('919000001500',pg_temp.pick_room(:'numeric_cid','f7000000-0000-0000-0000-000000000001'));
+select pg_temp.incoming('919000001500','2');
+select is((select step from private.whatsapp_booking_sessions where conversation_id=:'numeric_cid'),'confirm','plain numeric answers can complete a two-room quote');
+select is((select sum((x->>'members')::integer)::integer from private.whatsapp_booking_sessions s,jsonb_array_elements(s.room_items)x where s.conversation_id=:'numeric_cid'),4,'room allocations retain all four members');
+-- Sessions already waiting at the old guest-count step also accept the new answer.
+select pg_temp.incoming('919000001509','BOOK')as legacy_cid \gset
+update private.whatsapp_booking_sessions set step='guests'where conversation_id=:'legacy_cid';
+select pg_temp.incoming('919000001509','4');
+select is((select step from private.whatsapp_booking_sessions where conversation_id=:'legacy_cid'),'room_count','legacy guests step accepts plain 4 too');
+select is((select members from private.whatsapp_booking_sessions where conversation_id=:'legacy_cid'),4,'legacy session does not run the adults-comma-children parser');
+
 select is(private.enquiry_dates('31-02-2027 to 03-03-2027'),null::date[],'invalid calendar dates are rejected');
 select is(private.enquiry_dates('one date 01-12-2026'),null::date[],'both dates are required');
 select is(private.whatsapp_public_hotel_intent('3 rooms'),null::text,'room count is not intercepted as a public hotel question');
