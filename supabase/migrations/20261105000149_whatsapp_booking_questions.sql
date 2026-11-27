@@ -196,7 +196,7 @@ declare c public.conversations;p public.properties;s private.whatsapp_booking_se
  elsif s.step='rooms'then perform private.enquiry_rooms(c.id,p_source);return 1;
  else body:='Use Confirm booking above to accept the quote, or send BOOK to start again. No reservation is created by a text reply.';end if;
  perform private.enquiry_reply(c.id,p_source,body);return 1;
-end $function$
+end $function$;
 
 -- A contact name can contain words such as “Contact”, “Rates” or “Garden”.
 -- During the name answer, do not reinterpret it as a public hotel question.
