@@ -44,11 +44,11 @@ select ok(exists(select 1 from public.messages where conversation_id=:'cid'and j
 select pg_temp.incoming('919000001481','Can you send resort photos?','148-photos');
 select is((select count(*)::integer from public.messages where conversation_id=:'cid'and type='image'and guest_reply_to=(select id from public.messages where wa_message_id='148-photos')),2,'natural-language photo request sends actual saved images');
 select pg_temp.incoming('919000001481','BOOK','148-book');
-select is((select step from private.whatsapp_booking_sessions where conversation_id=:'cid'),'arrival','BOOK still starts normal date collection');
+select is((select step from private.whatsapp_booking_sessions where conversation_id=:'cid'),'dates','BOOK still starts normal date collection');
 select pg_temp.incoming('919000001481','What is your contact number?','148-contact');
-select is((select step from private.whatsapp_booking_sessions where conversation_id=:'cid'),'arrival','a public question does not reset or consume a booking step');
-select pg_temp.incoming('919000001481',to_char((now()at time zone'Asia/Kolkata')::date+1,'DD-MM-YYYY'),'148-date');
-select is((select step from private.whatsapp_booking_sessions where conversation_id=:'cid'),'departure','guest can continue the booking after receiving the answer');
+select is((select step from private.whatsapp_booking_sessions where conversation_id=:'cid'),'dates','a public question does not reset or consume a booking step');
+select pg_temp.incoming('919000001481',to_char((now()at time zone'Asia/Kolkata')::date+1,'DD-MM-YYYY')||' to '||to_char((now()at time zone'Asia/Kolkata')::date+3,'DD-MM-YYYY'),'148-date');
+select is((select step from private.whatsapp_booking_sessions where conversation_id=:'cid'),'members','guest can continue the booking after receiving the answer');
 select pg_temp.incoming('919000001481','Do you have a pool and parking?','148-facilities');
 select ok(exists(select 1 from public.messages where conversation_id=:'cid'and journey_purpose='public_hotel:facilities'and body like'%Reception can confirm%'),'unknown facilities are referred to reception instead of invented');
 update public.hotel_message_photos set archived=true where id='e1480000-0000-0000-0000-000000000002';

@@ -38,17 +38,17 @@ select ok((select body like 'Welcome to Enquiry Resort!%'from public.messages wh
 select ok(private.whatsapp_enquiry(:'cid'),'unbooked chat is an enquiry');
 select ok(not(select human_handoff from public.conversations where id=:'cid'),'unknown greeting never pauses automation');
 select pg_temp.incoming('919000001351',pg_temp.pick(:'cid','enquiry_start'));
-select is((select step from private.whatsapp_booking_sessions where conversation_id=:'cid'),'arrival','book button starts arrival date collection');
+select is((select step from private.whatsapp_booking_sessions where conversation_id=:'cid'),'dates','book button starts one combined date question');
 select pg_temp.incoming('919000001351','2026-02-30');
-select is((select step from private.whatsapp_booking_sessions where conversation_id=:'cid'),'arrival','invalid dates do not advance the booking');
-select pg_temp.incoming('919000001351',:'arrival');
-select pg_temp.incoming('919000001351',:'arrival');
-select is((select step from private.whatsapp_booking_sessions where conversation_id=:'cid'),'departure','same-day departure is rejected');
-select pg_temp.incoming('919000001351',:'departure');
-select pg_temp.incoming('919000001351','2,0');
+select is((select step from private.whatsapp_booking_sessions where conversation_id=:'cid'),'dates','invalid dates do not advance the booking');
+select pg_temp.incoming('919000001351',:'arrival'||' to '||:'arrival');
+select is((select step from private.whatsapp_booking_sessions where conversation_id=:'cid'),'dates','same-day departure is rejected');
+select pg_temp.incoming('919000001351',:'arrival'||' to '||:'departure');
+select pg_temp.incoming('919000001351','2');
+select pg_temp.incoming('919000001351','1');
 select pg_temp.incoming('919000001351','Maya Rao');
 select is((select step from private.whatsapp_booking_sessions where conversation_id=:'cid'),'rooms','name and party lead to live room availability');
-select ok(exists(select 1 from public.messages where conversation_id=:'cid'and body like 'Available rooms at%'and outbound_payload#>>'{interactive,action,sections,0,rows,0,description}'like 'INR 8000%'),'quote uses date-specific nightly rates');
+select ok(exists(select 1 from public.messages where conversation_id=:'cid'and body like 'Choose your room type.%'and outbound_payload#>>'{interactive,action,sections,0,rows,0,description}'like '%base INR 2500%'),'room choices show availability and indicative base rates');
 select pg_temp.pick(:'cid','enquiry_room')as room_choice \gset
 select pg_temp.incoming('919000001351',:'room_choice');
 select is((select quote from private.whatsapp_booking_sessions where conversation_id=:'cid'),8000::numeric,'full stay quote is stored for explicit confirmation');
@@ -82,7 +82,7 @@ select is(public.dispatch_whatsapp_automations(50,'https://hotel.test'),1,'exist
 select pg_temp.incoming('919000001351','Hi');
 select ok(exists(select 1 from private.whatsapp_journey_actions where conversation_id=:'cid'and action='updates'),'after booking Hi enters the existing stay-consent journey');
 create function pg_temp.quote(p_phone text,p_in text,p_out text,p_name text)returns uuid language plpgsql as $$declare c uuid;begin
- c:=pg_temp.incoming(p_phone,'BOOK');perform pg_temp.incoming(p_phone,p_in);perform pg_temp.incoming(p_phone,p_out);perform pg_temp.incoming(p_phone,'2,0');perform pg_temp.incoming(p_phone,p_name);perform pg_temp.incoming(p_phone,pg_temp.pick(c,'enquiry_room'));return c;
+ c:=pg_temp.incoming(p_phone,'BOOK');perform pg_temp.incoming(p_phone,p_in||' to '||p_out);perform pg_temp.incoming(p_phone,'2');perform pg_temp.incoming(p_phone,'1');perform pg_temp.incoming(p_phone,p_name);perform pg_temp.incoming(p_phone,pg_temp.pick(c,'enquiry_room'));return c;
 end $$;
 select ((now()at time zone 'Asia/Kolkata')::date+10)::text as later_in,((now()at time zone 'Asia/Kolkata')::date+12)::text as later_out \gset
 select pg_temp.quote('919000001354',:'later_in',:'later_out','Fresh Quote Guest')as price_cid \gset
@@ -114,7 +114,7 @@ select pg_temp.quote('919000001359',((now()at time zone 'Asia/Kolkata')::date+30
 select pg_temp.pick(:'restart_cid','enquiry_confirm')as old_confirm \gset
 select pg_temp.incoming('919000001359','BOOK');
 select pg_temp.incoming('919000001359',:'old_confirm');
-select is((select step from private.whatsapp_booking_sessions where conversation_id=:'restart_cid'),'arrival','old confirmation cannot replace a restarted booking');
+select is((select step from private.whatsapp_booking_sessions where conversation_id=:'restart_cid'),'dates','old confirmation cannot replace a restarted booking');
 select is((select count(*)::integer from public.reservations where property_id=:'pid'),2,'restarted-session buttons never create an unintended booking');
 set local role authenticated;
 select set_config('request.jwt.claims',json_build_object('sub',:'owner','role','authenticated')::text,true);
